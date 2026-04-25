@@ -1,0 +1,6 @@
+{
+  "fluid.shhs_create_core.hostility": "恶意",
+  "fluid.shhs_create_core.wonder": "奇迹",
+  "itemGroup.shhs_create_core.total": "什机核心：汇总",
+  "text.shhs_create_core.event.no_enough_spell_tolerance": "至少需要 %s 点魔力耐性才能施放这个法术"
+}

@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.shrhang.shhs_create_core.mixin",
+  "refmap": "shhs_create_core.refmap.json",
+  "compatibilityLevel": "JAVA_21",
+  "plugin": "com.shrhang.shhs_create_core.mixin.MixinPlugin",
+  "mixins": [
+    "irons_spellbooks.util.TooltipsUtilsMixin"
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

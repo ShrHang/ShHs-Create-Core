@@ -1,0 +1,15 @@
+{
+  "type": "create:emptying",
+  "ingredients": [
+    {"item":"l2hostility:miracle_powder"}
+  ],
+  "results": [
+    {
+      "id": "minecraft:air"
+    },
+    {
+      "id": "shhs_create_core:wonder",
+      "amount": 1000
+    }
+  ]
+}
