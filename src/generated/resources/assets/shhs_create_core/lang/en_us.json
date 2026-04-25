@@ -1,0 +1,6 @@
+{
+  "fluid.shhs_create_core.hostility": "Hostility",
+  "fluid.shhs_create_core.wonder": "Wonder",
+  "itemGroup.shhs_create_core.total": "Total",
+  "text.shhs_create_core.event.no_enough_spell_tolerance": "Need at least %s spell tolerance to cast this spell"
+}

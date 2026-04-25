@@ -33,7 +33,7 @@ public class MagicEventHandler {
         Player player = event.getEntity();
         double spellTolerance = getSpellTolerance(player);
 
-        if (spellTolerance < requiredTolerance) {
+        if (spellTolerance < requiredTolerance && !player.isCreative()) {
             event.setCanceled(true);
             MagicData.getPlayerMagicData(player).resetCastingState();
             if (player instanceof ServerPlayer serverPlayer)
