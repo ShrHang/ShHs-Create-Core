@@ -1,4 +1,4 @@
-package com.shrhang.shhs_create_core.content.magic;
+package com.shrhang.shhs_create_core.content.event;
 
 import io.redspace.ironsspellbooks.api.events.SpellPreCastEvent;
 import io.redspace.ironsspellbooks.api.magic.MagicData;
@@ -40,7 +40,9 @@ public class MagicEventHandler {
                 PacketDistributor.sendToPlayersTrackingEntityAndSelf(serverPlayer,
                         new OnCastFinishedPacket(serverPlayer.getUUID(), event.getSpellId(), true)
                 );
-            player.displayClientMessage(Component.translatable(lang, requiredTolerance).withStyle(ChatFormatting.RED), true );
+            player.displayClientMessage(
+                    Component.translatable(lang, requiredTolerance)
+                            .withStyle(ChatFormatting.RED), true );
         }
     }
 }

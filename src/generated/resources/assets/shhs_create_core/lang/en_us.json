@@ -1,6 +1,6 @@
 {
+  "event.shhs_create_core.no_enough_spell_tolerance": "At least %s Spell Tolerance is required to cast this spell.",
   "fluid.shhs_create_core.hostility": "Hostility",
   "fluid.shhs_create_core.wonder": "Wonder",
-  "itemGroup.shhs_create_core.total": "Total",
-  "text.shhs_create_core.event.no_enough_spell_tolerance": "Need at least %s spell tolerance to cast this spell"
+  "trait.shhs_create_core.augmented_reality": "Augmented Reality"
 }

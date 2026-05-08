@@ -1,5 +1,6 @@
 package com.shrhang.shhs_create_core;
 
+import dev.xkmc.curseofpandora.init.registrate.CoPAttrs;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.loading.FMLEnvironment;
@@ -64,12 +65,18 @@ public class Config {
     }
 
     public static class Server {
+        public final ModConfigSpec.DoubleValue realityTraitScale;
         public final ModConfigSpec.IntValue scrollPrintingCost;
         Server(ModConfigSpec.Builder builder) {
             builder.push("enchantment_industry");
             scrollPrintingCost = builder
                     .comment("The cost of printing a spell scroll per lv in Enchantment Industry.")
                     .defineInRange("scrollPrintingCost", 250, 1, 1000);
+            builder.pop();
+            builder.push("l2hostility");
+            realityTraitScale = builder
+                    .comment("The scale of reality trait in hostility calculation. The hostility increase from reality trait is calculated as reality trait level * RealityTraitScale.")
+                    .defineInRange("realityTraitScale", 1.0, 0.0, 10000);
             builder.pop();
         }
     }

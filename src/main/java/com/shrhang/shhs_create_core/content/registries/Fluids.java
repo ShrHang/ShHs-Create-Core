@@ -7,7 +7,7 @@ import com.tterrag.registrate.util.entry.FluidEntry;
 import net.minecraft.resources.ResourceLocation;
 
 public class Fluids {
-    private static final CreateRegistrate REGISTRATE = ShHsCreateCore.REGISTRATE;
+    private static final CreateRegistrate REGISTRATE = ShHsCreateCore.createRegistrate;
 
     public static final FluidEntry<VirtualFluid> HOSTILITY = REGISTRATE.virtualFluid("hostility", ResourceLocation.parse("shhs_create_core:block/hostility_still"), ResourceLocation.parse("shhs_create_core:block/hostility_flow"))
             .lang("Hostility")

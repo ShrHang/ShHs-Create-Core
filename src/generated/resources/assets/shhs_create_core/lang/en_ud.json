@@ -1,6 +1,6 @@
 {
+  "event.shhs_create_core.no_enough_spell_tolerance": "˙ןןǝds sıɥʇ ʇsɐɔ oʇ pǝɹınbǝɹ sı ǝɔuɐɹǝןo⟘ ןןǝdS %s ʇsɐǝן ʇⱯ",
   "fluid.shhs_create_core.hostility": "ʎʇıןıʇsoH",
   "fluid.shhs_create_core.wonder": "ɹǝpuoM",
-  "itemGroup.shhs_create_core.total": "ןɐʇo⟘",
-  "text.shhs_create_core.event.no_enough_spell_tolerance": "Need at least %s spell tolerance to cast this spell"
+  "trait.shhs_create_core.augmented_reality": "ʎʇıןɐǝᴚ pǝʇuǝɯbnⱯ"
 }

@@ -82,9 +82,14 @@ repositories {
             includeGroup "maven.modrinth"
         }
     } // Modrinth Mods
-    maven {
-        url "https://cursemaven.com"
-        content {
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "CurseForge"
+                url = "https://cursemaven.com"
+            }
+        }
+        filter {
             includeGroup "curse.maven"
         }
     } // CurseForge Mods
@@ -178,7 +183,6 @@ dependencies {
     implementation "dev.xkmc:l2hostility:${l2hostility_ver}-slim"
     implementation "dev.xkmc:l2archery:${l2archery_ver}"
     implementation "dev.xkmc:curseofpandora:${curseofpandora_ver}"
-
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
