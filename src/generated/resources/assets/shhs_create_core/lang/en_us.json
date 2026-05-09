@@ -2,5 +2,7 @@
   "event.shhs_create_core.no_enough_spell_tolerance": "At least %s Spell Tolerance is required to cast this spell.",
   "fluid.shhs_create_core.hostility": "Hostility",
   "fluid.shhs_create_core.wonder": "Wonder",
-  "trait.shhs_create_core.augmented_reality": "Augmented Reality"
+  "trait.shhs_create_core.augmented_reality": "Augmented Reality",
+  "trait.shhs_create_core.wizard": "Wizard",
+  "trait.shhs_create_core.wizard.desc": "The mob can cast up to %sx trait lv types of random spells."
 }

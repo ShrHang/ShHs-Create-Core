@@ -26,6 +26,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
 
+import static com.shrhang.shhs_create_core.content.data.ShHsTagKey.ENTITY_TAG_BUILDER;
+
 public class ShHsTraitBuilder<T extends MobTrait>
         extends AbstractBuilder<MobTrait, T, ShHsRegistrate, ShHsTraitBuilder<T>> {
 
@@ -45,14 +47,14 @@ public class ShHsTraitBuilder<T extends MobTrait>
     public ShHsTraitBuilder<T> addWhitelist(Consumer<IntrinsicHolderTagsProvider.IntrinsicTagAppender<EntityType<?>>> pvd) {
         var id = ResourceLocation.fromNamespaceAndPath(getOwner().getModid(), getName());
         var tag = TagKey.create(Registries.ENTITY_TYPE, id.withSuffix("_whitelist"));
-        LHTagGen.ENTITY_TAG_BUILDER.put(tag.location(), e -> pvd.accept(e.addTag(tag)));
+        ENTITY_TAG_BUILDER.put(tag.location(), e -> pvd.accept(e.addTag(tag)));
         return this;
     }
 
     public ShHsTraitBuilder<T> addBlacklist(Consumer<IntrinsicHolderTagsProvider.IntrinsicTagAppender<EntityType<?>>> pvd) {
         var id = ResourceLocation.fromNamespaceAndPath(getOwner().getModid(), getName());
         var tag = TagKey.create(Registries.ENTITY_TYPE, id.withSuffix("_blacklist"));
-        LHTagGen.ENTITY_TAG_BUILDER.put(tag.location(), e -> pvd.accept(e.addTag(tag)));
+        ENTITY_TAG_BUILDER.put(tag.location(), e -> pvd.accept(e.addTag(tag)));
         return this;
     }
 

@@ -2,5 +2,7 @@
   "event.shhs_create_core.no_enough_spell_tolerance": "至少需要 %s 点魔力耐性才能施放这个法术",
   "fluid.shhs_create_core.hostility": "恶意",
   "fluid.shhs_create_core.wonder": "奇迹",
-  "trait.shhs_create_core.augmented_reality": "增强现实"
+  "trait.shhs_create_core.augmented_reality": "增强现实",
+  "trait.shhs_create_core.wizard": "巫师",
+  "trait.shhs_create_core.wizard.desc": "生物可随机释放词条等级%s倍数量种类的法术。"
 }

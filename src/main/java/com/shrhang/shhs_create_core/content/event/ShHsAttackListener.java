@@ -1,6 +1,7 @@
 package com.shrhang.shhs_create_core.content.event;
 
 import com.shrhang.shhs_create_core.ShHsCreateCore;
+import dev.xkmc.l2damagetracker.contents.attack.AttackEventHandler;
 import dev.xkmc.l2damagetracker.contents.attack.AttackListener;
 import dev.xkmc.l2damagetracker.contents.attack.DamageData;
 import dev.xkmc.l2damagetracker.contents.attack.DamageModifier;
@@ -50,5 +51,9 @@ public class ShHsAttackListener implements AttackListener {
             float compensation = Math.round((targetMultiplier / originalMultiplier) * 100.0f) / 100.0f;
             data.addDealtModifier(DamageModifier.multTotal(compensation, REALITY_SCALING));
         }
+    }
+
+    public static void init() {
+        AttackEventHandler.register(823, new ShHsAttackListener());
     }
 }

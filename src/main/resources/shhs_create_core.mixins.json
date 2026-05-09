@@ -6,6 +6,7 @@
   "compatibilityLevel": "JAVA_21",
   "plugin": "com.shrhang.shhs_create_core.mixin.MixinPlugin",
   "mixins": [
+    "curios.common.data.CuriosEntityManagerMixin",
     "irons_spellbooks.util.TooltipsUtilsMixin"
   ],
   "client": [

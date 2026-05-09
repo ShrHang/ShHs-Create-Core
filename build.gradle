@@ -152,8 +152,8 @@ dependencies {
     implementation("mezz.jei:jei-$minecraft_version-neoforge:$jei_version") // JEI
     runtimeOnly "vazkii.patchouli:Patchouli:$minecraft_version-$patchouli_version-NEOFORGE-SNAPSHOT" // Patchouli
 
-    compileOnly("top.theillusivec4.curios:curios-neoforge:$curios_version+$minecraft_version:api") // Curios API
-    runtimeOnly("top.theillusivec4.curios:curios-neoforge:$curios_version+$minecraft_version")
+//    compileOnly("top.theillusivec4.curios:curios-neoforge:$curios_version+$minecraft_version:api") // Curios API
+    implementation("top.theillusivec4.curios:curios-neoforge:$curios_version+$minecraft_version")
 
     implementation "maven.modrinth:kaleidoscope-cookery:1.2.1-neoforge+mc1.21.1" // 森罗厨房
     implementation "maven.modrinth:kaleidoscope-compat:2.4.4-neoforge+mc1.21.1" // 森罗物语：兼容
@@ -176,11 +176,11 @@ dependencies {
     implementation "dev.xkmc:l2damagetracker:${l2damagetracker_ver}"
     runtimeOnly "dev.xkmc:l2magic:${l2magic_ver}"
     runtimeOnly "dev.xkmc:mob_weapon_api:${mob_weapon_api_ver}"
-    implementation "dev.xkmc:pandora:1.0.5"
+    implementation "dev.xkmc:pandora:${pandora_ver}"
     implementation "dev.xkmc:l2library:${l2library_ver}-slim"
 
-    implementation "dev.xkmc:l2complements:${l2complements_ver}-slim"
-    implementation "dev.xkmc:l2hostility:${l2hostility_ver}-slim"
+    implementation "dev.xkmc:l2complements:${l2complements_ver}"
+    implementation "dev.xkmc:l2hostility:${l2hostility_ver}"
     implementation "dev.xkmc:l2archery:${l2archery_ver}"
     implementation "dev.xkmc:curseofpandora:${curseofpandora_ver}"
 }

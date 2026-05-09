@@ -1,0 +1,8 @@
+{
+  "entities": [
+    "#shhs_create_core:wizard_whitelist"
+  ],
+  "slots": [
+    "spellbook"
+  ]
+}
