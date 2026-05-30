@@ -6,11 +6,16 @@ import com.tterrag.registrate.util.nullness.NonNullSupplier;
 import dev.xkmc.l2hostility.content.config.TraitConfig;
 import dev.xkmc.l2hostility.content.traits.base.MobTrait;
 import dev.xkmc.l2hostility.init.registrate.LHTraits;
+import dev.xkmc.l2serial.util.ModContainerHack;
+import net.minecraft.resources.ResourceLocation;
 
 public class ShHsRegistrate extends CreateRegistrate {
 
     protected ShHsRegistrate(String modid) {
-            super(modid);
+        super(modid);
+        var mod = ModContainerHack.getMod(modid);
+        var bus = mod.getEventBus();
+        if (bus != null) registerEventListeners(bus);
     }
     public static ShHsRegistrate create(String modid) {
         ShHsRegistrate registrate = new ShHsRegistrate(modid);

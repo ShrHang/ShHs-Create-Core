@@ -65,6 +65,7 @@ public class Config {
     }
 
     public static class Server {
+        public final ModConfigSpec.DoubleValue mobManaRegenMultiplier;
         public final ModConfigSpec.DoubleValue realityTraitScale;
         public final ModConfigSpec.IntValue scrollPrintingCost;
         Server(ModConfigSpec.Builder builder) {
@@ -74,6 +75,8 @@ public class Config {
                     .defineInRange("scrollPrintingCost", 250, 1, 1000);
             builder.pop();
             builder.push("l2hostility");
+            mobManaRegenMultiplier = builder.worldRestart()
+                    .defineInRange("mobManaRegenMultiplier", 1.0, 0.0, 100.0);
             realityTraitScale = builder
                     .comment("The scale of reality trait in hostility calculation. The hostility increase from reality trait is calculated as reality trait level * RealityTraitScale.")
                     .defineInRange("realityTraitScale", 1.0, 0.0, 10000);

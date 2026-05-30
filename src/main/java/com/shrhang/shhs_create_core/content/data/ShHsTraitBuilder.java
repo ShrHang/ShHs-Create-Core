@@ -4,6 +4,7 @@ import com.tterrag.registrate.builders.AbstractBuilder;
 import com.tterrag.registrate.builders.BuilderCallback;
 import com.tterrag.registrate.builders.ItemBuilder;
 import com.tterrag.registrate.providers.ProviderType;
+import com.tterrag.registrate.util.entry.RegistryEntry;
 import com.tterrag.registrate.util.nullness.NonNullBiConsumer;
 import com.tterrag.registrate.util.nullness.NonNullFunction;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
@@ -44,17 +45,17 @@ public class ShHsTraitBuilder<T extends MobTrait>
         return item(TraitSymbol::new);
     }
 
-    public ShHsTraitBuilder<T> addWhitelist(Consumer<IntrinsicHolderTagsProvider.IntrinsicTagAppender<EntityType<?>>> pvd) {
+    public ShHsTraitBuilder<T> addWhitelist(Consumer<IntrinsicHolderTagsProvider.IntrinsicTagAppender<EntityType<?>>> provider) {
         var id = ResourceLocation.fromNamespaceAndPath(getOwner().getModid(), getName());
         var tag = TagKey.create(Registries.ENTITY_TYPE, id.withSuffix("_whitelist"));
-        ENTITY_TAG_BUILDER.put(tag.location(), e -> pvd.accept(e.addTag(tag)));
+        ENTITY_TAG_BUILDER.put(tag.location(), e -> provider.accept(e.addTag(tag)));
         return this;
     }
 
-    public ShHsTraitBuilder<T> addBlacklist(Consumer<IntrinsicHolderTagsProvider.IntrinsicTagAppender<EntityType<?>>> pvd) {
+    public ShHsTraitBuilder<T> addBlacklist(Consumer<IntrinsicHolderTagsProvider.IntrinsicTagAppender<EntityType<?>>> provider) {
         var id = ResourceLocation.fromNamespaceAndPath(getOwner().getModid(), getName());
         var tag = TagKey.create(Registries.ENTITY_TYPE, id.withSuffix("_blacklist"));
-        ENTITY_TAG_BUILDER.put(tag.location(), e -> pvd.accept(e.addTag(tag)));
+        ENTITY_TAG_BUILDER.put(tag.location(), e -> provider.accept(e.addTag(tag)));
         return this;
     }
 
@@ -94,5 +95,9 @@ public class ShHsTraitBuilder<T extends MobTrait>
     public ShHsTraitBuilder<T> desc(String s) {
         getOwner().addRawLang("trait." + getOwner().getModid() + "." + getName() + ".desc", s);
         return this;
+    }
+
+    public static class ShHsTraitEntry<T extends MobTrait> extends RegistryEntry<MobTrait, T> {
+        public ShHsTraitEntry(ShHsRegistrate owner, DeferredHolder<MobTrait, T> delegate) {super(owner, delegate);}
     }
 }

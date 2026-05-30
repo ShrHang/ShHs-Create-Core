@@ -4,5 +4,5 @@
   "fluid.shhs_create_core.wonder": "奇迹",
   "trait.shhs_create_core.augmented_reality": "增强现实",
   "trait.shhs_create_core.wizard": "巫师",
-  "trait.shhs_create_core.wizard.desc": "生物可随机释放词条等级%s倍数量种类的法术。"
+  "trait.shhs_create_core.wizard.desc": "生物可释放法术。"
 }

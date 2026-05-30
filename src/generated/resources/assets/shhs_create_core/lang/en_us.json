@@ -4,5 +4,5 @@
   "fluid.shhs_create_core.wonder": "Wonder",
   "trait.shhs_create_core.augmented_reality": "Augmented Reality",
   "trait.shhs_create_core.wizard": "Wizard",
-  "trait.shhs_create_core.wizard.desc": "The mob can cast up to %sx trait lv types of random spells."
+  "trait.shhs_create_core.wizard.desc": "The mob can cast spells."
 }

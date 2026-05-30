@@ -4,7 +4,7 @@ import com.shrhang.shhs_create_core.content.fluid.openpipe.HostilityEffectHandle
 import com.simibubi.create.api.effect.OpenPipeEffectHandler;
 
 public class OpenPipeEffects {
-    public static void registerDefaults() {
+    public static void register() {
         OpenPipeEffectHandler.REGISTRY.register(Fluids.HOSTILITY.getSource(), new HostilityEffectHandler());
     }
 }

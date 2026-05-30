@@ -1,0 +1,12 @@
+{
+  "values": [
+    {
+      "id": "irons_spellbooks:spectral_hammer",
+      "required": false
+    },
+    {
+      "id": "irons_spellbooks:shield",
+      "required": false
+    }
+  ]
+}

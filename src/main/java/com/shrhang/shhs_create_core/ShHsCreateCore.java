@@ -14,30 +14,26 @@ import com.simibubi.create.foundation.item.ItemDescription;
 import com.simibubi.create.foundation.item.KineticStats;
 import com.simibubi.create.foundation.item.TooltipModifier;
 import dev.xkmc.curseofpandora.init.registrate.CoPAttrs;
-import dev.xkmc.l2damagetracker.contents.attack.AttackEventHandler;
 import net.createmod.catnip.lang.FontHelper;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.neoforge.data.event.GatherDataEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 
 @Mod(ShHsCreateCore.MODID)
 public class ShHsCreateCore {
     public static final String MODID = "shhs_create_core";
     public static final ShHsRegistrate REGISTRATE = (ShHsRegistrate) ShHsRegistrate.create(MODID)
-            .defaultCreativeTab((ResourceKey<CreativeModeTab>) null)
+            .defaultCreativeTab(ResourceKey.create(Registries.CREATIVE_MODE_TAB, resourceLocation("general")))
             .setTooltipModifierFactory(item ->
                     new ItemDescription.Modifier(item, FontHelper.Palette.STANDARD_CREATE)
                             .andThen(TooltipModifier.mapNull(KineticStats.create(item))));
 
     public ShHsCreateCore(IEventBus modEventBus, ModContainer modContainer) {
-        REGISTRATE.registerEventListeners(modEventBus);
-
         // 数据生成器注册
         gatherData();
 
@@ -51,13 +47,15 @@ public class ShHsCreateCore {
         modEventBus.addListener(ShHsCreateCore::init);
         modEventBus.addListener(ShHsCreateCore::modifyEntityAttributes);
 
+
+
         MagicEventHandler.init();
         ShHsAttackListener.init();
         Mods.CREATE_ENCHANTMENT_INDUSTRY.executeIfInstalled(() -> CreateEnchantmentIndustry::init);
     }
 
     public static void init(final FMLCommonSetupEvent event) {
-        event.enqueueWork(OpenPipeEffects::registerDefaults);
+        event.enqueueWork(OpenPipeEffects::register);
     }
 
     public static void modifyEntityAttributes(final EntityAttributeModificationEvent event) {
@@ -67,5 +65,9 @@ public class ShHsCreateCore {
     private static void gatherData() {
         ShHsLang.init();
         ShHsTagKey.init();
+    }
+
+    public static ResourceLocation resourceLocation(String id) {
+        return ResourceLocation.fromNamespaceAndPath(MODID, id);
     }
 }
