@@ -8,7 +8,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -20,8 +19,7 @@ public class MagicEventHandler {
         NeoForge.EVENT_BUS.addListener(MagicEventHandler::preCast);
     }
 
-    @SubscribeEvent
-    public static void preCast(SpellPreCastEvent event) {
+    public static void preCast(final SpellPreCastEvent event) {
         if (!COMMON.isToleranceRequired.get()) return;
 
         var spell = SpellRegistry.getSpell(event.getSpellId());

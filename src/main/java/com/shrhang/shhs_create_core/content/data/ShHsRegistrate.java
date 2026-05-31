@@ -1,5 +1,6 @@
 package com.shrhang.shhs_create_core.content.data;
 
+import com.shrhang.shhs_create_core.ShHsCreateCore;
 import com.simibubi.create.api.registrate.CreateRegistrateRegistrationCallback;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
@@ -7,7 +8,7 @@ import dev.xkmc.l2hostility.content.config.TraitConfig;
 import dev.xkmc.l2hostility.content.traits.base.MobTrait;
 import dev.xkmc.l2hostility.init.registrate.LHTraits;
 import dev.xkmc.l2serial.util.ModContainerHack;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.MutableComponent;
 
 public class ShHsRegistrate extends CreateRegistrate {
 
@@ -21,6 +22,14 @@ public class ShHsRegistrate extends CreateRegistrate {
         ShHsRegistrate registrate = new ShHsRegistrate(modid);
         CreateRegistrateRegistrationCallback.provideRegistrate(registrate);
         return registrate;
+    }
+
+    public MutableComponent langText(String keyName, String value) {
+        return this.addRawLang("text." + ShHsCreateCore.MODID + "." + keyName, value);
+    }
+
+    public MutableComponent langOfCreativeTab(String keyName, String value) {
+        return this.addRawLang("itemGroup." + ShHsCreateCore.MODID + "." + keyName, value);
     }
 
     /**

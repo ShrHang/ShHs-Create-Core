@@ -11,7 +11,7 @@ import io.redspace.ironsspellbooks.item.Scroll;
 import io.redspace.ironsspellbooks.item.SpellBook;
 import io.redspace.ironsspellbooks.spells.ender.TeleportSpell;
 import io.redspace.ironsspellbooks.spells.fire.BurningDashSpell;
-import io.redspace.ironsspellbooks.util.Log;
+import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -26,19 +26,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static net.minecraft.world.entity.EquipmentSlot.*;
+import static com.shrhang.shhs_create_core.content.data.ShHsTagKey.ENTITY_SPELL_BLACKLIST;
+import static io.redspace.ironsspellbooks.api.registry.SchoolRegistry.HOLY_RESOURCE;
+import static net.minecraft.world.entity.EquipmentSlot.MAINHAND;
+import static net.minecraft.world.entity.EquipmentSlot.OFFHAND;
 
 public class SpellCastHelper {
     /**
      * 法术的准入口，会检查施法条件与事件，所有施法都会经过这个方法处理。
-     * @param stack
-     * @param entity
-     * @param spell
-     * @param spellLevel
-     * @param castSource
-     * @param triggerCooldown
-     * @param castingEquipmentSlot
-     * @return
      */
     public static boolean attemptInitiateEntityCast(ItemStack stack, LivingEntity entity, AbstractSpell spell, int spellLevel, CastSource castSource, boolean triggerCooldown, String castingEquipmentSlot) {
         Level level = entity.level();
@@ -72,6 +67,10 @@ public class SpellCastHelper {
         return false;
     }
 
+    public static boolean isSpellAllowed(LivingEntity entity, AbstractSpell spell) {
+        return spell.getRecastCount(spell.getMaxLevel(), entity) <= 0 && !ENTITY_SPELL_BLACKLIST.contains(spell) && !(entity.getType().is(EntityTypeTags.UNDEAD) && spell.getSchoolType().getId() == HOLY_RESOURCE);
+    }
+
     public static CastResult canBeCastedBy(AbstractSpell spell, int spellLevel, CastSource castSource, MagicData entityMagicData, LivingEntity entity) {
         if (entityMagicData.getPlayerCooldowns().isOnCooldown(spell)) // 检查冷却
             return new CastResult(CastResult.Type.FAILURE);
@@ -82,25 +81,17 @@ public class SpellCastHelper {
 
     /**
      * 调用法术的onCast方法，并处理施法结果相关的事件、法力消耗与冷却。适用于所有实体的施法，包括玩家与怪物。
-     * @param spell 法术
-     * @param world 真的需要注释吗
-     * @param spellLevel    法术等级
-     * @param entity    施法实体
-     * @param castSource 施法源，随施法槽位变化
-     * @param triggerCooldown 是否在法术释放完成后触发冷却，持续施法会在每次onCast调用时触发
      */
     public static void entityCastSpell(AbstractSpell spell, Level world, int spellLevel, LivingEntity entity, CastSource castSource, boolean triggerCooldown) {
         MagicData magicData = MagicData.getPlayerMagicData(entity);
         var entityRecasts = magicData.getPlayerRecasts(); // 判断是否多重施法
-        boolean entityAlreadyHasRecast = entityRecasts.hasRecastForSpell(spell.getSpellId());
+        boolean entityAlreadyHasRecast = entityRecasts.hasRecastForSpell(spell.getSpellId()); // 如果已经有重施法了，就不再消耗法力了
 
         var event = new SpellOnEntityCastEvent(entity, spell.getSpellId(), spellLevel, spell.getManaCost(spellLevel), spell.getSchoolType(), castSource);
         NeoForge.EVENT_BUS.post(event);
 
-        if (castSource.consumesMana() && !entityAlreadyHasRecast) {
-            float newMana = Math.max(magicData.getMana() - event.getManaCost(), 0);
-            magicData.setMana(newMana);
-        }
+        if (castSource.consumesMana() && !entityAlreadyHasRecast)
+            magicData.setMana(Math.max(magicData.getMana() - event.getManaCost(), 0));
         if (entity instanceof Targeting targeting && targeting.getTarget() != null)
             forceLookAtTarget(entity, targeting.getTarget());
         spell.onCast(world, event.getSpellLevel(), entity, castSource, magicData);
@@ -175,15 +166,14 @@ public class SpellCastHelper {
                         castSource = CastSource.SPELLBOOK;
                     }
                     var activeSpells = spellContainer.getActiveSpells();
-                    for (int i = 0; i < activeSpells.size(); i++) {
-                        SpellSlot spellSlot = activeSpells.get(i);
+                    for (SpellSlot spellSlot : activeSpells) {
                         SpellData currentData = spellSlot.spellData();
                         AbstractSpell spell = currentData.getSpell();
                         if (spell == SpellRegistry.none()) continue;
                         // 去重与最高等级筛选
                         SpellSource existingOption = highestLevelSpells.get(spell);
                         if (existingOption == null || currentData.getLevel() > existingOption.spellData().getLevel()) {
-                            highestLevelSpells.put(spell, new SpellSource(currentData, castSource));
+                            highestLevelSpells.put(spell, new SpellSource(currentData, castSource, slot));
                         }
                     }
                 }
@@ -192,6 +182,5 @@ public class SpellCastHelper {
         return new ArrayList<>(highestLevelSpells.values());
     }
 
-    public record SpellSource(SpellData spellData, CastSource castSource) {
-    }
+    public record SpellSource(SpellData spellData, CastSource castSource, EquipmentSlot slot) {}
 }

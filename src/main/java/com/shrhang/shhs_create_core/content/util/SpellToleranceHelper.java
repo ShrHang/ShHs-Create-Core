@@ -1,7 +1,5 @@
 package com.shrhang.shhs_create_core.content.util;
 
-import com.shrhang.shhs_create_core.ShHsCreateCore;
-import com.shrhang.shhs_create_core.content.data.ShHsLang;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.CastSource;
 import net.minecraft.world.entity.LivingEntity;
@@ -12,7 +10,7 @@ import static com.shrhang.shhs_create_core.Config.COMMON;
 import static dev.xkmc.curseofpandora.init.registrate.CoPAttrs.SPELL;
 
 public class SpellToleranceHelper {
-    public static String lang = "event.shhs_create_core.no_enough_spell_tolerance";
+    public static String lang = "text.shhs_create_core.no_enough_spell_tolerance";
     public static double calculateRequiredTolerance(int spellLevel, AbstractSpell spell, CastSource source) {
         return calculateRequiredTolerance(spellLevel, spell.getRarity(spellLevel).getValue(), source);
     }

@@ -23,7 +23,6 @@ import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.datamaps.DataMapType;
 import org.apache.commons.lang3.function.Consumers;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
 
@@ -37,8 +36,7 @@ public class ShHsTraitBuilder<T extends MobTrait>
     public ShHsTraitBuilder(ShHsRegistrate owner, ShHsRegistrate parent, String name, BuilderCallback callback, NonNullSupplier<T> sup) {
         super(owner, parent, name, callback, LHTraits.TRAITS.key());
         this.sup = sup;
-        addBlacklist(Consumers.nop());
-        addWhitelist(Consumers.nop());
+        addBlacklist(Consumers.nop()).addWhitelist(Consumers.nop());
     }
 
     public ItemBuilder<TraitSymbol, ShHsTraitBuilder<T>> item() {
@@ -60,12 +58,12 @@ public class ShHsTraitBuilder<T extends MobTrait>
     }
 
     @Override
-    protected @NotNull ShHsTraitEntry<T> createEntryWrapper(@NotNull DeferredHolder<MobTrait, T> delegate) {
+    protected ShHsTraitEntry<T> createEntryWrapper(DeferredHolder<MobTrait, T> delegate) {
         return new ShHsTraitEntry<>(Wrappers.cast(this.getOwner()), delegate);
     }
 
     @Override
-    public @NotNull ShHsTraitEntry<T> register() {
+    public ShHsTraitEntry<T> register() {
         return Wrappers.cast(super.register());
     }
 
@@ -74,7 +72,7 @@ public class ShHsTraitBuilder<T extends MobTrait>
     }
 
     @Override
-    public <D> @NotNull ShHsTraitBuilder<T> dataMap(@NotNull DataMapType<MobTrait, D> type, @NotNull D val) {
+    public <D> ShHsTraitBuilder<T> dataMap(DataMapType<MobTrait, D> type, D val) {
         super.dataMap(type, val);
         return this;
     }
@@ -88,7 +86,7 @@ public class ShHsTraitBuilder<T extends MobTrait>
     }
 
     @Override
-    protected @NotNull T createEntry() {
+    protected T createEntry() {
         return this.sup.get();
     }
 

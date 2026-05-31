@@ -16,8 +16,7 @@ import static com.shrhang.shhs_create_core.content.util.RealityIndexHelper.getDa
 import static com.shrhang.shhs_create_core.content.util.RealityIndexHelper.getRealityIndex;
 
 public class ShHsAttackListener implements AttackListener {
-
-    private static final ResourceLocation REALITY_SCALING = ResourceLocation.fromNamespaceAndPath(ShHsCreateCore.MODID, "reality_scaling");
+    private static final ResourceLocation REALITY_SCALING = ShHsCreateCore.rl("reality_scaling");
 
     @Override
     public void onDamage(DamageData.Defence data) {

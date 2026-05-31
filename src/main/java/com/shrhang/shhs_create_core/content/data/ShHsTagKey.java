@@ -28,9 +28,16 @@ public class ShHsTagKey {
     }
 
     public static final ShHsSpellTag ENTITY_SPELL_BLACKLIST =
-            ShHsSpellTag.create(ShHsCreateCore.resourceLocation("entity_spell_blacklist")).addSpell(
+            ShHsSpellTag.create(ShHsCreateCore.rl("entity_spell_blacklist")).addSpell(
+                    GLUTTONY_SPELL,
+                    PLANAR_SIGHT_SPELL,
+                    POCKET_DIMENSION_SPELL,
+                    SHIELD_SPELL,
                     SPECTRAL_HAMMER_SPELL,
-                    SHIELD_SPELL
+                    SUMMON_ENDER_CHEST_SPELL,
+                    TELEKINESIS_SPELL,
+                    THROW_SPELL,
+                    WOLOLO_SPELL
             );
 
     public static void init() {

@@ -1,6 +1,5 @@
 package com.shrhang.shhs_create_core;
 
-import dev.xkmc.curseofpandora.init.registrate.CoPAttrs;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.loading.FMLEnvironment;

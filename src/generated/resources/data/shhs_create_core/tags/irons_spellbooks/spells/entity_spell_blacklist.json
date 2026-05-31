@@ -1,11 +1,39 @@
 {
   "values": [
     {
-      "id": "irons_spellbooks:spectral_hammer",
+      "id": "irons_spellbooks:gluttony",
+      "required": false
+    },
+    {
+      "id": "irons_spellbooks:planar_sight",
+      "required": false
+    },
+    {
+      "id": "irons_spellbooks:pocket_dimension",
       "required": false
     },
     {
       "id": "irons_spellbooks:shield",
+      "required": false
+    },
+    {
+      "id": "irons_spellbooks:spectral_hammer",
+      "required": false
+    },
+    {
+      "id": "irons_spellbooks:summon_ender_chest",
+      "required": false
+    },
+    {
+      "id": "irons_spellbooks:telekinesis",
+      "required": false
+    },
+    {
+      "id": "irons_spellbooks:throw",
+      "required": false
+    },
+    {
+      "id": "irons_spellbooks:wololo",
       "required": false
     }
   ]

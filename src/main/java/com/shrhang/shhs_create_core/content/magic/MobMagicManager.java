@@ -51,22 +51,19 @@ public class MobMagicManager {
             if ((spell.getCastType() == CastType.LONG && !entity.isUsingItem()) || spell.getCastType() == CastType.INSTANT) {
                 if (magicData.getCastDurationRemaining() <= 0) {
                     entityCastSpell(spell, level, magicData.getCastingSpellLevel(), entity, magicData.getCastSource(), true);
-// TODO 暂时没实现区分施法源
-//                    if (magicData.getCastSource() == CastSource.SCROLL) {
-//                        removeMobsScroll(entity);
-//                    }
+                    if (magicData.getCastSource() == CastSource.SCROLL) {
+                        removeMobsScroll(entity);
+                    }
                     spell.onServerCastComplete(level, magicData.getCastingSpellLevel(), entity, magicData, false);
                 }
             } else if (spell.getCastType() == CastType.CONTINUOUS) {
                 if ((magicData.getCastDurationRemaining()) % CONTINUOUS_CAST_TICK_INTERVAL == 0) {
                     if (magicData.getCastDurationRemaining() <= 0 || (magicData.getCastSource().consumesMana() && magicData.getMana() - spell.getManaCost(magicData.getCastingSpellLevel()) * 2 < 0)) {
                         entityCastSpell(spell, level, magicData.getCastingSpellLevel(), entity, magicData.getCastSource(), true);
-// TODO 同上
-//                        if (magicData.getCastSource() == CastSource.SCROLL) {
-//                            removeMobsScroll(entity);
-//                        }
+                        if (magicData.getCastSource() == CastSource.SCROLL) {
+                            removeMobsScroll(entity);
+                        }
                         spell.onServerCastComplete(level, magicData.getCastingSpellLevel(), entity, magicData, false);
-
                     } else {
                         entityCastSpell(spell, level, magicData.getCastingSpellLevel(), entity, magicData.getCastSource(), false);
                     }
@@ -89,9 +86,6 @@ public class MobMagicManager {
         
     }
 
-    /**
-     * 由于没区分施法源，理所当然地这个方法不会被调用。
-     */
     public static void removeMobsScroll(LivingEntity entity) {
         ItemStack potentialScroll = MagicData.getPlayerMagicData(entity).getPlayerCastingItem();
         if (potentialScroll.getItem() instanceof Scroll) {
@@ -101,18 +95,7 @@ public class MobMagicManager {
 
     public static void addCooldown(LivingEntity entity, AbstractSpell spell, CastSource castSource) {
         int effectiveCooldown = getEffectiveSpellCooldown(spell, entity, castSource);
-//        var pre = NeoForge.EVENT_BUS.post(new SpellCooldownAddedEvent.Pre(effectiveCooldown, spell, entity, castSource));
-//
-//        if (castSource == CastSource.SCROLL || pre.isCanceled()) {
-//            return;
-//        }
-//
-//        effectiveCooldown = pre.getEffectiveCooldown();
-
         MagicData.getPlayerMagicData(entity).getPlayerCooldowns().addCooldown(spell, effectiveCooldown);
-//        PacketDistributor.sendToPlayer(entity, new SyncCooldownPacket(spell.getSpellId(), effectiveCooldown));
-
-//        NeoForge.EVENT_BUS.post(new SpellCooldownAddedEvent.Post(effectiveCooldown, spell, entity, castSource));
     }
 
     public static int getEffectiveSpellCooldown(AbstractSpell spell, LivingEntity entity, CastSource castSource) {
