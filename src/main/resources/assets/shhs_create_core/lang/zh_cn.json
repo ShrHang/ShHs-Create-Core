@@ -1,5 +1,6 @@
 {
-  "event.shhs_create_core.no_enough_spell_tolerance": "至少需要 %s 点魔力耐性才能施放这个法术",
+  "effect.shhs_create_core.intangible": "无实体",
+  "text.shhs_create_core.no_enough_spell_tolerance": "至少需要 %s 点魔力耐性才能施放这个法术",
   "fluid.shhs_create_core.hostility": "恶意",
   "fluid.shhs_create_core.wonder": "奇迹",
   "item.shhs_create_core.empty_trait": "空词条",

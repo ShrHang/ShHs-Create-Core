@@ -5,9 +5,12 @@ import com.shrhang.shhs_create_core.compat.create_enchantment_industry.CreateEnc
 import com.shrhang.shhs_create_core.content.data.ShHsLang;
 import com.shrhang.shhs_create_core.content.data.ShHsRegistrate;
 import com.shrhang.shhs_create_core.content.data.ShHsTagKey;
+import com.shrhang.shhs_create_core.content.event.IntangibleEventHandler;
 import com.shrhang.shhs_create_core.content.event.MagicEventHandler;
 import com.shrhang.shhs_create_core.content.event.ShHsAttackListener;
+import com.shrhang.shhs_create_core.content.registries.Attachments;
 import com.shrhang.shhs_create_core.content.registries.CreativeTabs;
+import com.shrhang.shhs_create_core.content.registries.Effects;
 import com.shrhang.shhs_create_core.content.registries.Fluids;
 import com.shrhang.shhs_create_core.content.registries.Items;
 import com.shrhang.shhs_create_core.content.registries.OpenPipeEffects;
@@ -34,15 +37,13 @@ public class ShHsCreateCore {
                             .andThen(TooltipModifier.mapNull(KineticStats.create(item))));
 
     public ShHsCreateCore(IEventBus modEventBus, ModContainer modContainer) {
-        // 数据生成器注册
         gatherData();
-
-        // 配置文件注册
         Config.init(modContainer);
 
-        // 内容注册
+        Attachments.register(modEventBus);
         CreativeTabs.register(modEventBus);
         Items.register();
+        Effects.register();
         Fluids.register();
         Traits.register();
 
@@ -52,6 +53,7 @@ public class ShHsCreateCore {
 
     public static void init(final FMLCommonSetupEvent event) {
         event.enqueueWork(OpenPipeEffects::register);
+        IntangibleEventHandler.init();
         MagicEventHandler.init();
         ShHsAttackListener.init();
         Mods.CREATE_ENCHANTMENT_INDUSTRY.executeIfInstalled(() -> CreateEnchantmentIndustry::init);

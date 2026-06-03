@@ -8,7 +8,12 @@ import dev.xkmc.l2hostility.content.config.TraitConfig;
 import dev.xkmc.l2hostility.content.traits.base.MobTrait;
 import dev.xkmc.l2hostility.init.registrate.LHTraits;
 import dev.xkmc.l2serial.util.ModContainerHack;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.effect.MobEffect;
 
 public class ShHsRegistrate extends CreateRegistrate {
 
@@ -24,12 +29,12 @@ public class ShHsRegistrate extends CreateRegistrate {
         return registrate;
     }
 
-    public MutableComponent langText(String keyName, String value) {
-        return this.addRawLang("text." + ShHsCreateCore.MODID + "." + keyName, value);
-    }
-
     public MutableComponent langOfCreativeTab(String keyName, String value) {
         return this.addRawLang("itemGroup." + ShHsCreateCore.MODID + "." + keyName, value);
+    }
+
+    public <T extends MobEffect> ShHsMobEffectBuilder<T, ShHsRegistrate> effect(String name, NonNullSupplier<T> sup) {
+        return entry(name, cb -> new ShHsMobEffectBuilder<>(this, this, name, cb, sup));
     }
 
     /**
