@@ -1,4 +1,4 @@
-package com.shrhang.shhs_create_core.content.effect;
+package com.shrhang.shhs_create_core.content.effect.intangible;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
@@ -23,9 +23,9 @@ public class IntangibleMobEffect extends MobEffect {
             player.noPhysics = true;
             player.resetFallDistance();
 
+            boolean changed = IntangibleState.grantFlight(player); // 判断是否成功由无实体添加了飞行能力
             var abilities = player.getAbilities();
-            boolean changed = !abilities.mayfly || !abilities.flying;
-            abilities.mayfly = true;
+            changed |= !abilities.flying; // 判断飞行能力是否发生变化
             abilities.flying = true;
 
             Vec3 movement = player.getDeltaMovement();
@@ -33,7 +33,7 @@ public class IntangibleMobEffect extends MobEffect {
                 player.setDeltaMovement(movement.x(), 0, movement.z());
             }
 
-            if (changed && player instanceof ServerPlayer serverPlayer) {
+            if (changed && player instanceof ServerPlayer serverPlayer) { // 如果发生了变化则进行更新
                 serverPlayer.onUpdateAbilities();
             }
         }

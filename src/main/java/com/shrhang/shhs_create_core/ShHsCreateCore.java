@@ -5,7 +5,7 @@ import com.shrhang.shhs_create_core.compat.create_enchantment_industry.CreateEnc
 import com.shrhang.shhs_create_core.content.data.ShHsLang;
 import com.shrhang.shhs_create_core.content.data.ShHsRegistrate;
 import com.shrhang.shhs_create_core.content.data.ShHsTagKey;
-import com.shrhang.shhs_create_core.content.event.IntangibleEventHandler;
+import com.shrhang.shhs_create_core.content.event.effect.IntangibleEventHandler;
 import com.shrhang.shhs_create_core.content.event.MagicEventHandler;
 import com.shrhang.shhs_create_core.content.event.ShHsAttackListener;
 import com.shrhang.shhs_create_core.content.registries.Attachments;

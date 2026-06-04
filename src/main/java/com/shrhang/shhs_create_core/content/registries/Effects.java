@@ -1,7 +1,7 @@
 package com.shrhang.shhs_create_core.content.registries;
 
 import com.shrhang.shhs_create_core.content.data.ShHsMobEffectBuilder.ShHsMobEffectEntry;
-import com.shrhang.shhs_create_core.content.effect.IntangibleMobEffect;
+import com.shrhang.shhs_create_core.content.effect.intangible.IntangibleMobEffect;
 
 import static com.shrhang.shhs_create_core.ShHsCreateCore.REGISTRATE;
 

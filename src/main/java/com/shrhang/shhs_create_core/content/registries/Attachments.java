@@ -1,7 +1,7 @@
 package com.shrhang.shhs_create_core.content.registries;
 
 import com.shrhang.shhs_create_core.ShHsCreateCore;
-import com.shrhang.shhs_create_core.content.effect.IntangibleState;
+import com.shrhang.shhs_create_core.content.effect.intangible.IntangibleState;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredHolder;

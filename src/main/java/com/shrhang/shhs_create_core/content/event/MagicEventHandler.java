@@ -19,7 +19,7 @@ public class MagicEventHandler {
         NeoForge.EVENT_BUS.addListener(MagicEventHandler::preCast);
     }
 
-    public static void preCast(final SpellPreCastEvent event) {
+    private static void preCast(final SpellPreCastEvent event) {
         if (!COMMON.isToleranceRequired.get()) return;
 
         var spell = SpellRegistry.getSpell(event.getSpellId());

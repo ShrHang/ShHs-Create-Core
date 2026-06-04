@@ -1,6 +1,7 @@
 package com.shrhang.shhs_create_core.content.event;
 
 import com.shrhang.shhs_create_core.ShHsCreateCore;
+import com.shrhang.shhs_create_core.content.registries.Effects;
 import dev.xkmc.l2damagetracker.contents.attack.AttackEventHandler;
 import dev.xkmc.l2damagetracker.contents.attack.AttackListener;
 import dev.xkmc.l2damagetracker.contents.attack.DamageData;
@@ -10,6 +11,7 @@ import dev.xkmc.l2hostility.init.data.LHConfig;
 import dev.xkmc.l2hostility.init.data.LHTagGen;
 import dev.xkmc.l2hostility.init.registrate.LHMiscs;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
 
 import static com.shrhang.shhs_create_core.content.util.RealityIndexHelper.getDamageReduce;
@@ -17,6 +19,12 @@ import static com.shrhang.shhs_create_core.content.util.RealityIndexHelper.getRe
 
 public class ShHsAttackListener implements AttackListener {
     private static final ResourceLocation REALITY_SCALING = ShHsCreateCore.rl("reality_scaling");
+
+    @Override
+    public boolean onAttack(DamageData.Attack data) {
+        return data.getSource().is(DamageTypes.IN_WALL)
+                && data.getTarget().hasEffect(Effects.INTANGIBLE);
+    }
 
     @Override
     public void onDamage(DamageData.Defence data) {
