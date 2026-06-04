@@ -2,6 +2,7 @@ package com.shrhang.shhs_create_core;
 
 import com.shrhang.shhs_create_core.compat.Mods;
 import com.shrhang.shhs_create_core.compat.create_enchantment_industry.CreateEnchantmentIndustry;
+import com.shrhang.shhs_create_core.content.data.ShHsAtlases;
 import com.shrhang.shhs_create_core.content.data.ShHsLang;
 import com.shrhang.shhs_create_core.content.data.ShHsRegistrate;
 import com.shrhang.shhs_create_core.content.data.ShHsTagKey;
@@ -38,6 +39,7 @@ public class ShHsCreateCore {
 
     public ShHsCreateCore(IEventBus modEventBus, ModContainer modContainer) {
         gatherData();
+        modEventBus.addListener(ShHsAtlases::gatherData);
         Config.init(modContainer);
 
         Attachments.register(modEventBus);

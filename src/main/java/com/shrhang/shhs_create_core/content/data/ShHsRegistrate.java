@@ -3,6 +3,8 @@ package com.shrhang.shhs_create_core.content.data;
 import com.shrhang.shhs_create_core.ShHsCreateCore;
 import com.simibubi.create.api.registrate.CreateRegistrateRegistrationCallback;
 import com.simibubi.create.foundation.data.CreateRegistrate;
+import com.simibubi.create.content.fluids.VirtualFluid;
+import com.tterrag.registrate.builders.FluidBuilder;
 import com.tterrag.registrate.builders.ItemBuilder;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
 import com.tterrag.registrate.util.nullness.NonNullFunction;
@@ -15,6 +17,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.effect.MobEffect;
+import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 
 public class ShHsRegistrate extends CreateRegistrate {
     private ResourceKey<CreativeModeTab> defaultTab;
@@ -64,6 +67,21 @@ public class ShHsRegistrate extends CreateRegistrate {
             return defaultTab == null ? itemBuilder : itemBuilder.tab(defaultTab);
         });
         return (ShHsItemBuilder<T, P>) builder;
+    }
+
+    @Override
+    public FluidBuilder<VirtualFluid, CreateRegistrate> virtualFluid(String name) {
+        ShHsAtlases.addVirtualFluid(name);
+        return super.virtualFluid(name);
+    }
+
+    @Override
+    public <T extends BaseFlowingFluid> FluidBuilder<T, CreateRegistrate> virtualFluid(String name,
+                                                                                       FluidBuilder.FluidTypeFactory typeFactory,
+                                                                                       NonNullFunction<BaseFlowingFluid.Properties, T> sourceFactory,
+                                                                                       NonNullFunction<BaseFlowingFluid.Properties, T> flowingFactory) {
+        ShHsAtlases.addVirtualFluid(name);
+        return super.virtualFluid(name, typeFactory, sourceFactory, flowingFactory);
     }
 
     public <T extends MobEffect> ShHsMobEffectBuilder<T, ShHsRegistrate> effect(String name, NonNullSupplier<T> sup) {
