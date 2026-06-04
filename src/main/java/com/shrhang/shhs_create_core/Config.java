@@ -10,19 +10,14 @@ import org.apache.commons.lang3.tuple.Pair;
 
 public class Config {
     public static final Client CLIENT;
-    public static final Common COMMON;
     public static final Server SERVER;
     static final ModConfigSpec clientSpec;
-    static final ModConfigSpec commonSpec;
     static final ModConfigSpec serverSpec;
 
     static {
         Pair<?, ModConfigSpec> pair = new ModConfigSpec.Builder().configure(Client::new);
         CLIENT = (Client) pair.getLeft();
         clientSpec = pair.getRight();
-        pair = new ModConfigSpec.Builder().configure(Common::new);
-        COMMON = (Common) pair.getLeft();
-        commonSpec = pair.getRight();
         pair = new ModConfigSpec.Builder().configure(Server::new);
         SERVER = (Server) pair.getLeft();
         serverSpec = pair.getRight();
@@ -33,7 +28,6 @@ public class Config {
             modContainer.registerConfig(ModConfig.Type.CLIENT, clientSpec);
             modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         }
-        modContainer.registerConfig(ModConfig.Type.COMMON, commonSpec);
         modContainer.registerConfig(ModConfig.Type.SERVER, serverSpec);
     }
 
@@ -48,10 +42,14 @@ public class Config {
         }
     }
 
-    public static class Common {
+    public static class Server {
         public final ModConfigSpec.BooleanValue isToleranceRequired;
         public final ModConfigSpec.DoubleValue rarityCoefficient;
-        Common(ModConfigSpec.Builder builder) {
+        public final ModConfigSpec.DoubleValue mobManaRegenMultiplier;
+        public final ModConfigSpec.DoubleValue realityTraitScale;
+        public final ModConfigSpec.IntValue emptyTraitMinUseTicks;
+        public final ModConfigSpec.IntValue scrollPrintingCost;
+        Server(ModConfigSpec.Builder builder) {
             builder.push("magic");
             isToleranceRequired = builder
                     .comment("Whether spell tolerance is required for casting spells.")
@@ -60,14 +58,6 @@ public class Config {
                     .comment("The coefficient of spell rarity in spell tolerance calculation. The required spell tolerance is calculated as spell level + RarityCoefficient * rarity value.")
                     .defineInRange("RarityCoefficient", 3.0, 0.0, Integer.MAX_VALUE);
             builder.pop();
-        }
-    }
-
-    public static class Server {
-        public final ModConfigSpec.DoubleValue mobManaRegenMultiplier;
-        public final ModConfigSpec.DoubleValue realityTraitScale;
-        public final ModConfigSpec.IntValue scrollPrintingCost;
-        Server(ModConfigSpec.Builder builder) {
             builder.push("enchantment_industry");
             scrollPrintingCost = builder
                     .comment("The cost of printing a spell scroll per lv in Enchantment Industry.")
@@ -79,6 +69,9 @@ public class Config {
             realityTraitScale = builder
                     .comment("The scale of reality trait in hostility calculation. The hostility increase from reality trait is calculated as reality trait level * RealityTraitScale.")
                     .defineInRange("realityTraitScale", 1.0, 0.0, 10000);
+            emptyTraitMinUseTicks = builder
+                    .comment("The minimum use time in ticks required for Empty Trait extraction. Set to 0 to allow immediate release.")
+                    .defineInRange("emptyTraitMinUseTicks", 30, 0, 72000);
             builder.pop();
         }
     }

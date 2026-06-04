@@ -11,7 +11,7 @@ import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-import static com.shrhang.shhs_create_core.Config.COMMON;
+import static com.shrhang.shhs_create_core.Config.SERVER;
 import static com.shrhang.shhs_create_core.content.util.SpellToleranceHelper.*;
 
 public class MagicEventHandler {
@@ -20,7 +20,7 @@ public class MagicEventHandler {
     }
 
     private static void preCast(final SpellPreCastEvent event) {
-        if (!COMMON.isToleranceRequired.get()) return;
+        if (!SERVER.isToleranceRequired.get()) return;
 
         var spell = SpellRegistry.getSpell(event.getSpellId());
         if (spell == null) return;

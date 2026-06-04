@@ -1,10 +1,13 @@
 {
   "effect.shhs_create_core.intangible": "无实体",
-  "text.shhs_create_core.no_enough_spell_tolerance": "至少需要 %s 点魔力耐性才能施放这个法术",
   "fluid.shhs_create_core.hostility": "恶意",
   "fluid.shhs_create_core.wonder": "奇迹",
   "item.shhs_create_core.empty_trait": "空词条",
+  "item.shhs_create_core.empty_trait.tooltip.behaviour1": "_蓄力_后，_吸收__一级_目标身上随机一个_词条_并将其转化成对应的_词条物品_。",
+  "item.shhs_create_core.empty_trait.tooltip.condition1": "潜行使用时",
+  "item.shhs_create_core.empty_trait.tooltip.summary": "一个渴望从附近生物那里汲取一点_恶意_的_空容器_。",
   "itemGroup.shhs_create_core.shhs_stuff": "什物",
+  "text.shhs_create_core.no_enough_spell_tolerance": "至少需要 %s 点魔力耐性才能施放这个法术",
   "trait.shhs_create_core.augmented_reality": "增强现实",
   "trait.shhs_create_core.wizard": "巫师",
   "trait.shhs_create_core.wizard.desc": "生物可释放法术。"

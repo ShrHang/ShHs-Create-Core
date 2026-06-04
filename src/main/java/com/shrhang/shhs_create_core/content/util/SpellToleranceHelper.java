@@ -6,7 +6,7 @@ import net.minecraft.world.entity.LivingEntity;
 
 import java.util.Objects;
 
-import static com.shrhang.shhs_create_core.Config.COMMON;
+import static com.shrhang.shhs_create_core.Config.SERVER;
 import static dev.xkmc.curseofpandora.init.registrate.CoPAttrs.SPELL;
 
 public class SpellToleranceHelper {
@@ -15,7 +15,7 @@ public class SpellToleranceHelper {
         return calculateRequiredTolerance(spellLevel, spell.getRarity(spellLevel).getValue(), source);
     }
     public static double calculateRequiredTolerance(int spellLevel, int rarityValue, CastSource source) {
-        return calculateRequiredTolerance(spellLevel, rarityValue, COMMON.rarityCoefficient.get(), source);
+        return calculateRequiredTolerance(spellLevel, rarityValue, SERVER.rarityCoefficient.get(), source);
     }
     public static double calculateRequiredTolerance(int spellLevel, int rarityValue, double coefficient, CastSource source) {
         return Math.min(1, spellLevel + coefficient * rarityValue - (source.consumesMana() ? 0 : 2));

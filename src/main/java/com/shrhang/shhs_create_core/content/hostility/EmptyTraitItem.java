@@ -1,5 +1,7 @@
 package com.shrhang.shhs_create_core.content.hostility;
 
+import com.shrhang.shhs_create_core.Config;
+
 import dev.xkmc.l2hostility.content.traits.base.MobTrait;
 import dev.xkmc.l2hostility.init.registrate.LHMiscs;
 import net.minecraft.world.InteractionHand;
@@ -18,7 +20,7 @@ import net.minecraft.world.phys.Vec3;
 import static com.shrhang.shhs_create_core.content.util.TraitHelper.WeightedTrait.selectTraitByWeight;
 
 public class EmptyTraitItem extends Item {
-    private static final int MIN_USE_TICKS = 10;
+    private static final int SHORT_CHARGE_TICKS = 40;
 
     public EmptyTraitItem(Properties properties) {
         super(properties);
@@ -28,17 +30,46 @@ public class EmptyTraitItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (!player.isCrouching()) return InteractionResultHolder.pass(stack);
-        if (findTarget(level, player) == null) return InteractionResultHolder.pass(stack);
-        player.startUsingItem(hand);
+
+        int useDuration = getUseDuration(stack, player);
+        if (useDuration <= 0) {
+            if (!level.isClientSide) extractTrait(stack, level, player);
+        } else {
+            LivingEntity target = findTarget(level, player);
+            if (requiresTargetBeforeUse(useDuration)) {
+                if (target == null || !hasExtractableTrait(target)) return InteractionResultHolder.pass(stack);
+            }
+            player.startUsingItem(hand);
+        }
         return InteractionResultHolder.consume(stack);
     }
 
     @Override
-    public void releaseUsing(ItemStack stack, Level level, LivingEntity entity, int timeLeft) {
-        if (!(entity instanceof Player player) || level.isClientSide) return;
-        if (!player.isCrouching()) return;
-        if (getUseDuration(stack, entity) - timeLeft < MIN_USE_TICKS) return;
+    public void onUseTick(Level level, LivingEntity entity, ItemStack stack, int remainingUseDuration) {
+        if (entity instanceof Player player && !player.isCrouching()) {
+            player.stopUsingItem();
+        }
+    }
 
+    @Override
+    public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity entity) {
+        if (entity instanceof Player player && player.isCrouching() && !level.isClientSide) {
+            extractTrait(stack, level, player);
+        }
+        return stack;
+    }
+
+    @Override
+    public int getUseDuration(ItemStack stack, LivingEntity entity) {
+        return Math.clamp(Config.SERVER.emptyTraitMinUseTicks.get(), 0, 72000);
+    }
+
+    @Override
+    public UseAnim getUseAnimation(ItemStack stack) {
+        return UseAnim.BOW;
+    }
+
+    private void extractTrait(ItemStack stack, Level level, Player player) {
         LivingEntity target = findTarget(level, player);
         if (target == null) return;
 
@@ -49,7 +80,7 @@ public class EmptyTraitItem extends Item {
         if (cap.traits.isEmpty()) return;
 
         MobTrait trait = selectTraitByWeight(cap, target);
-        if (trait == null) return;
+        if (trait == null || cap.getTraitLevel(trait) <= 0) return;
 
         cap.setTrait(trait, cap.getTraitLevel(trait) - 1);
         cap.syncToClient(target);
@@ -59,14 +90,14 @@ public class EmptyTraitItem extends Item {
         if (!player.addItem(traitSymbol)) player.drop(traitSymbol, false);
     }
 
-    @Override
-    public int getUseDuration(ItemStack stack, LivingEntity entity) {
-        return 72000;
+    private boolean requiresTargetBeforeUse(int useDuration) {
+        return useDuration > 0 && useDuration <= SHORT_CHARGE_TICKS;
     }
 
-    @Override
-    public UseAnim getUseAnimation(ItemStack stack) {
-        return UseAnim.BOW;
+    private boolean hasExtractableTrait(LivingEntity target) {
+        var opt = LHMiscs.MOB.type().getExisting(target);
+        return opt.isPresent() && opt.get().traits.keySet().stream()
+                .anyMatch(trait -> opt.get().getTraitLevel(trait) > 0);
     }
 
     private LivingEntity findTarget(Level level, Player player) {

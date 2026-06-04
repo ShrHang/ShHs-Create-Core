@@ -3,19 +3,21 @@ package com.shrhang.shhs_create_core.content.data;
 import com.shrhang.shhs_create_core.ShHsCreateCore;
 import com.simibubi.create.api.registrate.CreateRegistrateRegistrationCallback;
 import com.simibubi.create.foundation.data.CreateRegistrate;
+import com.tterrag.registrate.builders.ItemBuilder;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
+import com.tterrag.registrate.util.nullness.NonNullFunction;
 import dev.xkmc.l2hostility.content.config.TraitConfig;
 import dev.xkmc.l2hostility.content.traits.base.MobTrait;
 import dev.xkmc.l2hostility.init.registrate.LHTraits;
 import dev.xkmc.l2serial.util.ModContainerHack;
-import net.minecraft.core.Holder;
-import net.minecraft.core.Registry;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.effect.MobEffect;
 
 public class ShHsRegistrate extends CreateRegistrate {
+    private ResourceKey<CreativeModeTab> defaultTab;
 
     protected ShHsRegistrate(String modid) {
         super(modid);
@@ -31,6 +33,37 @@ public class ShHsRegistrate extends CreateRegistrate {
 
     public MutableComponent langOfCreativeTab(String keyName, String value) {
         return this.addRawLang("itemGroup." + ShHsCreateCore.MODID + "." + keyName, value);
+    }
+
+    @Override
+    public ShHsRegistrate defaultCreativeTab(ResourceKey<CreativeModeTab> creativeModeTab) {
+        defaultTab = creativeModeTab;
+        super.defaultCreativeTab(creativeModeTab);
+        return this;
+    }
+
+    @Override
+    public <T extends Item> ShHsItemBuilder<T, CreateRegistrate> item(NonNullFunction<Item.Properties, T> factory) {
+        return item(this, factory);
+    }
+
+    @Override
+    public <T extends Item> ShHsItemBuilder<T, CreateRegistrate> item(String name, NonNullFunction<Item.Properties, T> factory) {
+        return item(this, name, factory);
+    }
+
+    @Override
+    public <T extends Item, P> ShHsItemBuilder<T, P> item(P parent, NonNullFunction<Item.Properties, T> factory) {
+        return item(parent, currentName(), factory);
+    }
+
+    @Override
+    public <T extends Item, P> ShHsItemBuilder<T, P> item(P parent, String name, NonNullFunction<Item.Properties, T> factory) {
+        ItemBuilder<T, P> builder = entry(name, callback -> {
+            ShHsItemBuilder<T, P> itemBuilder = ShHsItemBuilder.create(this, parent, name, callback, factory);
+            return defaultTab == null ? itemBuilder : itemBuilder.tab(defaultTab);
+        });
+        return (ShHsItemBuilder<T, P>) builder;
     }
 
     public <T extends MobEffect> ShHsMobEffectBuilder<T, ShHsRegistrate> effect(String name, NonNullSupplier<T> sup) {
