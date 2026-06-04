@@ -1,0 +1,20 @@
+{
+  "sources": [
+    {
+      "type": "minecraft:single",
+      "resource": "shhs_create_core:fluid/hostility_flow"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "shhs_create_core:fluid/hostility_still"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "shhs_create_core:fluid/wonder_flow"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "shhs_create_core:fluid/wonder_still"
+    }
+  ]
+}
