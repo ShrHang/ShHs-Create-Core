@@ -5,27 +5,60 @@ import net.minecraft.client.renderer.texture.atlas.sources.SingleFile;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
+import com.tterrag.registrate.providers.ProviderType;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import net.neoforged.neoforge.common.data.SpriteSourceProvider;
-import net.neoforged.neoforge.data.event.GatherDataEvent;
 
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 
+import static com.shrhang.shhs_create_core.ShHsCreateCore.REGISTRATE;
+
+/**
+ * 为默认路径的虚拟流体生成方块材质图集声明。
+ * <p>
+ * {@code CreateRegistrate#virtualFluid(String)} 默认使用
+ * {@code assets/<modid>/textures/fluid/<name>_still.png} 和
+ * {@code assets/<modid>/textures/fluid/<name>_flow.png} 作为流体贴图。
+ * 这些贴图文件虽然存在于资源包中，但流体渲染时需要从 {@code minecraft:blocks}
+ * 图集中读取对应 sprite；如果没有把它们声明进 atlas，游戏内会显示黑紫缺失材质。
+ */
 public class ShHsAtlases {
+    /**
+     * 需要加入 {@code minecraft:blocks} 图集的虚拟流体名称。
+     * <p>
+     * 使用 {@link TreeSet} 是为了让 datagen 输出顺序稳定，避免每次生成文件顺序随机变化。
+     */
     private static final Set<String> VIRTUAL_FLUIDS = new TreeSet<>();
 
+    /**
+     * 记录一个使用默认贴图路径的虚拟流体。
+     * <p>
+     * 该方法由 {@link ShHsRegistrate#virtualFluid(String)} 自动调用。这里只接收流体名，
+     * 因此约定对应贴图一定是 {@code fluid/<name>_still} 和 {@code fluid/<name>_flow}。
+     */
     public static void addVirtualFluid(String name) {
         VIRTUAL_FLUIDS.add(name);
     }
 
-    public static void gatherData(GatherDataEvent event) {
-        event.getGenerator().addProvider(event.includeClient(),
-                new Provider(event.getGenerator().getPackOutput(), event.getLookupProvider(), event.getExistingFileHelper()));
+    /**
+     * 将 atlas 生成器接入 Registrate 的客户端 datagen。
+     * <p>
+     * {@link SpriteSourceProvider} 是 NeoForge 的普通 {@code DataProvider}，不是
+     * Registrate 的 {@code RegistrateProvider}，所以不能直接作为 {@code ProviderType}
+     * 注册。这里通过 {@link ProviderType#GENERIC_CLIENT} 这个桥接 provider，把普通
+     * {@code DataProvider} 挂进 Registrate 的 datagen 流程。
+     */
+    public static void init() {
+        REGISTRATE.addDataGenerator(ProviderType.GENERIC_CLIENT, provider ->
+                provider.add(data -> new Provider(data.output(), data.registries(), data.existingFileHelper())));
     }
 
+    /**
+     * 实际生成 {@code assets/minecraft/atlases/blocks.json} 的 provider。
+     */
     private static class Provider extends SpriteSourceProvider {
         public Provider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookupProvider,
                         ExistingFileHelper existingFileHelper) {
@@ -41,6 +74,12 @@ public class ShHsAtlases {
             });
         }
 
+        /**
+         * 向 {@code minecraft:blocks} 图集中添加一个单文件 sprite。
+         * <p>
+         * 例如 {@code name = "hostility"}, {@code suffix = "still"} 时，
+         * 会生成 {@code shhs_create_core:fluid/hostility_still}。
+         */
         private void addFluidSprite(SourceList blocks, String name, String suffix) {
             ResourceLocation sprite = ShHsCreateCore.rl("fluid/" + name + "_" + suffix);
             blocks.addSource(new SingleFile(sprite, Optional.empty()));

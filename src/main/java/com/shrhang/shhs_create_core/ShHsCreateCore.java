@@ -39,7 +39,6 @@ public class ShHsCreateCore {
 
     public ShHsCreateCore(IEventBus modEventBus, ModContainer modContainer) {
         gatherData();
-        modEventBus.addListener(ShHsAtlases::gatherData);
         Config.init(modContainer);
 
         Attachments.register(modEventBus);
@@ -66,6 +65,7 @@ public class ShHsCreateCore {
     }
 
     private static void gatherData() {
+        ShHsAtlases.init();
         ShHsLang.init();
         ShHsTagKey.init();
     }
