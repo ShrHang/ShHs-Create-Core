@@ -1,7 +1,7 @@
 package com.shrhang.shhs_create_core.content.event;
 
 import com.shrhang.shhs_create_core.ShHsCreateCore;
-import com.shrhang.shhs_create_core.content.registries.Effects;
+import com.shrhang.shhs_create_core.api.registries.Effects;
 import dev.xkmc.l2damagetracker.contents.attack.AttackEventHandler;
 import dev.xkmc.l2damagetracker.contents.attack.AttackListener;
 import dev.xkmc.l2damagetracker.contents.attack.DamageData;
