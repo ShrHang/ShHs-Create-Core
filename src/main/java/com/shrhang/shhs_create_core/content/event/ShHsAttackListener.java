@@ -19,6 +19,7 @@ import static com.shrhang.shhs_create_core.content.util.RealityIndexHelper.getRe
 
 public class ShHsAttackListener implements AttackListener {
     private static final ResourceLocation REALITY_SCALING = ShHsCreateCore.rl("reality_scaling");
+    private static final ResourceLocation INTANGIBLE_DAMAGE_CAP = ShHsCreateCore.rl("intangible_damage_cap");
 
     @Override
     public boolean onAttack(DamageData.Attack data) {
@@ -28,11 +29,24 @@ public class ShHsAttackListener implements AttackListener {
 
     @Override
     public void onDamage(DamageData.Defence data) {
+        applyIntangibleDamageCap(data);
+        applyRealityScaling(data);
+    }
+
+    private static void applyIntangibleDamageCap(DamageData.Defence data) {
+        LivingEntity target = data.getTarget();
+        if (!target.hasEffect(ShHsEffects.INTANGIBLE) || data.bypassMagic()) return;
+
+        data.addDealtModifier(DamageModifier.nonlinearFinal(
+                823, damage -> Math.min(damage, 1), INTANGIBLE_DAMAGE_CAP));
+    }
+
+    private static void applyRealityScaling(DamageData.Defence data) {
         var source = data.getSource();
+        LivingEntity target = data.getTarget();
         if (source.is(L2DamageTypes.NO_SCALE)) return;
 
         var attacker = data.getAttacker();
-        LivingEntity target = data.getTarget();
         if (attacker == null || attacker == target) return;
 
         var attOpt = LHMiscs.MOB.type().getExisting(attacker);

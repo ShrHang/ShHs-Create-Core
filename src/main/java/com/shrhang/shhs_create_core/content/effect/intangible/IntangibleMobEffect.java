@@ -22,12 +22,7 @@ public class IntangibleMobEffect extends MobEffect {
             player.noPhysics = true;
             player.resetFallDistance();
 
-            boolean changed = IntangibleState.grantFlight(player); // 判断是否成功由无实体添加了飞行能力
-            var abilities = player.getAbilities();
-            changed |= !abilities.flying; // 判断飞行能力是否发生变化
-            abilities.flying = true;
-
-            if (changed && player instanceof ServerPlayer serverPlayer) { // 如果发生了变化则进行更新
+            if (IntangibleState.applyFlight(player) && player instanceof ServerPlayer serverPlayer) {
                 serverPlayer.onUpdateAbilities();
             }
         }

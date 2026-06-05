@@ -14,6 +14,7 @@ public class IntangibleEventHandler {
     public static void init() {
         NeoForge.EVENT_BUS.addListener(IntangibleEventHandler::onEffectAdded);
         NeoForge.EVENT_BUS.addListener(IntangibleEventHandler::onPlayerTickPost);
+        NeoForge.EVENT_BUS.addListener(IntangibleEventHandler::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(IntangibleEventHandler::onPlayerLoggedOut);
     }
 
@@ -23,7 +24,7 @@ public class IntangibleEventHandler {
     private static void onEffectAdded(final MobEffectEvent.Added event) {
         if (event.getEffectInstance().is(ShHsEffects.INTANGIBLE) && event.getEntity() instanceof Player player) {
             IntangibleState state = player.getData(ShHsAttachments.INTANGIBLE_STATE);
-            if (!state.isActive()) state.capture(player);
+            if (!state.isActive()) state.captureBeforeEffect(player);
         }
     }
 
@@ -34,6 +35,18 @@ public class IntangibleEventHandler {
         Player player = event.getEntity();
         IntangibleState state = player.getExistingDataOrNull(ShHsAttachments.INTANGIBLE_STATE);
         if (state != null && state.isActive() && !player.hasEffect(ShHsEffects.INTANGIBLE)) restore(player, state);
+    }
+
+    /**
+     * 在玩家登录时检查无实体状态，如果玩家处于无实体状态则重新捕获玩家的状态以防止数据错误，并进行服务端数据同步。
+     */
+    private static void onPlayerLoggedIn(final PlayerEvent.PlayerLoggedInEvent event) {
+        Player player = event.getEntity();
+        if (!player.hasEffect(ShHsEffects.INTANGIBLE)) return;
+
+        IntangibleState state = player.getData(ShHsAttachments.INTANGIBLE_STATE);
+        state.recaptureAfterLogin(player);
+        if (player instanceof ServerPlayer serverPlayer) serverPlayer.onUpdateAbilities();
     }
 
     /**
@@ -49,7 +62,7 @@ public class IntangibleEventHandler {
      * 用于复原玩家状态的辅助方法，并进行服务端数据同步。
      */
     private static void restore(Player player, IntangibleState state) {
-        state.restore(player);
+        state.restoreBeforeEffect(player);
         if (player instanceof ServerPlayer) player.onUpdateAbilities();
     }
 }
