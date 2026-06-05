@@ -1,6 +1,6 @@
 package com.shrhang.shhs_create_core.content.magic;
 
-import com.shrhang.shhs_create_core.Config;
+import com.shrhang.shhs_create_core.ShHsConfig;
 import io.redspace.ironsspellbooks.api.magic.MagicData;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
@@ -27,7 +27,7 @@ public class MobMagicManager {
         int maxMana = (int) entity.getAttributeValue(MAX_MANA); // 获取最大法力值
         var mana = magicData.getMana(); // 获取当前法力值
         if (mana != maxMana) {
-            var increment = maxMana * entity.getAttributeValue(MANA_REGEN) * .05f * Config.SERVER.mobManaRegenMultiplier.get().floatValue(); // 计算法力值增量
+            var increment = maxMana * entity.getAttributeValue(MANA_REGEN) * .05f * ShHsConfig.SERVER.mobManaRegenMultiplier.get().floatValue(); // 计算法力值增量
             magicData.setMana((float) Mth.clamp(magicData.getMana() + increment, 0, maxMana)); // 更新法力值，并确保不超过最大值
             return true;
         } else {

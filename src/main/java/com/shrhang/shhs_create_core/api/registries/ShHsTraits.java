@@ -1,6 +1,6 @@
 package com.shrhang.shhs_create_core.api.registries;
 
-import com.shrhang.shhs_create_core.Config;
+import com.shrhang.shhs_create_core.ShHsConfig;
 import com.shrhang.shhs_create_core.content.data.ShHsTraitBuilder;
 import com.shrhang.shhs_create_core.content.traits.WizardTrait;
 import dev.xkmc.curseofpandora.init.registrate.CoPAttrs;
@@ -19,7 +19,7 @@ public class ShHsTraits {
         AUGMENTED_REALITY = REGISTRATE.trait("augmented_reality", ()-> new AttributeTrait(
                         (() -> 0xC9974C),
                         new AttributeTrait.AttributeEntry("augmented_reality_index", CoPAttrs.REALITY,
-                                Config.SERVER.realityTraitScale::get, AttributeModifier.Operation.ADD_VALUE)
+                                ShHsConfig.SERVER.realityTraitScale::get, AttributeModifier.Operation.ADD_VALUE)
                 ), new TraitConfig(1000, 1, 7, 50))
                 .lang("Augmented Reality").register();
 

@@ -6,6 +6,7 @@ import com.shrhang.shhs_create_core.content.data.ShHsAtlases;
 import com.shrhang.shhs_create_core.content.data.ShHsLang;
 import com.shrhang.shhs_create_core.content.data.ShHsRegistrate;
 import com.shrhang.shhs_create_core.content.data.ShHsTagKey;
+import com.shrhang.shhs_create_core.content.event.effect.IntangibleClientEventHandler;
 import com.shrhang.shhs_create_core.content.event.effect.IntangibleEventHandler;
 import com.shrhang.shhs_create_core.content.event.MagicEventHandler;
 import com.shrhang.shhs_create_core.content.event.ShHsAttackListener;
@@ -23,10 +24,12 @@ import com.simibubi.create.foundation.item.TooltipModifier;
 import dev.xkmc.curseofpandora.init.registrate.CoPAttrs;
 import net.createmod.catnip.lang.FontHelper;
 import net.minecraft.resources.ResourceLocation;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 
 @Mod(ShHsCreateCore.MODID)
@@ -40,7 +43,7 @@ public class ShHsCreateCore {
 
     public ShHsCreateCore(IEventBus modEventBus, ModContainer modContainer) {
         gatherData();
-        Config.init(modContainer);
+        ShHsConfig.init(modContainer);
 
         ShHsAttachments.register(modEventBus);
         ShHsCreativeTabs.register(modEventBus);
@@ -49,6 +52,10 @@ public class ShHsCreateCore {
         ShHsFluids.register();
         ShHsPotions.register();
         ShHsTraits.register();
+
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            modEventBus.addListener(IntangibleClientEventHandler::registerLayers);
+        }
 
         modEventBus.addListener(ShHsCreateCore::init);
         modEventBus.addListener(ShHsCreateCore::modifyEntityAttributes);

@@ -1,6 +1,6 @@
 package com.shrhang.shhs_create_core.content.hostility;
 
-import com.shrhang.shhs_create_core.Config;
+import com.shrhang.shhs_create_core.ShHsConfig;
 
 import dev.xkmc.l2hostility.content.traits.base.MobTrait;
 import dev.xkmc.l2hostility.init.registrate.LHMiscs;
@@ -61,7 +61,7 @@ public class EmptyTraitItem extends Item {
 
     @Override
     public int getUseDuration(ItemStack stack, LivingEntity entity) {
-        return Math.clamp(Config.SERVER.emptyTraitMinUseTicks.get(), 0, 72000);
+        return Math.clamp(ShHsConfig.SERVER.emptyTraitMinUseTicks.get(), 0, 72000);
     }
 
     @Override

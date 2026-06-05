@@ -1,6 +1,6 @@
 package com.shrhang.shhs_create_core.mixin.irons_spellbooks.util;
 
-import com.shrhang.shhs_create_core.Config;
+import com.shrhang.shhs_create_core.ShHsConfig;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.CastSource;
 import io.redspace.ironsspellbooks.api.spells.ISpellContainer;
@@ -25,7 +25,7 @@ import static com.shrhang.shhs_create_core.content.util.SpellToleranceHelper.*;
 public abstract class TooltipsUtilsMixin {
     @Inject( method = "formatActiveSpellTooltip", at = @At("RETURN"))
     private static void shhsc_c$formatActiveSpellTooltip (ItemStack stack, SpellData spellData, CastSource castSource, LocalPlayer player, CallbackInfoReturnable<List<MutableComponent>> cir) {
-        if (!Config.CLIENT.isToleranceTooltip.get()) return;
+        if (!ShHsConfig.CLIENT.isToleranceTooltip.get()) return;
         List<MutableComponent> lines = cir.getReturnValue();
         if (lines != null && !lines.isEmpty() && player != null) {
             var spell = spellData.getSpell();
@@ -40,7 +40,7 @@ public abstract class TooltipsUtilsMixin {
 
     @Inject(method = "formatScrollTooltip", at = @At("RETURN"))
     private static void shhsc_c$formatScrollTooltip(ItemStack stack, Player player, CallbackInfoReturnable<List<Component>> cir) {
-        if (!Config.CLIENT.isToleranceTooltip.get()) return;
+        if (!ShHsConfig.CLIENT.isToleranceTooltip.get()) return;
         List<Component> lines = cir.getReturnValue();
         if (lines != null && !lines.isEmpty() && player != null) {
             var spellList = ISpellContainer.get(stack);

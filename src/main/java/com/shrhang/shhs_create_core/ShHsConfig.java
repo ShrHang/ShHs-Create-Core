@@ -8,7 +8,7 @@ import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
 
-public class Config {
+public class ShHsConfig {
     public static final Client CLIENT;
     public static final Server SERVER;
     static final ModConfigSpec clientSpec;

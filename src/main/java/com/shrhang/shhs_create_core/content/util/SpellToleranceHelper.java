@@ -6,7 +6,7 @@ import net.minecraft.world.entity.LivingEntity;
 
 import java.util.Objects;
 
-import static com.shrhang.shhs_create_core.Config.SERVER;
+import static com.shrhang.shhs_create_core.ShHsConfig.SERVER;
 import static dev.xkmc.curseofpandora.init.registrate.CoPAttrs.SPELL;
 
 public class SpellToleranceHelper {

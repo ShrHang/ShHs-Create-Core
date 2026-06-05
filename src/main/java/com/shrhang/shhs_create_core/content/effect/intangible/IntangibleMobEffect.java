@@ -8,7 +8,7 @@ import net.minecraft.world.entity.player.Player;
 
 public class IntangibleMobEffect extends MobEffect {
     public IntangibleMobEffect() {
-        super(MobEffectCategory.BENEFICIAL, 0x6ed28e);
+        super(MobEffectCategory.BENEFICIAL, 0x9AE9B6);
     }
 
     @Override
