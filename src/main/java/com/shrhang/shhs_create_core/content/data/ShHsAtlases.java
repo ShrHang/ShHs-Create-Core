@@ -16,15 +16,6 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.shrhang.shhs_create_core.ShHsCreateCore.REGISTRATE;
 
-/**
- * 为默认路径的虚拟流体生成方块材质图集声明。
- * <p>
- * {@code CreateRegistrate#virtualFluid(String)} 默认使用
- * {@code assets/<modid>/textures/fluid/<name>_still.png} 和
- * {@code assets/<modid>/textures/fluid/<name>_flow.png} 作为流体贴图。
- * 这些贴图文件虽然存在于资源包中，但流体渲染时需要从 {@code minecraft:blocks}
- * 图集中读取对应 sprite；如果没有把它们声明进 atlas，游戏内会显示黑紫缺失材质。
- */
 public class ShHsAtlases {
     /**
      * 需要加入 {@code minecraft:blocks} 图集的虚拟流体名称。

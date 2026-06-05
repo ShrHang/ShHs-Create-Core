@@ -147,7 +147,7 @@ dependencies {
     implementation "maven.modrinth:create-dragons-plus:${create_dragons_plus_version}"
     compileOnly "maven.modrinth:create-enchantment-industry:${create_enchantment_industry_version}"
 
-    implementation "maven.modrinth:create-wizardry:mH7u4nCX"
+    implementation "maven.modrinth:create-wizardry:YoUVUmtF"
 
     implementation("mezz.jei:jei-$minecraft_version-neoforge:$jei_version") // JEI
     runtimeOnly "vazkii.patchouli:Patchouli:$minecraft_version-$patchouli_version-NEOFORGE-SNAPSHOT" // Patchouli

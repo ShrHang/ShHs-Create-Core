@@ -88,6 +88,10 @@ public class ShHsRegistrate extends CreateRegistrate {
         return entry(name, cb -> new ShHsMobEffectBuilder<>(this, this, name, cb, sup));
     }
 
+    public ShHsPotionBuilder<ShHsRegistrate> potion(String name) {
+        return entry(name, cb -> new ShHsPotionBuilder<>(this, this, name, cb));
+    }
+
     /**
      * 复刻了l2hostility的trait注册方法，注册时会自动生成对应的tag和物品。
      */

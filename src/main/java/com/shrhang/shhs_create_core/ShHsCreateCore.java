@@ -15,6 +15,7 @@ import com.shrhang.shhs_create_core.content.registries.Effects;
 import com.shrhang.shhs_create_core.content.registries.Fluids;
 import com.shrhang.shhs_create_core.content.registries.Items;
 import com.shrhang.shhs_create_core.content.registries.OpenPipeEffects;
+import com.shrhang.shhs_create_core.content.registries.Potions;
 import com.shrhang.shhs_create_core.content.registries.Traits;
 import com.simibubi.create.foundation.item.ItemDescription;
 import com.simibubi.create.foundation.item.KineticStats;
@@ -46,6 +47,7 @@ public class ShHsCreateCore {
         Items.register();
         Effects.register();
         Fluids.register();
+        Potions.register();
         Traits.register();
 
         modEventBus.addListener(ShHsCreateCore::init);
