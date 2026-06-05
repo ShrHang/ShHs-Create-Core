@@ -5,7 +5,6 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.phys.Vec3;
 
 public class IntangibleMobEffect extends MobEffect {
     public IntangibleMobEffect() {
@@ -27,11 +26,6 @@ public class IntangibleMobEffect extends MobEffect {
             var abilities = player.getAbilities();
             changed |= !abilities.flying; // 判断飞行能力是否发生变化
             abilities.flying = true;
-
-            Vec3 movement = player.getDeltaMovement();
-            if (movement.y() < 0) {
-                player.setDeltaMovement(movement.x(), 0, movement.z());
-            }
 
             if (changed && player instanceof ServerPlayer serverPlayer) { // 如果发生了变化则进行更新
                 serverPlayer.onUpdateAbilities();
