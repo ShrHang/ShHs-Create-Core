@@ -5,7 +5,7 @@ import com.shrhang.shhs_create_core.content.effect.intangible.IntangibleMobEffec
 
 import static com.shrhang.shhs_create_core.ShHsCreateCore.REGISTRATE;
 
-public class Effects {
+public class ShHsEffects {
     public static final ShHsMobEffectEntry<IntangibleMobEffect> INTANGIBLE = REGISTRATE
             .effect("intangible", IntangibleMobEffect::new)
             .lang("Intangible")

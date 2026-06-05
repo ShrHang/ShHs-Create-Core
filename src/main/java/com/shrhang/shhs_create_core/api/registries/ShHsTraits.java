@@ -11,7 +11,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 
 import static com.shrhang.shhs_create_core.ShHsCreateCore.REGISTRATE;
 
-public class Traits {
+public class ShHsTraits {
     public static final ShHsTraitBuilder.ShHsTraitEntry<AttributeTrait> AUGMENTED_REALITY;
     public static final ShHsTraitBuilder.ShHsTraitEntry<WizardTrait> WIZARD;
 

@@ -5,7 +5,7 @@ import com.shrhang.shhs_create_core.content.data.ShHsRegistrate;
 import com.simibubi.create.content.fluids.VirtualFluid;
 import com.tterrag.registrate.util.entry.FluidEntry;
 
-public class Fluids {
+public class ShHsFluids {
     private static final ShHsRegistrate REGISTRATE = ShHsCreateCore.REGISTRATE;
 
     public static final FluidEntry<VirtualFluid> HOSTILITY = REGISTRATE.virtualFluid("hostility")

@@ -9,14 +9,14 @@ import com.shrhang.shhs_create_core.content.data.ShHsTagKey;
 import com.shrhang.shhs_create_core.content.event.effect.IntangibleEventHandler;
 import com.shrhang.shhs_create_core.content.event.MagicEventHandler;
 import com.shrhang.shhs_create_core.content.event.ShHsAttackListener;
-import com.shrhang.shhs_create_core.api.registries.Attachments;
-import com.shrhang.shhs_create_core.api.registries.CreativeTabs;
-import com.shrhang.shhs_create_core.api.registries.Effects;
-import com.shrhang.shhs_create_core.api.registries.Fluids;
-import com.shrhang.shhs_create_core.api.registries.Items;
-import com.shrhang.shhs_create_core.api.registries.OpenPipeEffects;
-import com.shrhang.shhs_create_core.api.registries.Potions;
-import com.shrhang.shhs_create_core.api.registries.Traits;
+import com.shrhang.shhs_create_core.api.registries.ShHsAttachments;
+import com.shrhang.shhs_create_core.api.registries.ShHsCreativeTabs;
+import com.shrhang.shhs_create_core.api.registries.ShHsEffects;
+import com.shrhang.shhs_create_core.api.registries.ShHsFluids;
+import com.shrhang.shhs_create_core.api.registries.ShHsItems;
+import com.shrhang.shhs_create_core.api.registries.ShHsOpenPipeEffects;
+import com.shrhang.shhs_create_core.api.registries.ShHsPotions;
+import com.shrhang.shhs_create_core.api.registries.ShHsTraits;
 import com.simibubi.create.foundation.item.ItemDescription;
 import com.simibubi.create.foundation.item.KineticStats;
 import com.simibubi.create.foundation.item.TooltipModifier;
@@ -33,7 +33,7 @@ import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 public class ShHsCreateCore {
     public static final String MODID = "shhs_create_core";
     public static final ShHsRegistrate REGISTRATE = (ShHsRegistrate) ShHsRegistrate.create(MODID)
-            .defaultCreativeTab(CreativeTabs.DEFAULT.getKey())
+            .defaultCreativeTab(ShHsCreativeTabs.DEFAULT.getKey())
             .setTooltipModifierFactory(item ->
                     new ItemDescription.Modifier(item, FontHelper.Palette.STANDARD_CREATE)
                             .andThen(TooltipModifier.mapNull(KineticStats.create(item))));
@@ -42,20 +42,20 @@ public class ShHsCreateCore {
         gatherData();
         Config.init(modContainer);
 
-        Attachments.register(modEventBus);
-        CreativeTabs.register(modEventBus);
-        Items.register();
-        Effects.register();
-        Fluids.register();
-        Potions.register();
-        Traits.register();
+        ShHsAttachments.register(modEventBus);
+        ShHsCreativeTabs.register(modEventBus);
+        ShHsItems.register();
+        ShHsEffects.register();
+        ShHsFluids.register();
+        ShHsPotions.register();
+        ShHsTraits.register();
 
         modEventBus.addListener(ShHsCreateCore::init);
         modEventBus.addListener(ShHsCreateCore::modifyEntityAttributes);
     }
 
     public static void init(final FMLCommonSetupEvent event) {
-        event.enqueueWork(OpenPipeEffects::register);
+        event.enqueueWork(ShHsOpenPipeEffects::register);
         IntangibleEventHandler.init();
         MagicEventHandler.init();
         ShHsAttackListener.init();

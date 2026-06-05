@@ -1,8 +1,8 @@
 package com.shrhang.shhs_create_core.content.event.effect;
 
 import com.shrhang.shhs_create_core.content.effect.intangible.IntangibleState;
-import com.shrhang.shhs_create_core.api.registries.Attachments;
-import com.shrhang.shhs_create_core.api.registries.Effects;
+import com.shrhang.shhs_create_core.api.registries.ShHsAttachments;
+import com.shrhang.shhs_create_core.api.registries.ShHsEffects;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.common.NeoForge;
@@ -21,8 +21,8 @@ public class IntangibleEventHandler {
      * 在效果被添加时捕获玩家的当前状态，如果是无实体则保存状态以便后续恢复。
      */
     private static void onEffectAdded(final MobEffectEvent.Added event) {
-        if (event.getEffectInstance().is(Effects.INTANGIBLE) && event.getEntity() instanceof Player player) {
-            IntangibleState state = player.getData(Attachments.INTANGIBLE_STATE);
+        if (event.getEffectInstance().is(ShHsEffects.INTANGIBLE) && event.getEntity() instanceof Player player) {
+            IntangibleState state = player.getData(ShHsAttachments.INTANGIBLE_STATE);
             if (!state.isActive()) state.capture(player);
         }
     }
@@ -32,8 +32,8 @@ public class IntangibleEventHandler {
      */
     private static void onPlayerTickPost(final PlayerTickEvent.Post event) {
         Player player = event.getEntity();
-        IntangibleState state = player.getExistingDataOrNull(Attachments.INTANGIBLE_STATE);
-        if (state != null && state.isActive() && !player.hasEffect(Effects.INTANGIBLE)) restore(player, state);
+        IntangibleState state = player.getExistingDataOrNull(ShHsAttachments.INTANGIBLE_STATE);
+        if (state != null && state.isActive() && !player.hasEffect(ShHsEffects.INTANGIBLE)) restore(player, state);
     }
 
     /**
@@ -41,7 +41,7 @@ public class IntangibleEventHandler {
      */
     private static void onPlayerLoggedOut(final PlayerEvent.PlayerLoggedOutEvent event) {
         Player player = event.getEntity();
-        IntangibleState state = player.getExistingDataOrNull(Attachments.INTANGIBLE_STATE);
+        IntangibleState state = player.getExistingDataOrNull(ShHsAttachments.INTANGIBLE_STATE);
         if (state != null && state.isActive()) restore(player, state);
     }
 

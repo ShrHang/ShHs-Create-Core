@@ -8,7 +8,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
-public class Attachments {
+public class ShHsAttachments {
     private static final DeferredRegister<AttachmentType<?>> REGISTER =
             DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, ShHsCreateCore.MODID);
 

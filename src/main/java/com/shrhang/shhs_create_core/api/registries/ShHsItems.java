@@ -5,7 +5,7 @@ import com.shrhang.shhs_create_core.content.data.ShHsRegistrate;
 import com.shrhang.shhs_create_core.content.hostility.EmptyTraitItem;
 import com.tterrag.registrate.util.entry.ItemEntry;
 
-public class Items {
+public class ShHsItems {
     private static final ShHsRegistrate REGISTRATE = ShHsCreateCore.REGISTRATE;
 
     public static final ItemEntry<EmptyTraitItem> EMPTY_TRAIT = REGISTRATE.item("empty_trait", EmptyTraitItem::new)

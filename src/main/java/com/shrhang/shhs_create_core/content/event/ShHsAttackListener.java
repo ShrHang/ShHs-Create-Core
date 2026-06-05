@@ -1,7 +1,7 @@
 package com.shrhang.shhs_create_core.content.event;
 
 import com.shrhang.shhs_create_core.ShHsCreateCore;
-import com.shrhang.shhs_create_core.api.registries.Effects;
+import com.shrhang.shhs_create_core.api.registries.ShHsEffects;
 import dev.xkmc.l2damagetracker.contents.attack.AttackEventHandler;
 import dev.xkmc.l2damagetracker.contents.attack.AttackListener;
 import dev.xkmc.l2damagetracker.contents.attack.DamageData;
@@ -23,7 +23,7 @@ public class ShHsAttackListener implements AttackListener {
     @Override
     public boolean onAttack(DamageData.Attack data) {
         return data.getSource().is(DamageTypes.IN_WALL)
-                && data.getTarget().hasEffect(Effects.INTANGIBLE);
+                && data.getTarget().hasEffect(ShHsEffects.INTANGIBLE);
     }
 
     @Override
