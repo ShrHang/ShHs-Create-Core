@@ -6,7 +6,7 @@ import com.shrhang.shhs_create_core.content.data.ShHsAtlases;
 import com.shrhang.shhs_create_core.content.data.ShHsLang;
 import com.shrhang.shhs_create_core.content.data.ShHsRegistrate;
 import com.shrhang.shhs_create_core.content.data.ShHsTagKey;
-import com.shrhang.shhs_create_core.content.event.effect.IntangibleClientEventHandler;
+import com.shrhang.shhs_create_core.content.render.IntangibleRender;
 import com.shrhang.shhs_create_core.content.event.effect.IntangibleEventHandler;
 import com.shrhang.shhs_create_core.content.event.MagicEventHandler;
 import com.shrhang.shhs_create_core.content.event.ShHsAttackListener;
@@ -28,7 +28,6 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
@@ -54,9 +53,8 @@ public class ShHsCreateCore {
         ShHsPotions.register();
         ShHsTraits.register();
 
-        if (FMLEnvironment.dist == Dist.CLIENT) {
-            modEventBus.addListener(ShHsCreateCore::initClient);
-            modEventBus.addListener(IntangibleClientEventHandler::registerLayers);
+        if (FMLEnvironment.dist.isClient()) {
+            modEventBus.addListener(IntangibleRender::registerLayers);
         }
 
         modEventBus.addListener(ShHsCreateCore::init);
@@ -69,10 +67,6 @@ public class ShHsCreateCore {
         MagicEventHandler.init();
         ShHsAttackListener.init();
         Mods.CREATE_ENCHANTMENT_INDUSTRY.executeIfInstalled(() -> CreateEnchantmentIndustry::init);
-    }
-
-    public static void initClient(final FMLClientSetupEvent event) {
-        IntangibleClientEventHandler.init();
     }
 
     public static void modifyEntityAttributes(final EntityAttributeModificationEvent event) {

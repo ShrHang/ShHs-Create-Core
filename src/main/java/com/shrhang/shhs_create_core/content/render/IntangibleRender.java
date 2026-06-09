@@ -1,30 +1,21 @@
-package com.shrhang.shhs_create_core.content.event.effect;
+package com.shrhang.shhs_create_core.content.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.shrhang.shhs_create_core.ShHsCreateCore;
 import com.shrhang.shhs_create_core.api.registries.ShHsEffects;
-import com.shrhang.shhs_create_core.content.effect.intangible.IntangibleState;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
-import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
+import net.minecraft.client.renderer.entity.player.PlayerRenderer;
+import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
-import net.neoforged.neoforge.common.NeoForge;
 
-public class IntangibleClientEventHandler {
-    public static void init() {
-        NeoForge.EVENT_BUS.addListener(IntangibleClientEventHandler::onClientTickPost);
-    }
+public class IntangibleRender {
 
     public static void registerLayers(EntityRenderersEvent.AddLayers event) {
         addLayer(event, PlayerSkin.Model.WIDE);
@@ -35,13 +26,6 @@ public class IntangibleClientEventHandler {
         var renderer = event.getSkin(skinModel);
         if (renderer instanceof PlayerRenderer playerRenderer) {
             playerRenderer.addLayer(new IntangiblePlayerLayer(playerRenderer));
-        }
-    }
-
-    private static void onClientTickPost(ClientTickEvent.Post event) {
-        var player = Minecraft.getInstance().player;
-        if (player != null && player.hasEffect(ShHsEffects.INTANGIBLE)) {
-            IntangibleState.applyFlight(player);
         }
     }
 

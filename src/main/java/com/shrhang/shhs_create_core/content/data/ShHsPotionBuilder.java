@@ -30,12 +30,7 @@ public class ShHsPotionBuilder<P>
     @Nullable
     private String baseName; // 原版习惯让药水的长效、强效等变体使用与基础药水相同的语言键，因此该变量用于记录基础版药水的名称。
 
-    public ShHsPotionBuilder(
-            AbstractRegistrate<?> owner,
-            P parent,
-            String name,
-            BuilderCallback callback
-    ) {
+    public ShHsPotionBuilder(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback) {
         super(owner, parent, name, callback, Registries.POTION);
     }
 

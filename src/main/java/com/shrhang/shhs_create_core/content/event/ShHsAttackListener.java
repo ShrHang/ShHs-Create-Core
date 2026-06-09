@@ -22,23 +22,8 @@ public class ShHsAttackListener implements AttackListener {
     private static final ResourceLocation INTANGIBLE_DAMAGE_CAP = ShHsCreateCore.rl("intangible_damage_cap");
 
     @Override
-    public boolean onAttack(DamageData.Attack data) {
-        return data.getSource().is(DamageTypes.IN_WALL)
-                && data.getTarget().hasEffect(ShHsEffects.INTANGIBLE);
-    }
-
-    @Override
     public void onDamage(DamageData.Defence data) {
-        applyIntangibleDamageCap(data);
         applyRealityScaling(data);
-    }
-
-    private static void applyIntangibleDamageCap(DamageData.Defence data) {
-        LivingEntity target = data.getTarget();
-        if (!target.hasEffect(ShHsEffects.INTANGIBLE) || data.bypassMagic()) return;
-
-        data.addDealtModifier(DamageModifier.nonlinearFinal(
-                823, damage -> Math.min(damage, 1), INTANGIBLE_DAMAGE_CAP));
     }
 
     private static void applyRealityScaling(DamageData.Defence data) {

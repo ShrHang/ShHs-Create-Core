@@ -18,7 +18,7 @@ public class SpellToleranceHelper {
         return calculateRequiredTolerance(spellLevel, rarityValue, SERVER.rarityCoefficient.get(), source);
     }
     public static double calculateRequiredTolerance(int spellLevel, int rarityValue, double coefficient, CastSource source) {
-        return Math.min(1, spellLevel + coefficient * rarityValue - (source.consumesMana() ? 0 : 2));
+        return Math.max(1, spellLevel + coefficient * rarityValue - (source.consumesMana() ? 0 : 2));
     }
 
     public static double getSpellTolerance(LivingEntity entity) {

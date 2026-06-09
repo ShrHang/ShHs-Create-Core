@@ -1,5 +1,7 @@
 {
   "effect.shhs_create_core.intangible": "无实体",
+  "effect.shhs_create_core.intangible.desc": "使目标进入幽魂般的状态，可以低速飞行并穿过墙体，同时使大多数受到的伤害最多为 1 点。",
+  "effect.shhs_create_core.intangible.description": "使目标进入幽魂般的状态，可以低速飞行并穿过墙体，同时使大多数受到的伤害最多为 1 点。",
   "fluid.shhs_create_core.hostility": "恶意",
   "fluid.shhs_create_core.wonder": "奇迹",
   "item.minecraft.lingering_potion.effect.intangible": "滞留型无形药水",

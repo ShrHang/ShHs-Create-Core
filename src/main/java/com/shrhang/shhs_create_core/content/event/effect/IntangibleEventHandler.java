@@ -1,28 +1,79 @@
 package com.shrhang.shhs_create_core.content.event.effect;
 
+import com.shrhang.shhs_create_core.ShHsConfig;
 import com.shrhang.shhs_create_core.content.effect.intangible.IntangibleState;
 import com.shrhang.shhs_create_core.api.registries.ShHsAttachments;
 import com.shrhang.shhs_create_core.api.registries.ShHsEffects;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.EntityInvulnerabilityCheckEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
+import static com.shrhang.shhs_create_core.api.registries.ShHsEffects.INTANGIBLE;
+
 public class IntangibleEventHandler {
     public static void init() {
+        NeoForge.EVENT_BUS.addListener(IntangibleEventHandler::onInvulnerabilityCheck);
+        NeoForge.EVENT_BUS.addListener(IntangibleEventHandler::onPreDamage);
         NeoForge.EVENT_BUS.addListener(IntangibleEventHandler::onEffectAdded);
         NeoForge.EVENT_BUS.addListener(IntangibleEventHandler::onPlayerTickPost);
         NeoForge.EVENT_BUS.addListener(IntangibleEventHandler::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(IntangibleEventHandler::onPlayerLoggedOut);
     }
 
+    private static void onInvulnerabilityCheck(final EntityInvulnerabilityCheckEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        if (!player.hasEffect(INTANGIBLE)) return;
+        var source = event.getSource();
+        if (source.is(DamageTypeTags.BYPASSES_EFFECTS)) return;
+        if (source.is(DamageTypes.IN_WALL)) {
+            event.setInvulnerable(true);
+        }
+    }
+
+    private static void onPreDamage(final LivingDamageEvent.Pre event) {
+        if (!ShHsConfig.SERVER.isSlayTheSpire.get()) return;
+
+        var entity = event.getEntity();
+        var effect = entity.getEffect(INTANGIBLE);
+        if (effect == null) return;
+
+        var source = event.getSource();
+        if (source.is(DamageTypeTags.BYPASSES_EFFECTS)) return;
+        if (event.getNewDamage() <= 1.0f) return;
+
+        event.setNewDamage(1.0F);
+
+        int duration = effect.getDuration();
+        int amplifier = effect.getAmplifier();
+
+        if (amplifier > 0) {
+            entity.removeEffectNoUpdate(INTANGIBLE);
+            entity.addEffect(new MobEffectInstance(
+                    INTANGIBLE,
+                    duration,
+                    amplifier - 1,
+                    effect.isAmbient(),
+                    effect.isVisible(),
+                    effect.showIcon()
+            ));
+        } else {
+            entity.removeEffect(INTANGIBLE);
+        }
+    }
+
     /**
      * 在效果被添加时捕获玩家的当前状态，如果是无实体则保存状态以便后续恢复。
      */
     private static void onEffectAdded(final MobEffectEvent.Added event) {
-        if (event.getEffectInstance().is(ShHsEffects.INTANGIBLE) && event.getEntity() instanceof Player player) {
+        if (event.getEffectInstance().is(INTANGIBLE) && event.getEntity() instanceof Player player) {
             IntangibleState state = player.getData(ShHsAttachments.INTANGIBLE_STATE);
             if (!state.isActive()) state.captureBeforeEffect(player);
         }
@@ -34,7 +85,7 @@ public class IntangibleEventHandler {
     private static void onPlayerTickPost(final PlayerTickEvent.Post event) {
         Player player = event.getEntity();
         IntangibleState state = player.getExistingDataOrNull(ShHsAttachments.INTANGIBLE_STATE);
-        if (state != null && state.isActive() && !player.hasEffect(ShHsEffects.INTANGIBLE)) restore(player, state);
+        if (state != null && state.isActive() && !player.hasEffect(INTANGIBLE)) restore(player, state);
     }
 
     /**
@@ -42,7 +93,7 @@ public class IntangibleEventHandler {
      */
     private static void onPlayerLoggedIn(final PlayerEvent.PlayerLoggedInEvent event) {
         Player player = event.getEntity();
-        if (!player.hasEffect(ShHsEffects.INTANGIBLE)) return;
+        if (!player.hasEffect(INTANGIBLE)) return;
 
         IntangibleState state = player.getData(ShHsAttachments.INTANGIBLE_STATE);
         state.recaptureAfterLogin(player);

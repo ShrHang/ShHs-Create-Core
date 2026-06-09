@@ -1,5 +1,7 @@
 {
   "effect.shhs_create_core.intangible": "Intangible",
+  "effect.shhs_create_core.intangible.desc": "Turns the target ghostlike, allowing slow flight and wall phasing while limiting most incoming damage to 1.",
+  "effect.shhs_create_core.intangible.description": "Turns the target ghostlike, allowing slow flight and wall phasing while limiting most incoming damage to 1.",
   "fluid.shhs_create_core.hostility": "Hostility",
   "fluid.shhs_create_core.wonder": "Wonder",
   "item.minecraft.lingering_potion.effect.intangible": "Lingering Potion of Intangibility",
