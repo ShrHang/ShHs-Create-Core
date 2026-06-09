@@ -49,7 +49,6 @@ public class ShHsConfig {
         public final ModConfigSpec.DoubleValue realityTraitScale;
         public final ModConfigSpec.IntValue emptyTraitMinUseTicks;
         public final ModConfigSpec.IntValue scrollPrintingCost;
-        public final ModConfigSpec.BooleanValue isSlayTheSpire;
         Server(ModConfigSpec.Builder builder) {
             builder.push("magic");
             isToleranceRequired = builder
@@ -73,10 +72,6 @@ public class ShHsConfig {
             emptyTraitMinUseTicks = builder
                     .comment("The minimum use time in ticks required for Empty Trait extraction. Set to 0 to allow immediate release.")
                     .defineInRange("emptyTraitMinUseTicks", 30, 0, 72000);
-            builder.pop();
-            builder.push("effect");
-            isSlayTheSpire = builder
-                    .define("isSlayTheSpire", false);
             builder.pop();
         }
     }
