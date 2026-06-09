@@ -12,7 +12,6 @@ import com.shrhang.shhs_create_core.api.registries.ShHsCreativeTabs;
 import com.shrhang.shhs_create_core.api.registries.ShHsFluids;
 import com.shrhang.shhs_create_core.api.registries.ShHsItems;
 import com.shrhang.shhs_create_core.api.registries.ShHsOpenPipeEffects;
-import com.shrhang.shhs_create_core.api.registries.ShHsPotions;
 import com.shrhang.shhs_create_core.api.registries.ShHsTraits;
 import com.simibubi.create.foundation.item.ItemDescription;
 import com.simibubi.create.foundation.item.KineticStats;
@@ -42,7 +41,6 @@ public class ShHsCreateCore {
         ShHsCreativeTabs.register(modEventBus);
         ShHsItems.register();
         ShHsFluids.register();
-        ShHsPotions.register();
         ShHsTraits.register();
 
         modEventBus.addListener(ShHsCreateCore::init);
