@@ -10,7 +10,6 @@ import static com.shrhang.shhs_create_core.ShHsConfig.SERVER;
 import static dev.xkmc.curseofpandora.init.registrate.CoPAttrs.SPELL;
 
 public class SpellToleranceHelper {
-    public static String lang = "text.shhs_create_core.no_enough_spell_tolerance";
     public static double calculateRequiredTolerance(int spellLevel, AbstractSpell spell, CastSource source) {
         return calculateRequiredTolerance(spellLevel, spell.getRarity(spellLevel).getValue(), source);
     }

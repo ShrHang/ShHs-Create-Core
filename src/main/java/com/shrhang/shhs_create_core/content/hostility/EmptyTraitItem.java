@@ -4,6 +4,7 @@ import com.shrhang.shhs_create_core.ShHsConfig;
 
 import dev.xkmc.l2hostility.content.traits.base.MobTrait;
 import dev.xkmc.l2hostility.init.registrate.LHMiscs;
+import net.minecraft.ChatFormatting;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.LivingEntity;
@@ -17,6 +18,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 
+import static com.shrhang.shhs_create_core.content.data.ShHsLang.textComponent;
 import static com.shrhang.shhs_create_core.content.util.TraitHelper.WeightedTrait.selectTraitByWeight;
 
 public class EmptyTraitItem extends Item {
@@ -37,7 +39,14 @@ public class EmptyTraitItem extends Item {
         } else {
             LivingEntity target = findTarget(level, player);
             if (requiresTargetBeforeUse(useDuration)) {
-                if (target == null || !hasExtractableTrait(target)) return InteractionResultHolder.pass(stack);
+                if (target == null) {
+                    notifyUseFailure(level, player, "empty_trait_no_target");
+                    return InteractionResultHolder.pass(stack);
+                }
+                if (!hasExtractableTrait(target)) {
+                    notifyUseFailure(level, player, "empty_trait_no_traits");
+                    return InteractionResultHolder.pass(stack);
+                }
             }
             player.startUsingItem(hand);
         }
@@ -71,16 +80,28 @@ public class EmptyTraitItem extends Item {
 
     private void extractTrait(ItemStack stack, Level level, Player player) {
         LivingEntity target = findTarget(level, player);
-        if (target == null) return;
+        if (target == null) {
+            notifyUseFailure(level, player, "empty_trait_no_target");
+            return;
+        }
 
         var opt = LHMiscs.MOB.type().getExisting(target);
-        if (opt.isEmpty()) return;
+        if (opt.isEmpty()) {
+            notifyUseFailure(level, player, "empty_trait_no_traits");
+            return;
+        }
 
         var cap = opt.get();
-        if (cap.traits.isEmpty()) return;
+        if (cap.traits.isEmpty()) {
+            notifyUseFailure(level, player, "empty_trait_no_traits");
+            return;
+        }
 
         MobTrait trait = selectTraitByWeight(cap, target);
-        if (trait == null || cap.getTraitLevel(trait) <= 0) return;
+        if (trait == null) {
+            notifyUseFailure(level, player, "empty_trait_no_traits");
+            return;
+        }
 
         cap.setTrait(trait, cap.getTraitLevel(trait) - 1);
         cap.syncToClient(target);
@@ -88,6 +109,12 @@ public class EmptyTraitItem extends Item {
         ItemStack traitSymbol = new ItemStack(trait.asItem());
         if (!player.isCreative()) stack.shrink(1);
         if (!player.addItem(traitSymbol)) player.drop(traitSymbol, false);
+    }
+
+    private void notifyUseFailure(Level level, Player player, String key) {
+        if (!level.isClientSide) {
+            player.displayClientMessage(textComponent(key).withStyle(ChatFormatting.RED), true);
+        }
     }
 
     private boolean requiresTargetBeforeUse(int useDuration) {

@@ -119,3 +119,4 @@ runs/
 !gradle-wrapper.jar
 /src/generated/resources/.cache/
 /.tmp/
+/生物施法调用链分析.md

@@ -33,7 +33,7 @@ public class TraitHelper {
                     if (randomValue < wt.cumulativeWeight + wt.weight) return wt.trait;
                 }
             }
-            return traits.get(target.level().random.nextInt(traits.size()));
+            return null;
         }
     }
 }

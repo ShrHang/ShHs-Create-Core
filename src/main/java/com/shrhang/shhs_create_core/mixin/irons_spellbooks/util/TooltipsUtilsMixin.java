@@ -19,7 +19,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.List;
 
-import static com.shrhang.shhs_create_core.content.util.SpellToleranceHelper.*;
+import static com.shrhang.shhs_create_core.content.data.ShHsLang.textComponent;
+import static com.shrhang.shhs_create_core.content.util.SpellToleranceHelper.calculateRequiredTolerance;
+import static com.shrhang.shhs_create_core.content.util.SpellToleranceHelper.getSpellTolerance;
 
 @Mixin(TooltipsUtils.class)
 public abstract class TooltipsUtilsMixin {
@@ -32,7 +34,7 @@ public abstract class TooltipsUtilsMixin {
             if (spell != null) {
                 double requiredTolerance = calculateRequiredTolerance(spell.getLevelFor(spellData.getLevel(), player), spell, castSource);
                 double spellTolerance = getSpellTolerance(player);
-                lines.add(Component.translatable(lang, requiredTolerance)
+                lines.add(textComponent("no_enough_spell_tolerance", requiredTolerance)
                         .withStyle(spellTolerance < requiredTolerance ? ChatFormatting.RED : ChatFormatting.GREEN));
             }
         }
@@ -49,7 +51,7 @@ public abstract class TooltipsUtilsMixin {
             if (spell != null) {
                 double requiredTolerance = calculateRequiredTolerance(spell.getLevelFor(spellData.getLevel(), player), spell, CastSource.SCROLL);
                 double spellTolerance = getSpellTolerance(player);
-                lines.add(Component.translatable(lang, requiredTolerance)
+                lines.add(textComponent("no_enough_spell_tolerance", requiredTolerance)
                         .withStyle(spellTolerance < requiredTolerance ? ChatFormatting.RED : ChatFormatting.GREEN));
             }
         }

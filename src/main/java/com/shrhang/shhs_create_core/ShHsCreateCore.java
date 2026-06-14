@@ -1,5 +1,6 @@
 package com.shrhang.shhs_create_core;
 
+import com.shrhang.shhs_create_core.api.registries.*;
 import com.shrhang.shhs_create_core.compat.Mods;
 import com.shrhang.shhs_create_core.compat.create_enchantment_industry.CreateEnchantmentIndustry;
 import com.shrhang.shhs_create_core.content.data.ShHsAtlases;
@@ -8,11 +9,6 @@ import com.shrhang.shhs_create_core.content.data.ShHsRegistrate;
 import com.shrhang.shhs_create_core.content.data.ShHsTagKey;
 import com.shrhang.shhs_create_core.content.event.MagicEventHandler;
 import com.shrhang.shhs_create_core.content.event.ShHsAttackListener;
-import com.shrhang.shhs_create_core.api.registries.ShHsCreativeTabs;
-import com.shrhang.shhs_create_core.api.registries.ShHsFluids;
-import com.shrhang.shhs_create_core.api.registries.ShHsItems;
-import com.shrhang.shhs_create_core.api.registries.ShHsOpenPipeEffects;
-import com.shrhang.shhs_create_core.api.registries.ShHsTraits;
 import com.simibubi.create.foundation.item.ItemDescription;
 import com.simibubi.create.foundation.item.KineticStats;
 import com.simibubi.create.foundation.item.TooltipModifier;
@@ -38,6 +34,8 @@ public class ShHsCreateCore {
         gatherData();
         ShHsConfig.init(modContainer);
 
+        ShHsBlockEntityTypes.register();
+        ShHsBlocks.register();
         ShHsCreativeTabs.register(modEventBus);
         ShHsItems.register();
         ShHsFluids.register();
@@ -48,6 +46,7 @@ public class ShHsCreateCore {
     }
 
     public static void init(final FMLCommonSetupEvent event) {
+        event.enqueueWork(ShHsInventoryIdentifiers::register);
         event.enqueueWork(ShHsOpenPipeEffects::register);
         MagicEventHandler.init();
         ShHsAttackListener.init();

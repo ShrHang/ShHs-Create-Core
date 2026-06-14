@@ -18,7 +18,7 @@ public class ShHsCreativeTabs {
             CreativeModeTab.builder()
                     .title(REGISTRATE.langOfCreativeTab("shhs_stuff", "ShH's Stuff"))
                     .withTabsBefore(CreativeModeTabs.SPAWN_EGGS)
-                    .icon(() -> new ItemStack(ShHsTraits.AUGMENTED_REALITY.get()))
+                    .icon(() -> new ItemStack(ShHsBlocks.BRASS_ENDER_CHEST.asItem()))
                     .build()
     );
     public static void register(IEventBus bus) {

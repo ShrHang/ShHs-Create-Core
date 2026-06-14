@@ -4,6 +4,7 @@ import com.shrhang.shhs_create_core.ShHsCreateCore;
 import com.simibubi.create.api.registrate.CreateRegistrateRegistrationCallback;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.simibubi.create.content.fluids.VirtualFluid;
+import com.tterrag.registrate.builders.BlockBuilder;
 import com.tterrag.registrate.builders.FluidBuilder;
 import com.tterrag.registrate.builders.ItemBuilder;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
@@ -17,6 +18,8 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 
 public class ShHsRegistrate extends CreateRegistrate {
@@ -67,6 +70,30 @@ public class ShHsRegistrate extends CreateRegistrate {
             return defaultTab == null ? itemBuilder : itemBuilder.tab(defaultTab);
         });
         return (ShHsItemBuilder<T, P>) builder;
+    }
+
+    @Override
+    public <T extends Block> ShHsBlockBuilder<T, CreateRegistrate> block(NonNullFunction<BlockBehaviour.Properties, T> factory) {
+        return block(this, factory);
+    }
+
+    @Override
+    public <T extends Block> ShHsBlockBuilder<T, CreateRegistrate> block(String name,
+                                                                         NonNullFunction<BlockBehaviour.Properties, T> factory) {
+        return block(this, name, factory);
+    }
+
+    @Override
+    public <T extends Block, P> ShHsBlockBuilder<T, P> block(P parent,
+                                                             NonNullFunction<BlockBehaviour.Properties, T> factory) {
+        return block(parent, currentName(), factory);
+    }
+
+    @Override
+    public <T extends Block, P> ShHsBlockBuilder<T, P> block(P parent, String name,
+                                                             NonNullFunction<BlockBehaviour.Properties, T> factory) {
+        BlockBuilder<T, P> builder = entry(name, callback -> ShHsBlockBuilder.create(this, parent, name, callback, factory));
+        return (ShHsBlockBuilder<T, P>) builder;
     }
 
     @Override

@@ -5,14 +5,15 @@ import io.redspace.ironsspellbooks.api.magic.MagicData;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.network.casting.OnCastFinishedPacket;
 import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import static com.shrhang.shhs_create_core.ShHsConfig.SERVER;
-import static com.shrhang.shhs_create_core.content.util.SpellToleranceHelper.*;
+import static com.shrhang.shhs_create_core.content.data.ShHsLang.textComponent;
+import static com.shrhang.shhs_create_core.content.util.SpellToleranceHelper.calculateRequiredTolerance;
+import static com.shrhang.shhs_create_core.content.util.SpellToleranceHelper.getSpellTolerance;
 
 public class MagicEventHandler {
     public static void init() {
@@ -39,7 +40,7 @@ public class MagicEventHandler {
                         new OnCastFinishedPacket(serverPlayer.getUUID(), event.getSpellId(), true)
                 );
             player.displayClientMessage(
-                    Component.translatable(lang, requiredTolerance)
+                    textComponent("no_enough_spell_tolerance", requiredTolerance)
                             .withStyle(ChatFormatting.RED), true );
         }
     }
