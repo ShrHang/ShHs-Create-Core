@@ -133,7 +133,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
         moveToTopNextTick = true;
         syncJEI(true);
         requestStatus();
-        PacketDistributor.sendToServer(new PortableStockRequestPacket(menu.networkId));
+        PacketDistributor.sendToServer(new RemoteStockRequestPacket(menu.networkId));
     }
 
     @Override
@@ -189,7 +189,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
         }
 
         if (snapshot == null || snapshot.ticksSinceLastUpdate() > 15) {
-            PacketDistributor.sendToServer(new PortableStockRequestPacket(menu.networkId));
+            PacketDistributor.sendToServer(new RemoteStockRequestPacket(menu.networkId));
         }
         if (snapshot == null || snapshot.isStatusStale(minecraft.level.getGameTime(), STATUS_REFRESH_INTERVAL)) {
             requestStatus();
@@ -998,14 +998,14 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
             }
             order = new PackageOrderWithCrafts(order.orderedStacks(), craftList);
         }
-        PacketDistributor.sendToServer(new PortablePackageOrderRequestPacket(
+        PacketDistributor.sendToServer(new RemotePackageOrderRequestPacket(
                 menu.networkId,
                 order,
                 addressBox.getValue()
         ));
         itemsToOrder.clear();
         recipesToOrder.clear();
-        PacketDistributor.sendToServer(new PortableStockRequestPacket(menu.networkId));
+        PacketDistributor.sendToServer(new RemoteStockRequestPacket(menu.networkId));
         successTicks = 1;
     }
 
@@ -1245,7 +1245,6 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
                         }
                     }
                     resolvedList.add(new BigItemStack(bigItemStack.stack, 1));
-                    continue ingredientLoop;
                 }
             }
         }
@@ -1304,7 +1303,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
             return;
         }
         snapshot.markStatusRequest(gameTime);
-        PacketDistributor.sendToServer(new PortableStockStatusRequestPacket(menu.networkId));
+        PacketDistributor.sendToServer(new RemoteStockStatusRequestPacket(menu.networkId));
     }
 
     private enum HoveredArea {

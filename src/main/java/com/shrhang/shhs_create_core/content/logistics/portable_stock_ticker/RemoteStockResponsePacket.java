@@ -14,14 +14,14 @@ import java.util.UUID;
 
 import static com.shrhang.shhs_create_core.ShHsCreateCore.rl;
 
-public record PortableStockResponsePacket(UUID networkId, boolean lastPacket, List<BigItemStack> items) implements CustomPacketPayload {
-    public static final Type<PortableStockResponsePacket> TYPE = new Type<>(rl("portable_stock_response"));
+public record RemoteStockResponsePacket(UUID networkId, boolean lastPacket, List<BigItemStack> items) implements CustomPacketPayload {
+    public static final Type<RemoteStockResponsePacket> TYPE = new Type<>(rl("portable_stock_response"));
     private static final StreamCodec<RegistryFriendlyByteBuf, UUID> UUID_CODEC = UUIDUtil.STREAM_CODEC.cast();
-    public static final StreamCodec<RegistryFriendlyByteBuf, PortableStockResponsePacket> STREAM_CODEC = StreamCodec.composite(
-            UUID_CODEC, PortableStockResponsePacket::networkId,
-            ByteBufCodecs.BOOL, PortableStockResponsePacket::lastPacket,
-            CatnipStreamCodecBuilders.list(BigItemStack.STREAM_CODEC), PortableStockResponsePacket::items,
-            PortableStockResponsePacket::new
+    public static final StreamCodec<RegistryFriendlyByteBuf, RemoteStockResponsePacket> STREAM_CODEC = StreamCodec.composite(
+            UUID_CODEC, RemoteStockResponsePacket::networkId,
+            ByteBufCodecs.BOOL, RemoteStockResponsePacket::lastPacket,
+            CatnipStreamCodecBuilders.list(BigItemStack.STREAM_CODEC), RemoteStockResponsePacket::items,
+            RemoteStockResponsePacket::new
     );
 
     @Override
@@ -29,7 +29,7 @@ public record PortableStockResponsePacket(UUID networkId, boolean lastPacket, Li
         return TYPE;
     }
 
-    public static void handle(PortableStockResponsePacket packet, IPayloadContext context) {
+    public static void handle(RemoteStockResponsePacket packet, IPayloadContext context) {
         PortableStockTickerClientData.receive(packet.networkId(), packet.items(), packet.lastPacket());
     }
 }

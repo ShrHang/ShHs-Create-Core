@@ -43,7 +43,7 @@ public class PortableStockTickerItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, @NotNull TooltipContext context, @NotNull List<Component> tooltipComponents, @NotNull TooltipFlag tooltipFlag) {
-        PortableStockTickerLink link = stack.get(ShHsComponentTypes.PORTABLE_STOCK_TICKER_LINK);
+        LogisticsNetworkLink link = stack.get(ShHsComponentTypes.LOGISTICS_NETWORK_LINK);
         if (link != null && !Screen.hasShiftDown()) {
             UUID networkId = link.networkId();
             requestStatusIfNeeded(networkId);
@@ -67,9 +67,6 @@ public class PortableStockTickerItem extends Item {
     public @NotNull InteractionResultHolder<ItemStack> use(Level level, Player player, @NotNull InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (level.isClientSide()) {
-            PortableStockTickerLink link = stack.get(ShHsComponentTypes.PORTABLE_STOCK_TICKER_LINK);
-            if (!player.isCrouching() && link != null)
-                requestStatusIfNeeded(link.networkId());
             return InteractionResultHolder.pass(stack);
         }
 
@@ -104,12 +101,12 @@ public class PortableStockTickerItem extends Item {
             return false;
         }
 
-        stack.set(ShHsComponentTypes.PORTABLE_STOCK_TICKER_LINK, new PortableStockTickerLink(networkId));
+        stack.set(ShHsComponentTypes.LOGISTICS_NETWORK_LINK, new LogisticsNetworkLink(networkId));
         return true;
     }
 
     public static boolean tryToOpenMenu(Player player, ItemStack stack) {
-        PortableStockTickerLink link = stack.get(ShHsComponentTypes.PORTABLE_STOCK_TICKER_LINK);
+        LogisticsNetworkLink link = stack.get(ShHsComponentTypes.LOGISTICS_NETWORK_LINK);
         if (link == null) {
             player.displayClientMessage(textComponent("portable_stock_ticker.no_data").withStyle(ChatFormatting.DARK_GRAY), true);
             return false;
@@ -123,23 +120,35 @@ public class PortableStockTickerItem extends Item {
     }
 
     public static boolean checkLink(Player player, UUID networkId) {
-        LogisticsNetwork network = Create.LOGISTICS.logisticsNetworks.get(networkId);
-        if (network == null) {
+        PortableStockTickerClientData.NetworkStatus status = getNetworkStatus(player, networkId);
+        if (status == PortableStockTickerClientData.NetworkStatus.NO_NETWORK) {
             player.displayClientMessage(textComponent("portable_stock_ticker.no_network").withStyle(ChatFormatting.DARK_RED), true);
             return false;
         }
-
-        if (!Create.LOGISTICS.mayInteract(networkId, player)) {
+        if (status == PortableStockTickerClientData.NetworkStatus.UNLOADED) {
+            player.displayClientMessage(textComponent("portable_stock_ticker.unloaded").withStyle(ChatFormatting.DARK_RED), true);
+            return false;
+        }
+        if (status != PortableStockTickerClientData.NetworkStatus.AVAILABLE) {
             player.displayClientMessage(CreateLang.translate("logistically_linked.protected").style(ChatFormatting.DARK_RED).component(), true);
             return false;
         }
 
-        if (LogisticallyLinkedBehaviour.getAllPresent(networkId, false).isEmpty()) {
-            player.displayClientMessage(textComponent("portable_stock_ticker.unloaded").withStyle(ChatFormatting.DARK_RED), true);
-            return false;
-        }
-
         return true;
+    }
+
+    public static PortableStockTickerClientData.NetworkStatus getNetworkStatus(@NotNull Player player, UUID networkId) {
+        LogisticsNetwork network = Create.LOGISTICS.logisticsNetworks.get(networkId);
+        if (network == null) {
+            return PortableStockTickerClientData.NetworkStatus.NO_NETWORK;
+        }
+        if (!Create.LOGISTICS.mayInteract(networkId, player)) {
+            return PortableStockTickerClientData.NetworkStatus.UNKNOWN;
+        }
+        if (LogisticallyLinkedBehaviour.getAllPresent(networkId, false).isEmpty()) {
+            return PortableStockTickerClientData.NetworkStatus.UNLOADED;
+        }
+        return PortableStockTickerClientData.NetworkStatus.AVAILABLE;
     }
 
     public record PortableStockTickerMenuProvider(UUID networkId) implements MenuProvider {
@@ -168,6 +177,6 @@ public class PortableStockTickerItem extends Item {
         }
 
         snapshot.markStatusRequest(gameTime);
-        PacketDistributor.sendToServer(new PortableStockStatusRequestPacket(networkId));
+        PacketDistributor.sendToServer(new RemoteStockStatusRequestPacket(networkId));
     }
 }

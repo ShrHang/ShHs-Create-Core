@@ -7,6 +7,7 @@ import com.shrhang.shhs_create_core.content.data.ShHsAtlases;
 import com.shrhang.shhs_create_core.content.data.ShHsLang;
 import com.shrhang.shhs_create_core.content.data.ShHsRegistrate;
 import com.shrhang.shhs_create_core.content.data.ShHsTagKey;
+import com.shrhang.shhs_create_core.content.event.ClientPlayerEvents;
 import com.shrhang.shhs_create_core.content.event.MagicEventHandler;
 import com.shrhang.shhs_create_core.content.event.ShHsAttackListener;
 import com.simibubi.create.foundation.item.ItemDescription;
@@ -19,6 +20,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 
 @Mod(ShHsCreateCore.MODID)
@@ -52,6 +54,9 @@ public class ShHsCreateCore {
     public static void init(final FMLCommonSetupEvent event) {
         event.enqueueWork(ShHsInventoryIdentifiers::register);
         event.enqueueWork(ShHsOpenPipeEffects::register);
+        if (FMLEnvironment.dist.isClient()) {
+            ClientPlayerEvents.init();
+        }
         MagicEventHandler.init();
         ShHsAttackListener.init();
         Mods.CREATE_ENCHANTMENT_INDUSTRY.executeIfInstalled(() -> CreateEnchantmentIndustry::init);

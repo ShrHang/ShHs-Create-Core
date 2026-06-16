@@ -19,18 +19,18 @@ import java.util.UUID;
 
 import static com.shrhang.shhs_create_core.ShHsCreateCore.rl;
 
-public record PortableStockRequestPacket(UUID networkId) implements CustomPacketPayload {
-    public static final Type<PortableStockRequestPacket> TYPE = new Type<>(rl("portable_stock_request"));
+public record RemoteStockRequestPacket(UUID networkId) implements CustomPacketPayload {
+    public static final Type<RemoteStockRequestPacket> TYPE = new Type<>(rl("portable_stock_request"));
     private static final StreamCodec<RegistryFriendlyByteBuf, UUID> UUID_CODEC = UUIDUtil.STREAM_CODEC.cast();
-    public static final StreamCodec<RegistryFriendlyByteBuf, PortableStockRequestPacket> STREAM_CODEC =
-            UUID_CODEC.map(PortableStockRequestPacket::new, PortableStockRequestPacket::networkId);
+    public static final StreamCodec<RegistryFriendlyByteBuf, RemoteStockRequestPacket> STREAM_CODEC =
+            UUID_CODEC.map(RemoteStockRequestPacket::new, RemoteStockRequestPacket::networkId);
 
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 
-    public static void handle(PortableStockRequestPacket packet, IPayloadContext context) {
+    public static void handle(RemoteStockRequestPacket packet, IPayloadContext context) {
         if (!(context.player() instanceof ServerPlayer player))
             return;
         UUID networkId = packet.networkId();
@@ -47,7 +47,7 @@ public record PortableStockRequestPacket(UUID networkId) implements CustomPacket
         List<BigItemStack> currentList = null;
 
         if (stacks.isEmpty()) {
-            PacketDistributor.sendToPlayer(player, new PortableStockResponsePacket(networkId, true, Collections.emptyList()));
+            PacketDistributor.sendToPlayer(player, new RemoteStockResponsePacket(networkId, true, Collections.emptyList()));
             return;
         }
 
@@ -63,11 +63,11 @@ public record PortableStockRequestPacket(UUID networkId) implements CustomPacket
             if (currentList.size() < 100)
                 continue;
 
-            PacketDistributor.sendToPlayer(player, new PortableStockResponsePacket(networkId, false, currentList));
+            PacketDistributor.sendToPlayer(player, new RemoteStockResponsePacket(networkId, false, currentList));
             currentList = null;
         }
 
         if (currentList != null)
-            PacketDistributor.sendToPlayer(player, new PortableStockResponsePacket(networkId, true, currentList));
+            PacketDistributor.sendToPlayer(player, new RemoteStockResponsePacket(networkId, true, currentList));
     }
 }

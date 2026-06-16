@@ -18,14 +18,14 @@ import java.util.UUID;
 
 import static com.shrhang.shhs_create_core.ShHsCreateCore.rl;
 
-public record PortablePackageOrderRequestPacket(UUID networkId, PackageOrderWithCrafts order, String address) implements CustomPacketPayload {
-    public static final Type<PortablePackageOrderRequestPacket> TYPE = new Type<>(rl("portable_package_order_request"));
+public record RemotePackageOrderRequestPacket(UUID networkId, PackageOrderWithCrafts order, String address) implements CustomPacketPayload {
+    public static final Type<RemotePackageOrderRequestPacket> TYPE = new Type<>(rl("portable_package_order_request"));
     private static final StreamCodec<RegistryFriendlyByteBuf, UUID> UUID_CODEC = UUIDUtil.STREAM_CODEC.cast();
-    public static final StreamCodec<RegistryFriendlyByteBuf, PortablePackageOrderRequestPacket> STREAM_CODEC = StreamCodec.composite(
-            UUID_CODEC, PortablePackageOrderRequestPacket::networkId,
-            PackageOrderWithCrafts.STREAM_CODEC, PortablePackageOrderRequestPacket::order,
-            ByteBufCodecs.STRING_UTF8, PortablePackageOrderRequestPacket::address,
-            PortablePackageOrderRequestPacket::new
+    public static final StreamCodec<RegistryFriendlyByteBuf, RemotePackageOrderRequestPacket> STREAM_CODEC = StreamCodec.composite(
+            UUID_CODEC, RemotePackageOrderRequestPacket::networkId,
+            PackageOrderWithCrafts.STREAM_CODEC, RemotePackageOrderRequestPacket::order,
+            ByteBufCodecs.STRING_UTF8, RemotePackageOrderRequestPacket::address,
+            RemotePackageOrderRequestPacket::new
     );
 
     @Override
@@ -33,7 +33,7 @@ public record PortablePackageOrderRequestPacket(UUID networkId, PackageOrderWith
         return TYPE;
     }
 
-    public static void handle(PortablePackageOrderRequestPacket packet, IPayloadContext context) {
+    public static void handle(RemotePackageOrderRequestPacket packet, IPayloadContext context) {
         if (!(context.player() instanceof ServerPlayer player))
             return;
         UUID networkId = packet.networkId();
