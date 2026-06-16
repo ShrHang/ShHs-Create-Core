@@ -3,6 +3,9 @@ package com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker;
 import com.simibubi.create.Create;
 import com.shrhang.shhs_create_core.api.registries.ShHsComponentTypes;
 import com.shrhang.shhs_create_core.api.registries.ShHsMenuTypes;
+import com.simibubi.create.content.logistics.packager.InventorySummary;
+import com.simibubi.create.content.logistics.packagerLink.LogisticsManager;
+import com.simibubi.create.content.logistics.packagerLink.LogisticsNetwork;
 import com.simibubi.create.content.logistics.stockTicker.StockTickerBlockEntity;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -26,6 +29,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.UUID;
 
 import static com.shrhang.shhs_create_core.content.data.ShHsLang.textComponent;
 
@@ -100,6 +104,9 @@ public class PortableStockTickerItem extends Item {
             return false;
         }
 
+        if (!validateLinkedNetwork(player, link, true))
+            return false;
+
         BlockPos sourcePos = link.sourcePos();
         BlockEntity be = level.getBlockEntity(sourcePos);
         if (be instanceof StockTickerBlockEntity stockTicker) {
@@ -107,8 +114,6 @@ public class PortableStockTickerItem extends Item {
                 player.sendSystemMessage(textComponent("portable_stock_ticker.no_block").withStyle(ChatFormatting.DARK_RED));
                 return false;
             }
-            if (!stockTicker.behaviour.mayInteractMessage(player))
-                return false;
 
             boolean showLockOption = stockTicker.behaviour.mayAdministrate(player)
                     && Create.LOGISTICS.isLockable(stockTicker.behaviour.freqId);
@@ -121,6 +126,32 @@ public class PortableStockTickerItem extends Item {
 
         player.sendSystemMessage(textComponent("portable_stock_ticker.no_block").withStyle(ChatFormatting.DARK_RED));
         return false;
+    }
+
+    public static boolean validateLinkedNetwork(Player player, PortableStockTickerLink link, boolean reportStatus) {
+        UUID networkId = link.networkId();
+        LogisticsNetwork network = Create.LOGISTICS.logisticsNetworks.get(networkId);
+        if (network == null) {
+            player.sendSystemMessage(textComponent("portable_stock_ticker.no_network").withStyle(ChatFormatting.DARK_RED));
+            return false;
+        }
+
+        if (!Create.LOGISTICS.mayInteract(networkId, player)) {
+            player.sendSystemMessage(textComponent("portable_stock_ticker.network_locked").withStyle(ChatFormatting.DARK_RED));
+            return false;
+        }
+
+        InventorySummary summary = LogisticsManager.getSummaryOfNetwork(networkId, false);
+        if (reportStatus) {
+            player.sendSystemMessage(textComponent("portable_stock_ticker.network_status",
+                    summary.getTotalCount(),
+                    summary.contributingLinks,
+                    network.loadedLinks.size(),
+                    Create.LOGISTICS.getUnloadedLinkCount(networkId)
+            ).withStyle(ChatFormatting.DARK_GRAY));
+        }
+
+        return true;
     }
 
     public record RemoteStockKeeperRequestMenuProvider(StockTickerBlockEntity stockTickerBE) implements MenuProvider {

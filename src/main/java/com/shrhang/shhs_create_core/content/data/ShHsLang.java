@@ -66,5 +66,8 @@ public class ShHsLang {
         REGISTRATE.addRawLang(textKey("portable_stock_ticker.tooltip.linked_to"), "Connected to %s %s");
         REGISTRATE.addRawLang(textKey("portable_stock_ticker.link_success"), "Connected to Stock Ticker successfully.");
         REGISTRATE.addRawLang(textKey("portable_stock_ticker.no_data"), "Not connected to a Stock Ticker");
+        REGISTRATE.addRawLang(textKey("portable_stock_ticker.no_network"), "Linked logistics network no longer exists.");
+        REGISTRATE.addRawLang(textKey("portable_stock_ticker.network_locked"), "Linked logistics network is locked.");
+        REGISTRATE.addRawLang(textKey("portable_stock_ticker.network_status"), "Network status: %s items, %s contributing links, %s loaded links, %s unloaded links.");
     }
 }
