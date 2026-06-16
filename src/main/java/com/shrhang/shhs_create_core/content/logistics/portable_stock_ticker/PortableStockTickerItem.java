@@ -2,11 +2,13 @@ package com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker;
 
 import com.shrhang.shhs_create_core.api.registries.ShHsComponentTypes;
 import com.simibubi.create.Create;
+import com.simibubi.create.content.logistics.packagerLink.LogisticallyLinkedBehaviour;
 import com.simibubi.create.content.logistics.packagerLink.LogisticsNetwork;
 import com.simibubi.create.content.logistics.packagerLink.PackagerLinkBlockEntity;
 import com.simibubi.create.content.logistics.stockTicker.StockCheckingBlockEntity;
 import com.simibubi.create.foundation.utility.CreateLang;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -33,6 +35,8 @@ import java.util.UUID;
 import static com.shrhang.shhs_create_core.content.data.ShHsLang.textComponent;
 
 public class PortableStockTickerItem extends Item {
+    private static final int STATUS_REFRESH_INTERVAL = 20;
+
     public PortableStockTickerItem(Properties props) {
         super(props);
     }
@@ -42,10 +46,13 @@ public class PortableStockTickerItem extends Item {
         PortableStockTickerLink link = stack.get(ShHsComponentTypes.PORTABLE_STOCK_TICKER_LINK);
         if (link != null && !Screen.hasShiftDown()) {
             UUID networkId = link.networkId();
-            LogisticsNetwork network = Create.LOGISTICS.logisticsNetworks.get(networkId);
-            if (network == null) {
+            requestStatusIfNeeded(networkId);
+            PortableStockTickerClientData.Snapshot snapshot = PortableStockTickerClientData.get(networkId);
+            PortableStockTickerClientData.NetworkStatus status =
+                    snapshot == null ? PortableStockTickerClientData.NetworkStatus.UNKNOWN : snapshot.status();
+            if (status == PortableStockTickerClientData.NetworkStatus.NO_NETWORK) {
                 tooltipComponents.add(textComponent("portable_stock_ticker.no_network").withStyle(ChatFormatting.DARK_RED));
-            } else if (network.loadedLinks.isEmpty()) {
+            } else if (status == PortableStockTickerClientData.NetworkStatus.UNLOADED) {
                 tooltipComponents.add(textComponent("portable_stock_ticker.unloaded").withStyle(ChatFormatting.DARK_RED));
             } else if (Screen.hasAltDown()) {
                 tooltipComponents.add(Component.literal(String.valueOf(networkId)).withStyle(ChatFormatting.GREEN));
@@ -62,7 +69,7 @@ public class PortableStockTickerItem extends Item {
         if (level.isClientSide()) {
             PortableStockTickerLink link = stack.get(ShHsComponentTypes.PORTABLE_STOCK_TICKER_LINK);
             if (!player.isCrouching() && link != null)
-                PacketDistributor.sendToServer(new PortableStockRequestPacket(link.networkId()));
+                requestStatusIfNeeded(link.networkId());
             return InteractionResultHolder.pass(stack);
         }
 
@@ -127,7 +134,7 @@ public class PortableStockTickerItem extends Item {
             return false;
         }
 
-        if (network.loadedLinks.isEmpty()) {
+        if (LogisticallyLinkedBehaviour.getAllPresent(networkId, false).isEmpty()) {
             player.displayClientMessage(textComponent("portable_stock_ticker.unloaded").withStyle(ChatFormatting.DARK_RED), true);
             return false;
         }
@@ -146,5 +153,21 @@ public class PortableStockTickerItem extends Item {
         public @NotNull Component getDisplayName() {
             return Component.empty();
         }
+    }
+
+    private static void requestStatusIfNeeded(UUID networkId) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
+            return;
+        }
+
+        long gameTime = minecraft.level.getGameTime();
+        PortableStockTickerClientData.Snapshot snapshot = PortableStockTickerClientData.getOrCreate(networkId);
+        if (!snapshot.shouldRequestStatus(gameTime, STATUS_REFRESH_INTERVAL)) {
+            return;
+        }
+
+        snapshot.markStatusRequest(gameTime);
+        PacketDistributor.sendToServer(new PortableStockStatusRequestPacket(networkId));
     }
 }

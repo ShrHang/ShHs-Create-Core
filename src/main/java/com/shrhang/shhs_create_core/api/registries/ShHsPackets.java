@@ -3,6 +3,8 @@ package com.shrhang.shhs_create_core.api.registries;
 import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockRequestPacket;
 import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockResponsePacket;
 import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortablePackageOrderRequestPacket;
+import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockStatusPacket;
+import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockStatusRequestPacket;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
@@ -12,7 +14,9 @@ public class ShHsPackets {
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(VERSION);
         registrar.playToServer(PortableStockRequestPacket.TYPE, PortableStockRequestPacket.STREAM_CODEC, PortableStockRequestPacket::handle);
+        registrar.playToServer(PortableStockStatusRequestPacket.TYPE, PortableStockStatusRequestPacket.STREAM_CODEC, PortableStockStatusRequestPacket::handle);
         registrar.playToServer(PortablePackageOrderRequestPacket.TYPE, PortablePackageOrderRequestPacket.STREAM_CODEC, PortablePackageOrderRequestPacket::handle);
         registrar.playToClient(PortableStockResponsePacket.TYPE, PortableStockResponsePacket.STREAM_CODEC, PortableStockResponsePacket::handle);
+        registrar.playToClient(PortableStockStatusPacket.TYPE, PortableStockStatusPacket.STREAM_CODEC, PortableStockStatusPacket::handle);
     }
 }

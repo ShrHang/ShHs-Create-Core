@@ -45,7 +45,10 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Function;
 
+import static com.shrhang.shhs_create_core.content.data.ShHsLang.textComponent;
+
 public class PortableStockTickerScreen extends AbstractSimiContainerScreen<PortableStockTickerMenu> {
+    private static final int STATUS_REFRESH_INTERVAL = 15;
     private static final AllGuiTextures NUMBERS = AllGuiTextures.NUMBERS;
     private static final AllGuiTextures HEADER = AllGuiTextures.STOCK_KEEPER_REQUEST_HEADER;
     private static final AllGuiTextures BODY = AllGuiTextures.STOCK_KEEPER_REQUEST_BODY;
@@ -78,6 +81,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
     private int windowHeight;
     private int emptyTicks;
     private int successTicks;
+    private boolean invalidStatusHandled;
 
     public PortableStockTickerScreen(PortableStockTickerMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -128,6 +132,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
         refreshSearchNextTick = true;
         moveToTopNextTick = true;
         syncJEI(true);
+        requestStatus();
         PacketDistributor.sendToServer(new PortableStockRequestPacket(menu.networkId));
     }
 
@@ -137,6 +142,22 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
         PortableStockTickerClientData.Snapshot snapshot = PortableStockTickerClientData.get(menu.networkId);
         if (snapshot != null) {
             snapshot.tick();
+            if (!invalidStatusHandled && snapshot.status() == PortableStockTickerClientData.NetworkStatus.NO_NETWORK) {
+                invalidStatusHandled = true;
+                if (minecraft != null && minecraft.player != null) {
+                    minecraft.player.displayClientMessage(textComponent("portable_stock_ticker.no_network").withStyle(ChatFormatting.DARK_RED), true);
+                }
+                onClose();
+                return;
+            }
+            if (!invalidStatusHandled && snapshot.status() == PortableStockTickerClientData.NetworkStatus.UNLOADED) {
+                invalidStatusHandled = true;
+                if (minecraft != null && minecraft.player != null) {
+                    minecraft.player.displayClientMessage(textComponent("portable_stock_ticker.unloaded").withStyle(ChatFormatting.DARK_RED), true);
+                }
+                onClose();
+                return;
+            }
         }
 
         if (shouldSyncFromJEI()) {
@@ -169,6 +190,9 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
 
         if (snapshot == null || snapshot.ticksSinceLastUpdate() > 15) {
             PacketDistributor.sendToServer(new PortableStockRequestPacket(menu.networkId));
+        }
+        if (snapshot == null || snapshot.isStatusStale(minecraft.level.getGameTime(), STATUS_REFRESH_INTERVAL)) {
+            requestStatus();
         }
     }
 
@@ -1267,6 +1291,20 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
                 256,
                 256
         );
+    }
+
+    private void requestStatus() {
+        if (minecraft == null || minecraft.level == null) {
+            return;
+        }
+
+        long gameTime = minecraft.level.getGameTime();
+        PortableStockTickerClientData.Snapshot snapshot = PortableStockTickerClientData.getOrCreate(menu.networkId);
+        if (!snapshot.shouldRequestStatus(gameTime, STATUS_REFRESH_INTERVAL)) {
+            return;
+        }
+        snapshot.markStatusRequest(gameTime);
+        PacketDistributor.sendToServer(new PortableStockStatusRequestPacket(menu.networkId));
     }
 
     private enum HoveredArea {
