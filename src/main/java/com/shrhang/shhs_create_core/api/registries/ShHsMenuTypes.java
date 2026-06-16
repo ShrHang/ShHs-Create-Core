@@ -1,6 +1,7 @@
 package com.shrhang.shhs_create_core.api.registries;
 
 import com.shrhang.shhs_create_core.ShHsCreateCore;
+import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerMenu;
 import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.RemoteStockKeeperRequestMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
@@ -17,6 +18,12 @@ public class ShHsMenuTypes {
             MENUS.register("remote_stock_keeper_request", () ->
                     IMenuTypeExtension.create((windowId, inv, data) ->
                             new RemoteStockKeeperRequestMenu(ShHsMenuTypes.REMOTE_STOCK_KEEPER_REQUEST.get(), windowId, inv, data))
+            );
+
+    public static final DeferredHolder<MenuType<?>, MenuType<PortableStockTickerMenu>> PORTABLE_STOCK_TICKER =
+            MENUS.register("portable_stock_ticker", () ->
+                    IMenuTypeExtension.create((windowId, inv, data) ->
+                            new PortableStockTickerMenu(ShHsMenuTypes.PORTABLE_STOCK_TICKER.get(), windowId, inv, data))
             );
 
     public static void register(IEventBus bus) {

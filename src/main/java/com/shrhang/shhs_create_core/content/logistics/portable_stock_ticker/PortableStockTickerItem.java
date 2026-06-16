@@ -44,10 +44,8 @@ public class PortableStockTickerItem extends Item {
         PortableStockTickerLink link = stack.get(ShHsComponentTypes.PORTABLE_STOCK_TICKER_LINK);
         Level clientLevel = Minecraft.getInstance().level;
         if (link != null && !Screen.hasShiftDown() && clientLevel != null) {
-            if (!clientLevel.dimension().equals(link.dimension()))
-                tooltipComponents.add(textComponent("portable_stock_ticker.different_dimension"
-                ).withStyle(ChatFormatting.DARK_RED));
-            else if (!(clientLevel.getBlockEntity(link.sourcePos()) instanceof StockTickerBlockEntity))
+            if (clientLevel.dimension().equals(link.dimension())
+                    && !(clientLevel.getBlockEntity(link.sourcePos()) instanceof StockTickerBlockEntity))
                 tooltipComponents.add(textComponent("portable_stock_ticker.no_block"
                 ).withStyle(ChatFormatting.DARK_RED));
             else
@@ -104,33 +102,11 @@ public class PortableStockTickerItem extends Item {
             return false;
         }
 
-        if (!level.dimension().equals(link.dimension())) {
-            player.sendSystemMessage(textComponent("portable_stock_ticker.different_dimension").withStyle(ChatFormatting.DARK_RED));
-            return false;
-        }
-
         if (!validateLinkedNetwork(player, link, true))
             return false;
 
-        BlockPos sourcePos = link.sourcePos();
-        BlockEntity be = level.getBlockEntity(sourcePos);
-        if (be instanceof StockTickerBlockEntity stockTicker) {
-            if (!stockTicker.behaviour.freqId.equals(link.networkId())) {
-                player.sendSystemMessage(textComponent("portable_stock_ticker.no_block").withStyle(ChatFormatting.DARK_RED));
-                return false;
-            }
-
-            boolean showLockOption = stockTicker.behaviour.mayAdministrate(player)
-                    && Create.LOGISTICS.isLockable(stockTicker.behaviour.freqId);
-            boolean isCurrentlyLocked = Create.LOGISTICS.isLocked(stockTicker.behaviour.freqId);
-
-            player.openMenu(new RemoteStockKeeperRequestMenuProvider(stockTicker), buf ->
-                    buf.writeBoolean(showLockOption).writeBoolean(isCurrentlyLocked).writeBlockPos(sourcePos));
-            return true;
-        }
-
-        player.sendSystemMessage(textComponent("portable_stock_ticker.no_block").withStyle(ChatFormatting.DARK_RED));
-        return false;
+        player.openMenu(new PortableStockTickerMenuProvider(link.networkId()), buf -> buf.writeUUID(link.networkId()));
+        return true;
     }
 
     public static boolean validateLinkedNetwork(Player player, PortableStockTickerLink link, boolean reportStatus) {
@@ -163,6 +139,19 @@ public class PortableStockTickerItem extends Item {
 
         public AbstractContainerMenu createMenu(int pContainerId, @NotNull Inventory pPlayerInventory, @NotNull Player pPlayer) {
             return new RemoteStockKeeperRequestMenu(ShHsMenuTypes.REMOTE_STOCK_KEEPER_REQUEST.get(), pContainerId, pPlayerInventory, stockTickerBE);
+        }
+
+        @Override
+        public @NotNull Component getDisplayName() {
+            return Component.empty();
+        }
+    }
+
+    public record PortableStockTickerMenuProvider(UUID networkId) implements MenuProvider {
+
+        @Override
+        public AbstractContainerMenu createMenu(int containerId, @NotNull Inventory playerInventory, @NotNull Player player) {
+            return PortableStockTickerMenu.create(containerId, playerInventory, networkId);
         }
 
         @Override

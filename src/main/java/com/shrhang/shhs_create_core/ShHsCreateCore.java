@@ -9,6 +9,7 @@ import com.shrhang.shhs_create_core.content.data.ShHsRegistrate;
 import com.shrhang.shhs_create_core.content.data.ShHsTagKey;
 import com.shrhang.shhs_create_core.content.event.MagicEventHandler;
 import com.shrhang.shhs_create_core.content.event.ShHsAttackListener;
+import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerScreen;
 import com.simibubi.create.content.logistics.stockTicker.StockKeeperRequestScreen;
 import com.simibubi.create.foundation.item.ItemDescription;
 import com.simibubi.create.foundation.item.KineticStats;
@@ -69,6 +70,7 @@ public class ShHsCreateCore {
 
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(ShHsMenuTypes.REMOTE_STOCK_KEEPER_REQUEST.get(), StockKeeperRequestScreen::new);
+        event.register(ShHsMenuTypes.PORTABLE_STOCK_TICKER.get(), PortableStockTickerScreen::new);
     }
 
     private static void gatherData() {
