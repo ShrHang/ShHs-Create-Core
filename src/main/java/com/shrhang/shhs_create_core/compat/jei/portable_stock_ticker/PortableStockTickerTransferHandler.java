@@ -69,14 +69,13 @@ public class PortableStockTickerTransferHandler implements IUniversalRecipeTrans
         }
         MutableObject<IRecipeTransferError> result = new MutableObject<>();
         if (level.isClientSide()) {
-            //noinspection unchecked
-            result.setValue(transferRecipeOnClient(container, (RecipeHolder<Recipe<?>>) recipeHolder, recipeSlots, player, maxTransfer, doTransfer));
+            result.setValue(transferRecipeOnClient(container, recipeHolder, recipeSlots, player, maxTransfer, doTransfer));
         }
         return result.getValue();
     }
 
     private @Nullable IRecipeTransferError transferRecipeOnClient(PortableStockTickerMenu container,
-                                                                  RecipeHolder<Recipe<?>> recipeHolder,
+                                                                  RecipeHolder<?> recipeHolder,
                                                                   IRecipeSlotsView recipeSlots,
                                                                   Player player,
                                                                   boolean maxTransfer,
