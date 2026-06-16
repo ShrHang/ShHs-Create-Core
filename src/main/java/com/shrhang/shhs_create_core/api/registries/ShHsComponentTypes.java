@@ -2,6 +2,7 @@ package com.shrhang.shhs_create_core.api.registries;
 
 import com.shrhang.shhs_create_core.ShHsCreateCore;
 import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.LvPosRecord;
+import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerLink;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.neoforged.bus.api.IEventBus;
@@ -18,6 +19,13 @@ public class ShHsComponentTypes {
             builder -> builder
                     .persistent(LvPosRecord.CODEC)
                     .networkSynchronized(LvPosRecord.STREAM_CODEC)
+    );
+
+    public static final DataComponentType<PortableStockTickerLink> PORTABLE_STOCK_TICKER_LINK = register(
+            "link",
+            builder -> builder
+                    .persistent(PortableStockTickerLink.CODEC)
+                    .networkSynchronized(PortableStockTickerLink.STREAM_CODEC)
     );
 
     private static <T> DataComponentType<T> register(String name, UnaryOperator<DataComponentType.Builder<T>> builder) {

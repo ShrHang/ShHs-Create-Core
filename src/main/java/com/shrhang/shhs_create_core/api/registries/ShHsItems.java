@@ -3,7 +3,6 @@ package com.shrhang.shhs_create_core.api.registries;
 import com.shrhang.shhs_create_core.ShHsCreateCore;
 import com.shrhang.shhs_create_core.content.data.ShHsRegistrate;
 import com.shrhang.shhs_create_core.content.hostility.EmptyTraitItem;
-import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.LvPosRecord;
 import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerItem;
 import com.tterrag.registrate.util.entry.ItemEntry;
 
@@ -12,9 +11,7 @@ public class ShHsItems {
 
     public static final ItemEntry<PortableStockTickerItem> PORTABLE_STOCK_TICKER =
             REGISTRATE.item("portable_stock_ticker", PortableStockTickerItem::new)
-                    .properties(p -> p
-                            .component(ShHsComponentTypes.LV_POS, LvPosRecord.EMPTY)
-                            .stacksTo(1))
+                    .properties(p -> p.stacksTo(1))
                     .model((ctx , prov) -> {})
                     .lang("Portable Stock Ticker")
                     .tooltipSummary("Allows you to connect to a _Stock Ticker_ and remotely view its stock information.")

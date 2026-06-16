@@ -1,5 +1,6 @@
 package com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker;
 
+import com.simibubi.create.Create;
 import com.shrhang.shhs_create_core.api.registries.ShHsComponentTypes;
 import com.shrhang.shhs_create_core.api.registries.ShHsMenuTypes;
 import com.simibubi.create.content.logistics.stockTicker.StockTickerBlockEntity;
@@ -8,7 +9,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -36,18 +36,19 @@ public class PortableStockTickerItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, Item.@NotNull TooltipContext context, @NotNull List<Component> tooltipComponents, @NotNull TooltipFlag tooltipFlag) {
-        LvPosRecord record = stack.getOrDefault(ShHsComponentTypes.LV_POS, LvPosRecord.EMPTY);
-        if (record != LvPosRecord.EMPTY && !Screen.hasShiftDown() && Minecraft.getInstance().level != null) {
-            if (Minecraft.getInstance().level.dimension() != record.dimension())
+        PortableStockTickerLink link = stack.get(ShHsComponentTypes.PORTABLE_STOCK_TICKER_LINK);
+        Level clientLevel = Minecraft.getInstance().level;
+        if (link != null && !Screen.hasShiftDown() && clientLevel != null) {
+            if (!clientLevel.dimension().equals(link.dimension()))
                 tooltipComponents.add(textComponent("portable_stock_ticker.different_dimension"
                 ).withStyle(ChatFormatting.DARK_RED));
-            else if (!(Minecraft.getInstance().level.getBlockEntity(record.pos()) instanceof StockTickerBlockEntity))
+            else if (!(clientLevel.getBlockEntity(link.sourcePos()) instanceof StockTickerBlockEntity))
                 tooltipComponents.add(textComponent("portable_stock_ticker.no_block"
                 ).withStyle(ChatFormatting.DARK_RED));
             else
                 tooltipComponents.add(textComponent("portable_stock_ticker.tooltip.linked_to",
-                        Component.literal(record.dimension().location().toString()).withStyle(ChatFormatting.GREEN),
-                        Component.literal(record.pos().toShortString()).withStyle(ChatFormatting.GREEN)
+                        Component.literal(link.dimension().location().toString()).withStyle(ChatFormatting.GREEN),
+                        Component.literal(link.sourcePos().toShortString()).withStyle(ChatFormatting.GREEN)
                 ).withStyle(ChatFormatting.DARK_GREEN));
         }
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
@@ -79,36 +80,42 @@ public class PortableStockTickerItem extends Item {
 
     public static boolean linkTo(ItemStack stack, Level level, BlockPos pos) {
         BlockEntity be = level.getBlockEntity(pos);
-        if (be instanceof StockTickerBlockEntity) {
-            LvPosRecord newRecord = new LvPosRecord(level.dimension(), pos);
-            stack.set(ShHsComponentTypes.LV_POS, newRecord);
+        if (be instanceof StockTickerBlockEntity stockTicker) {
+            PortableStockTickerLink newLink = new PortableStockTickerLink(stockTicker.behaviour.freqId, level.dimension(), pos);
+            stack.set(ShHsComponentTypes.PORTABLE_STOCK_TICKER_LINK, newLink);
             return true;
         }
         return false;
     }
 
     public static boolean tryToOpenMenu(Level level, Player player, ItemStack stack) {
-        LvPosRecord record = stack.get(ShHsComponentTypes.LV_POS);
-        if (record == LvPosRecord.EMPTY || record == null) {
+        PortableStockTickerLink link = stack.get(ShHsComponentTypes.PORTABLE_STOCK_TICKER_LINK);
+        if (link == null) {
             player.sendSystemMessage(textComponent("portable_stock_ticker.no_data").withStyle(ChatFormatting.DARK_GRAY));
             return false;
         }
 
-        ResourceKey<Level> targetDimension = record.dimension();
-        BlockPos pos = record.pos();
-
-        if (level.dimension() != targetDimension) {
+        if (!level.dimension().equals(link.dimension())) {
             player.sendSystemMessage(textComponent("portable_stock_ticker.different_dimension").withStyle(ChatFormatting.DARK_RED));
             return false;
         }
 
-        if (Minecraft.getInstance().level == null)
-            return false;
+        BlockPos sourcePos = link.sourcePos();
+        BlockEntity be = level.getBlockEntity(sourcePos);
+        if (be instanceof StockTickerBlockEntity stockTicker) {
+            if (!stockTicker.behaviour.freqId.equals(link.networkId())) {
+                player.sendSystemMessage(textComponent("portable_stock_ticker.no_block").withStyle(ChatFormatting.DARK_RED));
+                return false;
+            }
+            if (!stockTicker.behaviour.mayInteractMessage(player))
+                return false;
 
-        BlockEntity be = Minecraft.getInstance().level.getBlockEntity(pos);
-        if (be instanceof StockTickerBlockEntity) {
-            player.openMenu(new RemoteStockKeeperRequestMenuProvider((StockTickerBlockEntity) be), buf ->
-                    buf.writeBoolean(true).writeBoolean(false).writeBlockPos(pos));
+            boolean showLockOption = stockTicker.behaviour.mayAdministrate(player)
+                    && Create.LOGISTICS.isLockable(stockTicker.behaviour.freqId);
+            boolean isCurrentlyLocked = Create.LOGISTICS.isLocked(stockTicker.behaviour.freqId);
+
+            player.openMenu(new RemoteStockKeeperRequestMenuProvider(stockTicker), buf ->
+                    buf.writeBoolean(showLockOption).writeBoolean(isCurrentlyLocked).writeBlockPos(sourcePos));
             return true;
         }
 
