@@ -3,8 +3,8 @@
 	"credit": "Made with Blockbench",
 	"parent": "handheld",
 	"textures": {
-		"3": "create_logistics_by_shh:item/portable_stock_ticker",
-		"particle": "create_logistics_by_shh:item/portable_stock_ticker"
+		"3": "shhs_create_core:item/portable_stock_ticker",
+		"particle": "shhs_create_core:item/portable_stock_ticker"
 	},
 	"elements": [
 		{

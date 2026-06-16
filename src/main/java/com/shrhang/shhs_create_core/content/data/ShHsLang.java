@@ -53,11 +53,18 @@ public class ShHsLang {
         REGISTRATE.addRawLang(textKey("no_enough_spell_tolerance"), "At least %s Spell Tolerance is required to cast this spell.");
         REGISTRATE.addRawLang(textKey("empty_trait_no_target"), "No valid target in sight.");
         REGISTRATE.addRawLang(textKey("empty_trait_no_traits"), "No traits can be extracted from this target.");
+
         REGISTRATE.addRawLang(titleKey("container.endchest"), "%s's %s");
         REGISTRATE.addRawLang(tooltipKey("brass_ender_chest.header"), "Ender Chest Info");
         REGISTRATE.addRawLang(tooltipKey("brass_ender_chest.owner"), "Owner: %s");
         REGISTRATE.addRawLang(tooltipKey("brass_ender_chest.owner_unknown"), "Cannot find owner %s");
         REGISTRATE.addRawLang(tooltipKey("brass_ender_chest.locked"), "Locked: Only the owner can open.");
         REGISTRATE.addRawLang(tooltipKey("brass_ender_chest.unlocked"), "Unlocked: Anyone can open.");
+
+        REGISTRATE.addRawLang(textKey("portable_stock_ticker.different_dimension"), "Stock Ticker is in different dimension.");
+        REGISTRATE.addRawLang(textKey("portable_stock_ticker.no_block"), "Cannot find the Stock Ticker");
+        REGISTRATE.addRawLang(textKey("portable_stock_ticker.tooltip.linked_to"), "Connected to %s %s");
+        REGISTRATE.addRawLang(textKey("portable_stock_ticker.link_success"), "Connected to Stock Ticker successfully.");
+        REGISTRATE.addRawLang(textKey("portable_stock_ticker.no_data"), "Not connected to a Stock Ticker");
     }
 }

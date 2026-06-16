@@ -9,6 +9,7 @@ import com.shrhang.shhs_create_core.content.data.ShHsRegistrate;
 import com.shrhang.shhs_create_core.content.data.ShHsTagKey;
 import com.shrhang.shhs_create_core.content.event.MagicEventHandler;
 import com.shrhang.shhs_create_core.content.event.ShHsAttackListener;
+import com.simibubi.create.content.logistics.stockTicker.StockKeeperRequestScreen;
 import com.simibubi.create.foundation.item.ItemDescription;
 import com.simibubi.create.foundation.item.KineticStats;
 import com.simibubi.create.foundation.item.TooltipModifier;
@@ -19,6 +20,8 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 
 @Mod(ShHsCreateCore.MODID)
@@ -34,15 +37,21 @@ public class ShHsCreateCore {
         gatherData();
         ShHsConfig.init(modContainer);
 
-        ShHsBlockEntityTypes.register();
         ShHsBlocks.register();
-        ShHsCreativeTabs.register(modEventBus);
+        ShHsBlockEntityTypes.register();
         ShHsItems.register();
         ShHsFluids.register();
         ShHsTraits.register();
 
+        ShHsComponentTypes.register(modEventBus);
+        ShHsCreativeTabs.register(modEventBus);
+        ShHsMenuTypes.register(modEventBus);
+
         modEventBus.addListener(ShHsCreateCore::init);
         modEventBus.addListener(ShHsCreateCore::modifyEntityAttributes);
+        if (FMLEnvironment.dist.isClient()) {
+            modEventBus.addListener(ShHsCreateCore::registerScreens);
+        }
     }
 
     public static void init(final FMLCommonSetupEvent event) {
@@ -55,6 +64,10 @@ public class ShHsCreateCore {
 
     public static void modifyEntityAttributes(final EntityAttributeModificationEvent event) {
         event.getTypes().forEach(entityType -> event.add(entityType, CoPAttrs.REALITY));
+    }
+
+    public static void registerScreens(RegisterMenuScreensEvent event) {
+        event.register(ShHsMenuTypes.REMOTE_STOCK_KEEPER_REQUEST.get(), StockKeeperRequestScreen::new);
     }
 
     private static void gatherData() {

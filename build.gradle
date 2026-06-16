@@ -130,8 +130,10 @@ repositories {
             includeGroup "dev.latvian.apps"
         }
     } // KubeJS
-//    maven { url "https://maven.dragons.plus/releases" } // DragonsPlusMinecraft Maven
-//    maven { url "https://maven.fallenbreath.me/releases" } // Conditional Mixin
+
+    maven { url "https://maven.dragons.plus/releases" } // DragonsPlusMinecraft Maven
+    maven { url "https://maven.fallenbreath.me/releases" } // Conditional Mixin
+
 }
 
 dependencies {
@@ -144,8 +146,10 @@ dependencies {
     compileOnly("dev.engine-room.flywheel:flywheel-neoforge-api-$minecraft_version:$flywheel_version")
     runtimeOnly("dev.engine-room.flywheel:flywheel-neoforge-$minecraft_version:$flywheel_version")
 
-    implementation "maven.modrinth:create-dragons-plus:${create_dragons_plus_version}"
-    compileOnly "maven.modrinth:create-enchantment-industry:${create_enchantment_industry_version}"
+//    implementation "maven.modrinth:create-dragons-plus:${create_dragons_plus_version}"
+    implementation("plus.dragons.createdragonsplus:create-dragons-plus-${minecraft_version}:${create_dragons_plus_version}")
+//    compileOnly "maven.modrinth:create-enchantment-industry:${create_enchantment_industry_version}"
+    implementation("plus.dragons.createenchantmentindustry:create-enchantment-industry-${minecraft_version}:${create_enchantment_industry_version}")
 
     implementation "maven.modrinth:create-wizardry:YoUVUmtF"
 
