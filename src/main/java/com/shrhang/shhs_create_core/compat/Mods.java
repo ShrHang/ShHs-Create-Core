@@ -10,9 +10,7 @@ import java.util.function.Supplier;
  * 这里包含了除Create, Iron's Spells & Spellbooks, L2Hostility 以外的模组的兼容。
  */
 public enum Mods {
-    CREATE_ENCHANTMENT_INDUSTRY,
-    JEI
-    ;
+    CREATE_ENCHANTMENT_INDUSTRY;
 
     private final String id;
 

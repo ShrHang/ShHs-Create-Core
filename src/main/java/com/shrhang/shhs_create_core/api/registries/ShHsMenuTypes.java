@@ -2,9 +2,12 @@ package com.shrhang.shhs_create_core.api.registries;
 
 import com.shrhang.shhs_create_core.ShHsCreateCore;
 import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerMenu;
+import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerScreen;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -19,7 +22,12 @@ public class ShHsMenuTypes {
                             new PortableStockTickerMenu(ShHsMenuTypes.PORTABLE_STOCK_TICKER.get(), windowId, inv, data))
             );
 
+    private static void registerScreens(RegisterMenuScreensEvent event) {
+        event.register(ShHsMenuTypes.PORTABLE_STOCK_TICKER.get(), PortableStockTickerScreen::new);
+    }
+
     public static void register(IEventBus bus) {
         MENUS.register(bus);
+        if (FMLEnvironment.dist.isClient()) bus.addListener(ShHsMenuTypes::registerScreens);
     }
 }

@@ -504,7 +504,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
 
     private void renderItemEntry(GuiGraphics graphics, BigItemStack entry, boolean isHovered, boolean renderingOrders) {
         int customCount = entry.count;
-        ItemStack stackWithCount = entry.stack.copyWithCount(Math.max(1, Math.min(entry.stack.getMaxStackSize(), customCount)));
+        ItemStack stackWithCount = entry.stack.copyWithCount(Math.clamp(customCount, 1, entry.stack.getMaxStackSize()));
 
         if (!renderingOrders) {
             BigItemStack order = getOrderForItem(entry.stack);

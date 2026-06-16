@@ -1,0 +1,16 @@
+{
+  "type": "create:item_application",
+  "ingredients": [
+    {
+      "item": "create:brass_casing"
+    },
+    {
+      "item": "minecraft:ender_chest"
+    }
+  ],
+  "results": [
+    {
+      "id": "shhs_create_core:brass_ender_chest"
+    }
+  ]
+}
