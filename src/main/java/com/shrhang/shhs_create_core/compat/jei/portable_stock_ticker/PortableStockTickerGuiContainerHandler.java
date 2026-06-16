@@ -1,4 +1,4 @@
-package com.shrhang.shhs_create_core.compat.jei;
+package com.shrhang.shhs_create_core.compat.jei.portable_stock_ticker;
 
 import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerScreen;
 import mezz.jei.api.gui.builder.IClickableIngredientFactory;

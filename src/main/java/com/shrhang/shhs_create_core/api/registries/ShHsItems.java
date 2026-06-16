@@ -1,14 +1,12 @@
 package com.shrhang.shhs_create_core.api.registries;
 
-import com.shrhang.shhs_create_core.ShHsCreateCore;
-import com.shrhang.shhs_create_core.content.data.ShHsRegistrate;
 import com.shrhang.shhs_create_core.content.hostility.EmptyTraitItem;
 import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerItem;
 import com.tterrag.registrate.util.entry.ItemEntry;
 
-public class ShHsItems {
-    private static final ShHsRegistrate REGISTRATE = ShHsCreateCore.REGISTRATE;
+import static com.shrhang.shhs_create_core.ShHsCreateCore.REGISTRATE;
 
+public class ShHsItems {
     public static final ItemEntry<PortableStockTickerItem> PORTABLE_STOCK_TICKER =
             REGISTRATE.item("portable_stock_ticker", PortableStockTickerItem::new)
                     .properties(p -> p.stacksTo(1))

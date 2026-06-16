@@ -2,12 +2,11 @@ package com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker;
 
 import com.shrhang.shhs_create_core.api.registries.ShHsComponentTypes;
 import com.simibubi.create.Create;
-import com.simibubi.create.content.logistics.packager.InventorySummary;
-import com.simibubi.create.content.logistics.packagerLink.LogisticsManager;
 import com.simibubi.create.content.logistics.packagerLink.LogisticsNetwork;
-import com.simibubi.create.content.logistics.stockTicker.StockTickerBlockEntity;
+import com.simibubi.create.content.logistics.packagerLink.PackagerLinkBlockEntity;
+import com.simibubi.create.content.logistics.stockTicker.StockCheckingBlockEntity;
+import com.simibubi.create.foundation.utility.CreateLang;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -39,27 +38,27 @@ public class PortableStockTickerItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.@NotNull TooltipContext context, @NotNull List<Component> tooltipComponents, @NotNull TooltipFlag tooltipFlag) {
+    public void appendHoverText(ItemStack stack, @NotNull TooltipContext context, @NotNull List<Component> tooltipComponents, @NotNull TooltipFlag tooltipFlag) {
         PortableStockTickerLink link = stack.get(ShHsComponentTypes.PORTABLE_STOCK_TICKER_LINK);
-        Level clientLevel = Minecraft.getInstance().level;
-        if (link != null && !Screen.hasShiftDown() && clientLevel != null) {
-//            if (clientLevel.dimension().equals(link.dimension())
-//                    && !(clientLevel.getBlockEntity(link.sourcePos()) instanceof StockTickerBlockEntity))
-//                tooltipComponents.add(textComponent("portable_stock_ticker.no_block"
-//                ).withStyle(ChatFormatting.DARK_RED));
-//            else
-                tooltipComponents.add(textComponent("portable_stock_ticker.tooltip.linked_to",
-                        Component.literal(String.valueOf(link.networkId())).withStyle(ChatFormatting.GREEN)
-                ).withStyle(ChatFormatting.DARK_GREEN));
+        if (link != null && !Screen.hasShiftDown()) {
+            UUID networkId = link.networkId();
+            LogisticsNetwork network = Create.LOGISTICS.logisticsNetworks.get(networkId);
+            if (network == null) {
+                tooltipComponents.add(textComponent("portable_stock_ticker.no_network").withStyle(ChatFormatting.DARK_RED));
+            } else if (network.loadedLinks.isEmpty()) {
+                tooltipComponents.add(textComponent("portable_stock_ticker.unloaded").withStyle(ChatFormatting.DARK_RED));
+            } else if (Screen.hasAltDown()) {
+                tooltipComponents.add(Component.literal(String.valueOf(networkId)).withStyle(ChatFormatting.GREEN));
+            } else {
+                tooltipComponents.add(textComponent("portable_stock_ticker.tooltip.linked").withStyle(ChatFormatting.DARK_GREEN));
+            }
         }
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
     }
 
     @Override
     public @NotNull InteractionResultHolder<ItemStack> use(Level level, Player player, @NotNull InteractionHand hand) {
-
         ItemStack stack = player.getItemInHand(hand);
-
         if (level.isClientSide()) {
             PortableStockTickerLink link = stack.get(ShHsComponentTypes.PORTABLE_STOCK_TICKER_LINK);
             if (!player.isCrouching() && link != null)
@@ -69,65 +68,68 @@ public class PortableStockTickerItem extends Item {
 
         if (player.isCrouching()) {
             BlockHitResult blockHitResult = (BlockHitResult) player.pick(player.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE), 0.0f, false);
-            BlockPos blockPos = blockHitResult.getBlockPos();
-            InteractionResult result = InteractionResult.PASS;
-            if (linkTo(stack, level, blockPos)) {
-                player.sendSystemMessage(textComponent("portable_stock_ticker.link_success").withStyle(ChatFormatting.GREEN));
-                result = InteractionResult.SUCCESS;
+            if (linkTo(player, stack, level, blockHitResult.getBlockPos())) {
+                player.displayClientMessage(CreateLang.translate("logistically_linked.tuned").component(), true);
+                return new InteractionResultHolder<>(InteractionResult.SUCCESS, stack);
             }
-            return new InteractionResultHolder<>(result, stack);
+            return new InteractionResultHolder<>(InteractionResult.PASS, stack);
         }
 
-        InteractionResult result = tryToOpenMenu(level, player, stack) ? InteractionResult.SUCCESS : InteractionResult.PASS;
+        InteractionResult result = tryToOpenMenu(player, stack) ? InteractionResult.SUCCESS : InteractionResult.PASS;
         return new InteractionResultHolder<>(result, stack);
 
     }
 
-    public static boolean linkTo(ItemStack stack, Level level, BlockPos pos) {
+    public static boolean linkTo(Player player, ItemStack stack, Level level, BlockPos pos) {
         BlockEntity be = level.getBlockEntity(pos);
-        if (be instanceof StockTickerBlockEntity stockTicker) {
-            PortableStockTickerLink newLink = new PortableStockTickerLink(stockTicker.behaviour.freqId);
-            stack.set(ShHsComponentTypes.PORTABLE_STOCK_TICKER_LINK, newLink);
-            return true;
-        }
-        return false;
-    }
 
-    public static boolean tryToOpenMenu(Level level, Player player, ItemStack stack) {
-        PortableStockTickerLink link = stack.get(ShHsComponentTypes.PORTABLE_STOCK_TICKER_LINK);
-        if (link == null) {
-            player.sendSystemMessage(textComponent("portable_stock_ticker.no_data").withStyle(ChatFormatting.DARK_GRAY));
-            return false;
-        }
-
-        if (!validateLinkedNetwork(player, link, true))
-            return false;
-
-        player.openMenu(new PortableStockTickerMenuProvider(link.networkId()), buf -> buf.writeUUID(link.networkId()));
-        return true;
-    }
-
-    public static boolean validateLinkedNetwork(Player player, PortableStockTickerLink link, boolean reportStatus) {
-        UUID networkId = link.networkId();
-        LogisticsNetwork network = Create.LOGISTICS.logisticsNetworks.get(networkId);
-        if (network == null) {
-            player.sendSystemMessage(textComponent("portable_stock_ticker.no_network").withStyle(ChatFormatting.DARK_RED));
+        UUID networkId;
+        if (be instanceof StockCheckingBlockEntity stockCheckingBE) {
+            networkId = stockCheckingBE.behaviour.freqId;
+        } else if (be instanceof PackagerLinkBlockEntity packagerLinkBE) {
+            networkId = packagerLinkBE.behaviour.freqId;
+        } else {
             return false;
         }
 
         if (!Create.LOGISTICS.mayInteract(networkId, player)) {
-            player.sendSystemMessage(textComponent("portable_stock_ticker.network_locked").withStyle(ChatFormatting.DARK_RED));
+            player.displayClientMessage(CreateLang.translate("logistically_linked.protected").style(ChatFormatting.DARK_RED).component(), true);
             return false;
         }
 
-        InventorySummary summary = LogisticsManager.getSummaryOfNetwork(networkId, false);
-        if (reportStatus) {
-            player.sendSystemMessage(textComponent("portable_stock_ticker.network_status",
-                    summary.getTotalCount(),
-                    summary.contributingLinks,
-                    network.loadedLinks.size(),
-                    Create.LOGISTICS.getUnloadedLinkCount(networkId)
-            ).withStyle(ChatFormatting.DARK_GRAY));
+        stack.set(ShHsComponentTypes.PORTABLE_STOCK_TICKER_LINK, new PortableStockTickerLink(networkId));
+        return true;
+    }
+
+    public static boolean tryToOpenMenu(Player player, ItemStack stack) {
+        PortableStockTickerLink link = stack.get(ShHsComponentTypes.PORTABLE_STOCK_TICKER_LINK);
+        if (link == null) {
+            player.displayClientMessage(textComponent("portable_stock_ticker.no_data").withStyle(ChatFormatting.DARK_GRAY), true);
+            return false;
+        }
+
+        UUID networkId = link.networkId();
+        if (!checkLink(player, networkId)) return false;
+
+        player.openMenu(new PortableStockTickerMenuProvider(networkId), buf -> buf.writeUUID(networkId));
+        return true;
+    }
+
+    public static boolean checkLink(Player player, UUID networkId) {
+        LogisticsNetwork network = Create.LOGISTICS.logisticsNetworks.get(networkId);
+        if (network == null) {
+            player.displayClientMessage(textComponent("portable_stock_ticker.no_network").withStyle(ChatFormatting.DARK_RED), true);
+            return false;
+        }
+
+        if (!Create.LOGISTICS.mayInteract(networkId, player)) {
+            player.displayClientMessage(CreateLang.translate("logistically_linked.protected").style(ChatFormatting.DARK_RED).component(), true);
+            return false;
+        }
+
+        if (network.loadedLinks.isEmpty()) {
+            player.displayClientMessage(textComponent("portable_stock_ticker.unloaded").withStyle(ChatFormatting.DARK_RED), true);
+            return false;
         }
 
         return true;

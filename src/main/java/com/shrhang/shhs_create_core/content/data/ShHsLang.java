@@ -61,13 +61,9 @@ public class ShHsLang {
         REGISTRATE.addRawLang(tooltipKey("brass_ender_chest.locked"), "Locked: Only the owner can open.");
         REGISTRATE.addRawLang(tooltipKey("brass_ender_chest.unlocked"), "Unlocked: Anyone can open.");
 
-        REGISTRATE.addRawLang(textKey("portable_stock_ticker.different_dimension"), "Stock Ticker is in different dimension.");
-        REGISTRATE.addRawLang(textKey("portable_stock_ticker.no_block"), "Cannot find the Stock Ticker");
-        REGISTRATE.addRawLang(textKey("portable_stock_ticker.tooltip.linked_to"), "Connected to %s");
-        REGISTRATE.addRawLang(textKey("portable_stock_ticker.link_success"), "Connected to Stock Ticker successfully.");
-        REGISTRATE.addRawLang(textKey("portable_stock_ticker.no_data"), "Not connected to a Stock Ticker");
-        REGISTRATE.addRawLang(textKey("portable_stock_ticker.no_network"), "Linked logistics network no longer exists.");
-        REGISTRATE.addRawLang(textKey("portable_stock_ticker.network_locked"), "Linked logistics network is locked.");
-        REGISTRATE.addRawLang(textKey("portable_stock_ticker.network_status"), "Network status: %s items, %s contributing links, %s loaded links, %s unloaded links.");
+        REGISTRATE.addRawLang(textKey("portable_stock_ticker.tooltip.linked"), "Connected. Press [ALT] to show NetID.");
+        REGISTRATE.addRawLang(textKey("portable_stock_ticker.no_data"), "Not connected to a Logistics Network");
+        REGISTRATE.addRawLang(textKey("portable_stock_ticker.no_network"), "Linked Logistics Network no exists.");
+        REGISTRATE.addRawLang(textKey("portable_stock_ticker.unloaded"), "Linked Logistics Network is unloaded.");
     }
 }

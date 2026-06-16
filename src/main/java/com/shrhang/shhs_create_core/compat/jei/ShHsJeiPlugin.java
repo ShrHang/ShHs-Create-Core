@@ -1,5 +1,7 @@
 package com.shrhang.shhs_create_core.compat.jei;
 
+import com.shrhang.shhs_create_core.compat.jei.portable_stock_ticker.PortableStockTickerGuiContainerHandler;
+import com.shrhang.shhs_create_core.compat.jei.portable_stock_ticker.PortableStockTickerTransferHandler;
 import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerScreen;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
