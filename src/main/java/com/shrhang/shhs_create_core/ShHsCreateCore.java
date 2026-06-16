@@ -48,6 +48,7 @@ public class ShHsCreateCore {
         ShHsMenuTypes.register(modEventBus);
 
         modEventBus.addListener(ShHsCreateCore::init);
+        modEventBus.addListener(ShHsPackets::register);
         modEventBus.addListener(ShHsCreateCore::modifyEntityAttributes);
         if (FMLEnvironment.dist.isClient()) {
             modEventBus.addListener(ShHsCreateCore::registerScreens);

@@ -26,6 +26,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -63,8 +64,12 @@ public class PortableStockTickerItem extends Item {
 
         ItemStack stack = player.getItemInHand(hand);
 
-        if (level.isClientSide())
+        if (level.isClientSide()) {
+            PortableStockTickerLink link = stack.get(ShHsComponentTypes.PORTABLE_STOCK_TICKER_LINK);
+            if (!player.isCrouching() && link != null)
+                PacketDistributor.sendToServer(new PortableStockRequestPacket(link.networkId()));
             return InteractionResultHolder.pass(stack);
+        }
 
         if (player.isCrouching()) {
             BlockHitResult blockHitResult = (BlockHitResult) player.pick(player.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE), 0.0f, false);
