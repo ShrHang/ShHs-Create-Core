@@ -6,12 +6,13 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.UUID;
 
 public class PortableStockTickerMenu extends AbstractContainerMenu {
     public final UUID networkId;
+    public Object screenReference;
 
     public PortableStockTickerMenu(MenuType<?> type, int id, Inventory playerInventory, UUID networkId) {
         super(type, id);
@@ -27,12 +28,12 @@ public class PortableStockTickerMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public @NotNull net.minecraft.world.item.ItemStack quickMoveStack(@NotNull Player player, int index) {
-        return net.minecraft.world.item.ItemStack.EMPTY;
+    public ItemStack quickMoveStack(Player player, int index) {
+        return ItemStack.EMPTY;
     }
 
     @Override
-    public boolean stillValid(@NotNull Player player) {
+    public boolean stillValid(Player player) {
         return true;
     }
 }

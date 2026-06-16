@@ -1,8 +1,7 @@
 package com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker;
 
-import com.simibubi.create.Create;
 import com.shrhang.shhs_create_core.api.registries.ShHsComponentTypes;
-import com.shrhang.shhs_create_core.api.registries.ShHsMenuTypes;
+import com.simibubi.create.Create;
 import com.simibubi.create.content.logistics.packager.InventorySummary;
 import com.simibubi.create.content.logistics.packagerLink.LogisticsManager;
 import com.simibubi.create.content.logistics.packagerLink.LogisticsNetwork;
@@ -44,14 +43,13 @@ public class PortableStockTickerItem extends Item {
         PortableStockTickerLink link = stack.get(ShHsComponentTypes.PORTABLE_STOCK_TICKER_LINK);
         Level clientLevel = Minecraft.getInstance().level;
         if (link != null && !Screen.hasShiftDown() && clientLevel != null) {
-            if (clientLevel.dimension().equals(link.dimension())
-                    && !(clientLevel.getBlockEntity(link.sourcePos()) instanceof StockTickerBlockEntity))
-                tooltipComponents.add(textComponent("portable_stock_ticker.no_block"
-                ).withStyle(ChatFormatting.DARK_RED));
-            else
+//            if (clientLevel.dimension().equals(link.dimension())
+//                    && !(clientLevel.getBlockEntity(link.sourcePos()) instanceof StockTickerBlockEntity))
+//                tooltipComponents.add(textComponent("portable_stock_ticker.no_block"
+//                ).withStyle(ChatFormatting.DARK_RED));
+//            else
                 tooltipComponents.add(textComponent("portable_stock_ticker.tooltip.linked_to",
-                        Component.literal(link.dimension().location().toString()).withStyle(ChatFormatting.GREEN),
-                        Component.literal(link.sourcePos().toShortString()).withStyle(ChatFormatting.GREEN)
+                        Component.literal(String.valueOf(link.networkId())).withStyle(ChatFormatting.GREEN)
                 ).withStyle(ChatFormatting.DARK_GREEN));
         }
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
@@ -88,7 +86,7 @@ public class PortableStockTickerItem extends Item {
     public static boolean linkTo(ItemStack stack, Level level, BlockPos pos) {
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof StockTickerBlockEntity stockTicker) {
-            PortableStockTickerLink newLink = new PortableStockTickerLink(stockTicker.behaviour.freqId, level.dimension(), pos);
+            PortableStockTickerLink newLink = new PortableStockTickerLink(stockTicker.behaviour.freqId);
             stack.set(ShHsComponentTypes.PORTABLE_STOCK_TICKER_LINK, newLink);
             return true;
         }
@@ -133,18 +131,6 @@ public class PortableStockTickerItem extends Item {
         }
 
         return true;
-    }
-
-    public record RemoteStockKeeperRequestMenuProvider(StockTickerBlockEntity stockTickerBE) implements MenuProvider {
-
-        public AbstractContainerMenu createMenu(int pContainerId, @NotNull Inventory pPlayerInventory, @NotNull Player pPlayer) {
-            return new RemoteStockKeeperRequestMenu(ShHsMenuTypes.REMOTE_STOCK_KEEPER_REQUEST.get(), pContainerId, pPlayerInventory, stockTickerBE);
-        }
-
-        @Override
-        public @NotNull Component getDisplayName() {
-            return Component.empty();
-        }
     }
 
     public record PortableStockTickerMenuProvider(UUID networkId) implements MenuProvider {

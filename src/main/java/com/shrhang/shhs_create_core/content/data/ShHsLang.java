@@ -63,7 +63,7 @@ public class ShHsLang {
 
         REGISTRATE.addRawLang(textKey("portable_stock_ticker.different_dimension"), "Stock Ticker is in different dimension.");
         REGISTRATE.addRawLang(textKey("portable_stock_ticker.no_block"), "Cannot find the Stock Ticker");
-        REGISTRATE.addRawLang(textKey("portable_stock_ticker.tooltip.linked_to"), "Connected to %s %s");
+        REGISTRATE.addRawLang(textKey("portable_stock_ticker.tooltip.linked_to"), "Connected to %s");
         REGISTRATE.addRawLang(textKey("portable_stock_ticker.link_success"), "Connected to Stock Ticker successfully.");
         REGISTRATE.addRawLang(textKey("portable_stock_ticker.no_data"), "Not connected to a Stock Ticker");
         REGISTRATE.addRawLang(textKey("portable_stock_ticker.no_network"), "Linked logistics network no longer exists.");

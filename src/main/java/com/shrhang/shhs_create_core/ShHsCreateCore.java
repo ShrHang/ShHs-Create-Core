@@ -69,7 +69,6 @@ public class ShHsCreateCore {
     }
 
     public static void registerScreens(RegisterMenuScreensEvent event) {
-        event.register(ShHsMenuTypes.REMOTE_STOCK_KEEPER_REQUEST.get(), StockKeeperRequestScreen::new);
         event.register(ShHsMenuTypes.PORTABLE_STOCK_TICKER.get(), PortableStockTickerScreen::new);
     }
 
