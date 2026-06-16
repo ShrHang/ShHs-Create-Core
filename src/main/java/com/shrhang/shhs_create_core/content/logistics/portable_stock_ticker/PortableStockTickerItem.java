@@ -29,8 +29,8 @@ import java.util.List;
 
 import static com.shrhang.shhs_create_core.content.data.ShHsLang.textComponent;
 
-public class PortatbleStockTickerItem extends Item {
-    public PortatbleStockTickerItem(Properties props) {
+public class PortableStockTickerItem extends Item {
+    public PortableStockTickerItem(Properties props) {
         super(props);
     }
 

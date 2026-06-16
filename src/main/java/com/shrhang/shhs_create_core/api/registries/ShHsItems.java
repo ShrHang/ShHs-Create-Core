@@ -4,14 +4,14 @@ import com.shrhang.shhs_create_core.ShHsCreateCore;
 import com.shrhang.shhs_create_core.content.data.ShHsRegistrate;
 import com.shrhang.shhs_create_core.content.hostility.EmptyTraitItem;
 import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.LvPosRecord;
-import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortatbleStockTickerItem;
+import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerItem;
 import com.tterrag.registrate.util.entry.ItemEntry;
 
 public class ShHsItems {
     private static final ShHsRegistrate REGISTRATE = ShHsCreateCore.REGISTRATE;
 
-    public static final ItemEntry<PortatbleStockTickerItem> PORTABLE_STOCK_TICKER =
-            REGISTRATE.item("portable_stock_ticker", PortatbleStockTickerItem::new)
+    public static final ItemEntry<PortableStockTickerItem> PORTABLE_STOCK_TICKER =
+            REGISTRATE.item("portable_stock_ticker", PortableStockTickerItem::new)
                     .properties(p -> p
                             .component(ShHsComponentTypes.LV_POS, LvPosRecord.EMPTY)
                             .stacksTo(1))
