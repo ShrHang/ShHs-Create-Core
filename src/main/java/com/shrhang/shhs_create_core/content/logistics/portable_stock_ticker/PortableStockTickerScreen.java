@@ -3,6 +3,7 @@ package com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.simibubi.create.AllSoundEvents;
 import com.simibubi.create.compat.Mods;
 import com.simibubi.create.compat.jei.CreateJEI;
 import com.simibubi.create.content.logistics.BigItemStack;
@@ -32,7 +33,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.Item.TooltipContext;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
@@ -133,7 +136,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
         moveToTopNextTick = true;
         syncJEI(true);
         requestStatus();
-        PacketDistributor.sendToServer(new RemoteStockRequestPacket(menu.networkId));
+        PacketDistributor.sendToServer(new StockInventoryPacket.StockRequestPacket(menu.networkId));
     }
 
     @Override
@@ -189,7 +192,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
         }
 
         if (snapshot == null || snapshot.ticksSinceLastUpdate() > 15) {
-            PacketDistributor.sendToServer(new RemoteStockRequestPacket(menu.networkId));
+            PacketDistributor.sendToServer(new StockInventoryPacket.StockRequestPacket(menu.networkId));
         }
         if (snapshot == null || snapshot.isStatusStale(minecraft.level.getGameTime(), STATUS_REFRESH_INTERVAL)) {
             requestStatus();
@@ -400,6 +403,39 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
             AllGuiTextures.STOCK_KEEPER_REQUEST_SCROLL_BOT.render(graphics, barX, barY + barSize - 5);
             pose.popPose();
         }
+    }
+
+    @Override
+    protected void renderForeground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        super.renderForeground(graphics, mouseX, mouseY, partialTick);
+
+        HoveredSlot hoveredSlot = getHoveredSlot(mouseX, mouseY);
+        if (hoveredSlot.isNone() || minecraft == null || minecraft.level == null || minecraft.player == null) {
+            return;
+        }
+
+        BigItemStack entry = switch (hoveredSlot.area()) {
+            case RECIPE -> recipesToOrder.get(hoveredSlot.index());
+            case ORDER -> itemsToOrder.get(hoveredSlot.index());
+            case ITEM -> displayedItems.get(hoveredSlot.index());
+            case NONE -> null;
+        };
+        if (entry == null) {
+            return;
+        }
+
+        if (hoveredSlot.area() == HoveredArea.RECIPE) {
+            ArrayList<Component> lines = new ArrayList<>(
+                    entry.stack.getTooltipLines(TooltipContext.of(minecraft.level), minecraft.player, TooltipFlag.NORMAL)
+            );
+            if (!lines.isEmpty()) {
+                lines.set(0, CreateLang.translateDirect("gui.stock_keeper.craft", lines.getFirst().copy()));
+            }
+            graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+            return;
+        }
+
+        graphics.renderTooltip(font, entry.stack, mouseX, mouseY);
     }
 
     public Optional<Pair<ItemStack, Rect2i>> getHoveredIngredient(int mouseX, int mouseY) {
@@ -689,6 +725,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
             refreshSearchNextTick = true;
             moveToTopNextTick = true;
             searchBox.setFocused(true);
+            syncJEI(false);
             return true;
         }
 
@@ -737,8 +774,14 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
             return super.mouseClicked(mouseX, mouseY, button);
         }
 
-        int transfer = hasShiftDown() ? 64 : hasControlDown() ? 10 : 1;
-        if (hoveredSlot.area() == HoveredArea.RECIPE) {
+        boolean orderClicked = hoveredSlot.area() == HoveredArea.ORDER;
+        boolean recipeClicked = hoveredSlot.area() == HoveredArea.RECIPE;
+        BigItemStack entry = recipeClicked ? recipesToOrder.get(hoveredSlot.index())
+                : orderClicked ? itemsToOrder.get(hoveredSlot.index())
+                : displayedItems.get(hoveredSlot.index());
+        ItemStack itemStack = entry.stack;
+        int transfer = hasShiftDown() ? itemStack.getMaxStackSize() : hasControlDown() ? 10 : 1;
+        if (recipeClicked) {
             CraftableBigItemStack craftable = recipesToOrder.get(hoveredSlot.index());
             if (rightClick && craftable.count == 0) {
                 recipesToOrder.remove(craftable);
@@ -748,30 +791,30 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
             return true;
         }
 
-        if (hoveredSlot.area() == HoveredArea.ORDER) {
-            BigItemStack entry = itemsToOrder.get(hoveredSlot.index());
-            entry.count -= transfer;
-            if (entry.count <= 0) {
-                itemsToOrder.remove(hoveredSlot.index());
+        BigItemStack existingOrder = getOrderForItem(entry.stack);
+        if (existingOrder == null) {
+            if (itemsToOrder.size() >= COLS || rightClick) {
+                return true;
+            }
+            itemsToOrder.add(existingOrder = new BigItemStack(itemStack.copyWithCount(1), 0));
+            playUiSound(SoundEvents.WOOL_STEP, 0.75f, 1.2f);
+            playUiSound(SoundEvents.BAMBOO_WOOD_STEP, 0.75f, 0.8f);
+        }
+
+        int current = existingOrder.count;
+        if (rightClick || orderClicked) {
+            existingOrder.count = current - transfer;
+            if (existingOrder.count <= 0) {
+                itemsToOrder.remove(existingOrder);
+                playUiSound(SoundEvents.WOOL_STEP, 0.75f, 1.8f);
+                playUiSound(SoundEvents.BAMBOO_WOOD_STEP, 0.75f, 1.8f);
             }
             updateCraftableAmounts();
             return true;
         }
 
-        BigItemStack entry = displayedItems.get(hoveredSlot.index());
-        if (rightClick) {
-            BigItemStack existingOrder = getOrderForItem(entry.stack);
-            if (existingOrder != null) {
-                existingOrder.count -= transfer;
-                if (existingOrder.count <= 0) {
-                    itemsToOrder.remove(existingOrder);
-                }
-                updateCraftableAmounts();
-            }
-            return true;
-        }
-
-        addOrder(entry, transfer);
+        existingOrder.count = current + Math.min(transfer, entry.count - current);
+        updateCraftableAmounts();
         return true;
     }
 
@@ -828,38 +871,50 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
             return true;
         }
 
-        int transfer = (int) Math.ceil(Math.abs(scrollY)) * (hasControlDown() ? 10 : 1);
+        boolean orderClicked = hoveredSlot.area() == HoveredArea.ORDER;
+        boolean recipeClicked = hoveredSlot.area() == HoveredArea.RECIPE;
+        BigItemStack entry = recipeClicked ? recipesToOrder.get(hoveredSlot.index())
+                : orderClicked ? itemsToOrder.get(hoveredSlot.index())
+                : displayedItems.get(hoveredSlot.index());
         boolean remove = scrollY < 0;
+        int transfer = (int) Math.ceil(Math.abs(scrollY)) * (hasControlDown() ? 10 : 1);
 
-        if (hoveredSlot.area() == HoveredArea.RECIPE) {
-            requestCraftable(recipesToOrder.get(hoveredSlot.index()), remove ? -transfer : transfer);
+        if (recipeClicked) {
+            requestCraftable((CraftableBigItemStack) entry, remove ? -transfer : transfer);
             return true;
         }
 
-        if (hoveredSlot.area() == HoveredArea.ORDER) {
-            BigItemStack entry = itemsToOrder.get(hoveredSlot.index());
-            entry.count += remove ? -transfer : transfer;
-            if (entry.count <= 0) {
-                itemsToOrder.remove(hoveredSlot.index());
+        BigItemStack existingOrder = orderClicked ? entry : getOrderForItem(entry.stack);
+        if (existingOrder == null) {
+            if (itemsToOrder.size() >= COLS || remove) {
+                return true;
+            }
+            itemsToOrder.add(existingOrder = new BigItemStack(entry.stack.copyWithCount(1), 0));
+            playUiSound(SoundEvents.WOOL_STEP, 0.75f, 1.2f);
+            playUiSound(SoundEvents.BAMBOO_WOOD_STEP, 0.75f, 0.8f);
+        }
+
+        int current = existingOrder.count;
+        if (remove) {
+            existingOrder.count = current - transfer;
+            if (existingOrder.count <= 0) {
+                itemsToOrder.remove(existingOrder);
+                playUiSound(SoundEvents.WOOL_STEP, 0.75f, 1.8f);
+                playUiSound(SoundEvents.BAMBOO_WOOD_STEP, 0.75f, 1.8f);
+            } else if (existingOrder.count != current) {
+                playUiSound(AllSoundEvents.SCROLL_VALUE.getMainEvent(), 0.25f, 1.2f);
             }
             updateCraftableAmounts();
             return true;
         }
 
-        BigItemStack source = displayedItems.get(hoveredSlot.index());
-        if (remove) {
-            BigItemStack existing = getOrderForItem(source.stack);
-            if (existing != null) {
-                existing.count -= transfer;
-                if (existing.count <= 0) {
-                    itemsToOrder.remove(existing);
-                }
-                updateCraftableAmounts();
-            }
-            return true;
+        InventorySummary summary = getAvailableSummary();
+        int maxCount = summary == null ? current : summary.getCountOf(entry.stack);
+        existingOrder.count = current + Math.min(transfer, maxCount - current);
+        if (existingOrder.count != current && current != 0) {
+            playUiSound(AllSoundEvents.SCROLL_VALUE.getMainEvent(), 0.25f, 1.2f);
         }
-
-        addOrder(source, transfer);
+        updateCraftableAmounts();
         return true;
     }
 
@@ -925,19 +980,6 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
         return true;
     }
 
-    private void addOrder(BigItemStack source, int amount) {
-        BigItemStack existing = getOrderForItem(source.stack);
-        if (existing == null) {
-            if (itemsToOrder.size() >= COLS) {
-                return;
-            }
-            existing = new BigItemStack(source.stack.copyWithCount(1), 0);
-            itemsToOrder.add(existing);
-        }
-        existing.count = Math.min(source.count, existing.count + amount);
-        updateCraftableAmounts();
-    }
-
     private void sendOrder() {
         revalidateOrders();
         if (itemsToOrder.isEmpty()) {
@@ -998,14 +1040,14 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
             }
             order = new PackageOrderWithCrafts(order.orderedStacks(), craftList);
         }
-        PacketDistributor.sendToServer(new RemotePackageOrderRequestPacket(
+        PacketDistributor.sendToServer(new PackageOrderPacket.RemotePackageOrderPacket(
                 menu.networkId,
                 order,
                 addressBox.getValue()
         ));
         itemsToOrder.clear();
         recipesToOrder.clear();
-        PacketDistributor.sendToServer(new RemoteStockRequestPacket(menu.networkId));
+        PacketDistributor.sendToServer(new StockInventoryPacket.StockRequestPacket(menu.networkId));
         successTicks = 1;
     }
 
@@ -1303,7 +1345,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
             return;
         }
         snapshot.markStatusRequest(gameTime);
-        PacketDistributor.sendToServer(new RemoteStockStatusRequestPacket(menu.networkId));
+        PacketDistributor.sendToServer(new StockStatusPacket.StockStatusRequestPacket(menu.networkId));
     }
 
     private enum HoveredArea {

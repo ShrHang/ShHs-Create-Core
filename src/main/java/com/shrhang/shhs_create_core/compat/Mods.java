@@ -8,6 +8,7 @@ import java.util.function.Supplier;
 /**
  * 参考了Create的代码实现。
  * 这里包含了除Create, Iron's Spells & Spellbooks, L2Hostility 以外的模组的兼容。
+ * 这里不包含 {@link com.simibubi.create.compat.Mods} 中的模组。
  */
 public enum Mods {
     CREATE_ENCHANTMENT_INDUSTRY;

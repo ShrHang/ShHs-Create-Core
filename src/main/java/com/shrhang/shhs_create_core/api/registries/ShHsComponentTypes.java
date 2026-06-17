@@ -14,7 +14,7 @@ public class ShHsComponentTypes {
             DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, ShHsCreateCore.MODID);
 
     public static final DataComponentType<LogisticsNetworkLink> LOGISTICS_NETWORK_LINK = register(
-            "freqId",
+            "freq_id",
             builder -> builder
                     .persistent(LogisticsNetworkLink.CODEC)
                     .networkSynchronized(LogisticsNetworkLink.STREAM_CODEC)

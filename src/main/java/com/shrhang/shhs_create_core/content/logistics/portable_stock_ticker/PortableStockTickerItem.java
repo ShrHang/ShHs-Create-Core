@@ -177,6 +177,6 @@ public class PortableStockTickerItem extends Item {
         }
 
         snapshot.markStatusRequest(gameTime);
-        PacketDistributor.sendToServer(new RemoteStockStatusRequestPacket(networkId));
+        PacketDistributor.sendToServer(new StockStatusPacket.StockStatusRequestPacket(networkId));
     }
 }
