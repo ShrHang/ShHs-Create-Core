@@ -11,7 +11,7 @@ public class ShHsPackets {
         PayloadRegistrar registrar = event.registrar(VERSION);
         registrar.playToServer(StockInventoryPacket.StockRequestPacket.TYPE, StockInventoryPacket.StockRequestPacket.STREAM_CODEC, StockInventoryPacket.StockRequestPacket::handle);
         registrar.playToServer(StockStatusPacket.StockStatusRequestPacket.TYPE, StockStatusPacket.StockStatusRequestPacket.STREAM_CODEC, StockStatusPacket.StockStatusRequestPacket::handle);
-        registrar.playToServer(PackageOrderPacket.RemotePackageOrderPacket.TYPE, PackageOrderPacket.RemotePackageOrderPacket.STREAM_CODEC, PackageOrderPacket.RemotePackageOrderPacket::handle);
+        registrar.playToServer(RemotePackageOrderPacket.TYPE, RemotePackageOrderPacket.STREAM_CODEC, RemotePackageOrderPacket::handle);
         registrar.playToClient(StockInventoryPacket.StockResponsePacket.TYPE, StockInventoryPacket.StockResponsePacket.STREAM_CODEC, StockInventoryPacket.StockResponsePacket::handle);
         registrar.playToClient(StockStatusPacket.StockStatusResponsePacket.TYPE, StockStatusPacket.StockStatusResponsePacket.STREAM_CODEC, StockStatusPacket.StockStatusResponsePacket::handle);
     }

@@ -1040,7 +1040,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
             }
             order = new PackageOrderWithCrafts(order.orderedStacks(), craftList);
         }
-        PacketDistributor.sendToServer(new PackageOrderPacket.RemotePackageOrderPacket(
+        PacketDistributor.sendToServer(new RemotePackageOrderPacket(
                 menu.networkId,
                 order,
                 addressBox.getValue()
