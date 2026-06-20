@@ -1,13 +1,9 @@
 package com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker;
 
-import com.simibubi.create.AllSoundEvents;
 import com.simibubi.create.Create;
 import com.simibubi.create.content.logistics.BigItemStack;
 import com.simibubi.create.content.logistics.packager.InventorySummary;
-import com.simibubi.create.content.logistics.packagerLink.LogisticallyLinkedBehaviour;
 import com.simibubi.create.content.logistics.packagerLink.LogisticsManager;
-import com.simibubi.create.content.logistics.stockTicker.PackageOrderWithCrafts;
-import com.simibubi.create.foundation.advancement.AllAdvancements;
 import net.createmod.catnip.codecs.stream.CatnipStreamCodecBuilders;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.RegistryFriendlyByteBuf;

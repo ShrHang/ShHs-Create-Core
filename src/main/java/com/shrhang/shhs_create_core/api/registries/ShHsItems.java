@@ -12,9 +12,9 @@ public class ShHsItems {
                     .properties(p -> p.stacksTo(1))
                     .model((ctx , prov) -> {})
                     .lang("Portable Stock Ticker")
-                    .tooltipSummary("Allows you to connect to a _Stock Ticker_ and remotely view its stock information.")
-                    .tooltipBehaviour(1, "When used", "If in the _same dimension_ as the connected _Stock Ticker_ and a _Stock Keeper_ exists, opens the request menu.")
-                    .tooltipBehaviour(2, "When used in Sneak on Blocks", "If the target block is a _Stock Ticker_, connects to it.")
+                    .tooltipSummary("Allows you to connect to a _Logistics Network_ and remotely view its stock information.")
+                    .tooltipBehaviour(1, "When used", "If linked network exists and _is loaded_, opens a request menu.")
+                    .tooltipBehaviour(2, "When used in Sneak on Blocks", "If the target block is a _Stock Ticker_, _Stock Link_ or _Redstone Requester_, links to its network.")
                     .register();
 
     public static final ItemEntry<EmptyTraitItem> EMPTY_TRAIT = REGISTRATE.item("empty_trait", EmptyTraitItem::new)
