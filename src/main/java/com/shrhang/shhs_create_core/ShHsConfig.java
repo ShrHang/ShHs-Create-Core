@@ -45,6 +45,7 @@ public class ShHsConfig {
     public static class Server {
         public final ModConfigSpec.BooleanValue isToleranceRequired;
         public final ModConfigSpec.DoubleValue rarityCoefficient;
+        public final ModConfigSpec.DoubleValue consumesManaCoefficient;
         public final ModConfigSpec.DoubleValue mobManaRegenMultiplier;
         public final ModConfigSpec.DoubleValue realityTraitScale;
         public final ModConfigSpec.IntValue emptyTraitMinUseTicks;
@@ -55,12 +56,15 @@ public class ShHsConfig {
                     .comment("Whether spell tolerance is required for casting spells.")
                     .define("isToleranceRequired", true);
             rarityCoefficient = builder
-                    .comment("The coefficient of spell rarity in spell tolerance calculation. The required spell tolerance is calculated as spell level + RarityCoefficient * rarity value.")
-                    .defineInRange("RarityCoefficient", 3.0, 0.0, Integer.MAX_VALUE);
+                    .comment("The coefficient of spell rarity in spell tolerance calculation. The required spell tolerance is calculated as relative spell level + RarityCoefficient * rarity value.")
+                    .defineInRange("RarityCoefficient", 3.0, 0.0, 823);
+            consumesManaCoefficient = builder
+                    .comment("The coefficient for whether the spell consumes mana in spell tolerance calculation. The required spell tolerance is calculated as relative spell level - ConsumesManaCoefficient if the spell consumes mana.")
+                    .defineInRange("ConsumesManaCoefficient", 1.0, 0.0, 823);
             builder.pop();
             builder.push("enchantment_industry");
             scrollPrintingCost = builder
-                    .comment("The cost of printing a spell scroll per lv in Enchantment Industry.")
+                    .comment("The cost of ink for printing a spell scroll per relative level in Enchantment Industry.")
                     .defineInRange("scrollPrintingCost", 250, 1, 1000);
             builder.pop();
             builder.push("l2hostility");

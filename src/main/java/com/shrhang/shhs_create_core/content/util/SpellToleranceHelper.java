@@ -17,7 +17,7 @@ public class SpellToleranceHelper {
      */
     public static double getRequiredTolerance(int spellLevel, AbstractSpell spell, CastSource source) {
         SpellRarity rarity = spell.getRarity(spellLevel);
-        return Math.max(1, getRelativeLevel(spellLevel, spell) + SERVER.rarityCoefficient.get() * rarity.getValue() - (source.consumesMana() ? 0 : 2));
+        return Math.max(getRelativeLevel(spellLevel, spell) + SERVER.rarityCoefficient.get() * rarity.getValue() - (source.consumesMana() ? SERVER.consumesManaCoefficient.get() : 0), 1);
     }
 
     /**
