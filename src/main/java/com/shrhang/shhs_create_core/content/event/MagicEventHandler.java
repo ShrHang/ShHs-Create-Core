@@ -1,5 +1,6 @@
 package com.shrhang.shhs_create_core.content.event;
 
+import com.shrhang.shhs_create_core.content.util.SpellToleranceHelper;
 import io.redspace.ironsspellbooks.api.events.SpellPreCastEvent;
 import io.redspace.ironsspellbooks.api.magic.MagicData;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
@@ -12,7 +13,6 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import static com.shrhang.shhs_create_core.ShHsConfig.SERVER;
 import static com.shrhang.shhs_create_core.content.data.ShHsLang.textComponent;
-import static com.shrhang.shhs_create_core.content.util.SpellToleranceHelper.calculateRequiredTolerance;
 import static com.shrhang.shhs_create_core.content.util.SpellToleranceHelper.getSpellTolerance;
 
 public class MagicEventHandler {
@@ -27,7 +27,7 @@ public class MagicEventHandler {
         if (spell == null) return;
 
         int level = event.getSpellLevel();
-        double requiredTolerance = calculateRequiredTolerance(level, spell, event.getCastSource());
+        double requiredTolerance = SpellToleranceHelper.getRequiredTolerance(level, spell, event.getCastSource());
 
         Player player = event.getEntity();
         double spellTolerance = getSpellTolerance(player);

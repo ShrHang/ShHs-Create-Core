@@ -7,7 +7,7 @@ import com.shrhang.shhs_create_core.content.data.ShHsAtlases;
 import com.shrhang.shhs_create_core.content.data.ShHsLang;
 import com.shrhang.shhs_create_core.content.data.ShHsRegistrate;
 import com.shrhang.shhs_create_core.content.data.ShHsTagKey;
-import com.shrhang.shhs_create_core.content.event.ClientPlayerEvents;
+import com.shrhang.shhs_create_core.content.event.ClientEvents;
 import com.shrhang.shhs_create_core.content.event.MagicEventHandler;
 import com.shrhang.shhs_create_core.content.event.ShHsAttackListener;
 import com.simibubi.create.foundation.item.ItemDescription;
@@ -55,7 +55,7 @@ public class ShHsCreateCore {
         event.enqueueWork(ShHsInventoryIdentifiers::register);
         event.enqueueWork(ShHsOpenPipeEffects::register);
         if (FMLEnvironment.dist.isClient()) {
-            ClientPlayerEvents.init();
+            ClientEvents.init();
         }
         MagicEventHandler.init();
         ShHsAttackListener.init();

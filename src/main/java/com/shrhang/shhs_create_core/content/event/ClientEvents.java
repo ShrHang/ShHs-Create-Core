@@ -6,11 +6,11 @@ import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
-public class ClientPlayerEvents {
+public class ClientEvents {
     public static void init() {
-        NeoForge.EVENT_BUS.addListener(ClientPlayerEvents::onClientLoggingIn);
-        NeoForge.EVENT_BUS.addListener(ClientPlayerEvents::onClientLoggingOut);
-        NeoForge.EVENT_BUS.addListener(ClientPlayerEvents::onClientTickPost);
+        NeoForge.EVENT_BUS.addListener(ClientEvents::onClientLoggingIn);
+        NeoForge.EVENT_BUS.addListener(ClientEvents::onClientLoggingOut);
+        NeoForge.EVENT_BUS.addListener(ClientEvents::onClientTickPost);
     }
 
     public static void onClientLoggingIn(final ClientPlayerNetworkEvent.LoggingIn event) {

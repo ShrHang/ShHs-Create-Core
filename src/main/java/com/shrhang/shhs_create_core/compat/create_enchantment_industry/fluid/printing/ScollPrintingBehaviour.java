@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import static com.shrhang.shhs_create_core.ShHsConfig.SERVER;
+import static com.shrhang.shhs_create_core.content.util.SpellToleranceHelper.getRelativeLevel;
 import static io.redspace.ironsspellbooks.registries.ComponentRegistry.SPELL_CONTAINER;
 
 public record ScollPrintingBehaviour(SmartFluidTankBehaviour tank, ItemStack template, SpellRarity rarity, int cost) implements PrintingBehaviour {
@@ -42,15 +43,8 @@ public record ScollPrintingBehaviour(SmartFluidTankBehaviour tank, ItemStack tem
         SpellSlot spellSlot = spellContainer.getActiveSpells().getFirst();
         SpellRarity rarity = spellSlot.spellData().getRarity();
         int spellLevel = spellSlot.spellData().getLevel();
-        if (rarity != SpellRarity.COMMON && spellLevel > 1) {
-            for (int i = spellLevel - 1; i > 0; i--) {
-                if (spellSlot.getSpell().getRarity(i).getValue() != rarity.getValue()) {
-                    return Optional.of(DataResult.success(new ScollPrintingBehaviour(tank, stack, rarity, perCost * (spellLevel - i))));
-                }
-            }
-        }
-
-        return Optional.of(DataResult.success(new ScollPrintingBehaviour(tank, stack, rarity, perCost * spellLevel)));
+        int relativeLevel = getRelativeLevel(spellLevel, spellSlot.getSpell());
+        return Optional.of(DataResult.success(new ScollPrintingBehaviour(tank, stack, rarity, perCost * relativeLevel)));
     }
 
     @Override

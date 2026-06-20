@@ -1,6 +1,7 @@
 package com.shrhang.shhs_create_core.mixin.irons_spellbooks.util;
 
 import com.shrhang.shhs_create_core.ShHsConfig;
+import com.shrhang.shhs_create_core.content.util.SpellToleranceHelper;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.CastSource;
 import io.redspace.ironsspellbooks.api.spells.ISpellContainer;
@@ -20,7 +21,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.List;
 
 import static com.shrhang.shhs_create_core.content.data.ShHsLang.textComponent;
-import static com.shrhang.shhs_create_core.content.util.SpellToleranceHelper.calculateRequiredTolerance;
 import static com.shrhang.shhs_create_core.content.util.SpellToleranceHelper.getSpellTolerance;
 
 @Mixin(TooltipsUtils.class)
@@ -32,7 +32,7 @@ public abstract class TooltipsUtilsMixin {
         if (lines != null && !lines.isEmpty() && player != null) {
             var spell = spellData.getSpell();
             if (spell != null) {
-                double requiredTolerance = calculateRequiredTolerance(spell.getLevelFor(spellData.getLevel(), player), spell, castSource);
+                double requiredTolerance = SpellToleranceHelper.getRequiredTolerance(spell.getLevelFor(spellData.getLevel(), player), spell, castSource);
                 double spellTolerance = getSpellTolerance(player);
                 lines.add(textComponent("no_enough_spell_tolerance", requiredTolerance)
                         .withStyle(spellTolerance < requiredTolerance ? ChatFormatting.RED : ChatFormatting.GREEN));
@@ -49,7 +49,7 @@ public abstract class TooltipsUtilsMixin {
             var spellData = spellList != null ? spellList.getSpellAtIndex(0) : null;
             AbstractSpell spell = spellData != null ? spellData.getSpell() : null;
             if (spell != null) {
-                double requiredTolerance = calculateRequiredTolerance(spell.getLevelFor(spellData.getLevel(), player), spell, CastSource.SCROLL);
+                double requiredTolerance = SpellToleranceHelper.getRequiredTolerance(spell.getLevelFor(spellData.getLevel(), player), spell, CastSource.SCROLL);
                 double spellTolerance = getSpellTolerance(player);
                 lines.add(textComponent("no_enough_spell_tolerance", requiredTolerance)
                         .withStyle(spellTolerance < requiredTolerance ? ChatFormatting.RED : ChatFormatting.GREEN));
