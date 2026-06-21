@@ -1,4 +1,4 @@
-package com.shrhang.shhs_create_core.content.data;
+package com.shrhang.shhs_create_core.api.registrate;
 
 import com.tterrag.registrate.builders.AbstractBuilder;
 import com.tterrag.registrate.builders.BuilderCallback;

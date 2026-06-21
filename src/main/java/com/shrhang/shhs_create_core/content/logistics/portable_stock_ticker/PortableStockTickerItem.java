@@ -1,6 +1,6 @@
 package com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker;
 
-import com.shrhang.shhs_create_core.api.registries.ShHsComponentTypes;
+import com.shrhang.shhs_create_core.content.registries.ShHsComponentTypes;
 import com.simibubi.create.Create;
 import com.simibubi.create.content.logistics.packagerLink.LogisticallyLinkedBehaviour;
 import com.simibubi.create.content.logistics.packagerLink.LogisticsNetwork;

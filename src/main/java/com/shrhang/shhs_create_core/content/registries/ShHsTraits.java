@@ -1,7 +1,7 @@
-package com.shrhang.shhs_create_core.api.registries;
+package com.shrhang.shhs_create_core.content.registries;
 
 import com.shrhang.shhs_create_core.ShHsConfig;
-import com.shrhang.shhs_create_core.content.data.ShHsTraitBuilder;
+import com.shrhang.shhs_create_core.api.registrate.ShHsTraitBuilder;
 import com.shrhang.shhs_create_core.content.traits.WizardTrait;
 import dev.xkmc.curseofpandora.init.registrate.CoPAttrs;
 import dev.xkmc.l2hostility.content.config.TraitConfig;

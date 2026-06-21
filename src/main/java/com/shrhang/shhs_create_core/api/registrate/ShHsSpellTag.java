@@ -1,5 +1,6 @@
-package com.shrhang.shhs_create_core.content.data;
+package com.shrhang.shhs_create_core.api.registrate;
 
+import com.shrhang.shhs_create_core.content.data.ShHsTagKey;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import net.minecraft.data.tags.TagsProvider;
 import net.minecraft.resources.ResourceLocation;
