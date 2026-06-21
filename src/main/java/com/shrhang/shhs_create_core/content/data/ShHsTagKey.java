@@ -1,6 +1,7 @@
 package com.shrhang.shhs_create_core.content.data;
 
 import com.shrhang.shhs_create_core.ShHsCreateCore;
+import com.shrhang.shhs_create_core.api.registrate.ShHsSpellTag;
 import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.providers.RegistrateTagsProvider;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
@@ -32,11 +33,13 @@ public class ShHsTagKey {
                     GLUTTONY_SPELL,
                     PLANAR_SIGHT_SPELL,
                     POCKET_DIMENSION_SPELL,
+                    SACRIFICE_SPELL,
                     SHIELD_SPELL,
                     SPECTRAL_HAMMER_SPELL,
                     SUMMON_ENDER_CHEST_SPELL,
                     TELEKINESIS_SPELL,
                     THROW_SPELL,
+                    TOUCH_DIG,
                     WOLOLO_SPELL
             );
 

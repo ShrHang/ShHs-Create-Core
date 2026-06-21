@@ -1,7 +1,7 @@
 package com.shrhang.shhs_create_core.content.logistics.brass_ender_chest;
 
 import com.mojang.serialization.MapCodec;
-import com.shrhang.shhs_create_core.api.registries.ShHsBlockEntityTypes;
+import com.shrhang.shhs_create_core.content.registries.ShHsBlockEntityTypes;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.foundation.block.IBE;
 import net.minecraft.core.BlockPos;

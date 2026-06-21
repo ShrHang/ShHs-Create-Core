@@ -1,4 +1,4 @@
-package com.shrhang.shhs_create_core.api.registries;
+package com.shrhang.shhs_create_core.content.registries;
 
 import com.shrhang.shhs_create_core.content.logistics.brass_ender_chest.BrassEnderChestBlockEntity;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;

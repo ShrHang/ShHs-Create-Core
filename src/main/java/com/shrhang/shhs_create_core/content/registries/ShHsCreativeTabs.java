@@ -1,4 +1,4 @@
-package com.shrhang.shhs_create_core.api.registries;
+package com.shrhang.shhs_create_core.content.registries;
 
 import com.shrhang.shhs_create_core.ShHsCreateCore;
 import net.minecraft.core.registries.Registries;

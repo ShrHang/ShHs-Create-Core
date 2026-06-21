@@ -1,5 +1,6 @@
-package com.shrhang.shhs_create_core.content.util;
+package com.shrhang.shhs_create_core.content.magic.mob_spell_cast;
 
+import com.shrhang.shhs_create_core.content.util.SpellCastHelper;
 import io.redspace.ironsspellbooks.api.magic.MagicData;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.CastType;
@@ -14,13 +15,15 @@ import net.minecraft.world.item.ItemStack;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.shrhang.shhs_create_core.content.util.SpellCastHelper.*;
+import static com.shrhang.shhs_create_core.content.util.SpellCastHelper.SpellSource;
+import static com.shrhang.shhs_create_core.content.util.SpellCastHelper.attemptInitiateEntityCast;
 import static io.redspace.ironsspellbooks.api.registry.AttributeRegistry.MAX_MANA;
+
 /**
  * 法术决策辅助类，负责从实体法术列表中决策单发或连招施法。
- * 包含法术缓存、连招搜索、感知管理以及执行单发/连招的核心逻辑。
+ * 包含法术缓存、连招搜索、感知管理以及执行单发/连招的逻辑。
  */
-public class SpellDecisionHelper {
+public class MobSpellTactics {
     // 决策参数
     private static final float COMBO_TRIGGER_MANA_RATIO = 0.5f;   // 触发连招的最低法力比例
     private static final float COMBO_CHANCE = 0.3f;              // 尝试连招的概率
@@ -61,32 +64,20 @@ public class SpellDecisionHelper {
             this.nonInstantSortedByCost = Collections.unmodifiableList(tempNonInstant);
         }
 
-        static class SpellEntry {
-            final SpellSource source;
-            final int cost;
-            SpellEntry(SpellSource source, int cost) {
-                this.source = source;
-                this.cost = cost;
-            }
-        }
+        record SpellEntry(SpellSource source, int cost) {}
     }
+
     /**
      * 连招搜索结果，包含选中的法术列表和尝试次数。
      */
-    private static class SearchResult {
-        final List<SpellSource> combo;
-        final int attempts;
-        SearchResult(List<SpellSource> combo, int attempts) {
-            this.combo = combo;
-            this.attempts = attempts;
-        }
-    }
+    private record SearchResult(List<SpellSource> combo, int attempts) {}
+
     /**
      * 决策入口，由外部每 tick 调用。
      * 仅当满足时间间隔、有目标、且不在连招队列中时才进行决策。
      */
     public static void tick(LivingEntity entity) {
-        if (SpellQueueHelper.hasActiveCombo(entity)) return;
+        if (MobSpellQueue.hasActiveCombo(entity)) return;
         if (!isDecisionTime(entity)) return;
         if (!hasValidTarget(entity)) return;
 
@@ -113,6 +104,7 @@ public class SpellDecisionHelper {
     private static boolean isDecisionTime(LivingEntity entity) {
         return entity.level().getGameTime() % DECISION_INTERVAL == 0;
     }
+
     /**
      * 检查实体是否有有效的攻击目标。
      */
@@ -120,6 +112,7 @@ public class SpellDecisionHelper {
         if (!(entity instanceof Targeting targeting)) return false;
         return targeting.getTarget() != null;
     }
+
     /**
      * 计算当前法力比例（当前法力/最大法力）。
      */
@@ -127,6 +120,7 @@ public class SpellDecisionHelper {
         float maxMana = (float) entity.getAttributeValue(MAX_MANA);
         return maxMana > 0 ? magicData.getMana() / maxMana : 0;
     }
+
     /**
      * 判断是否跳过本次决策（低法力或随机延迟）。
      */
@@ -134,12 +128,14 @@ public class SpellDecisionHelper {
         float threshold = LOW_MANA_DELAY_RATIO * perception;
         return manaRatio < threshold || entity.getRandom().nextFloat() < DELAY_CHANCE;
     }
+
     /**
      * 是否尝试连招（法力充足且随机概率命中）。
      */
     private static boolean shouldAttemptCombo(float manaRatio, RandomSource random) {
         return manaRatio > COMBO_TRIGGER_MANA_RATIO && random.nextFloat() < COMBO_CHANCE;
     }
+
     /**
      * 构建当前实体的法术缓存（从各个物品栏获取法术）。
      */
@@ -147,6 +143,7 @@ public class SpellDecisionHelper {
         List<SpellSource> allSpells = SpellCastHelper.getEntitySpells(entity);
         return allSpells.isEmpty() ? null : new SpellCache(allSpells);
     }
+
     /**
      * 尝试执行连招，若成功返回 true。
      * 会搜索最优连招，并立即施放第一个，其余加入队列。
@@ -181,12 +178,13 @@ public class SpellDecisionHelper {
         }
 
         if (combo.size() > 1) {
-            SpellQueueHelper.submitCombo(entity, combo.subList(1, combo.size()), 5);
+            MobSpellQueue.submitCombo(entity, combo.subList(1, combo.size()), 5);
         } else {
             updatePerception(entity, false, 0);
         }
         return true;
     }
+
     /**
      * 执行单发法术：随机选取一个可用法术，校验后施放。
      */
@@ -214,13 +212,14 @@ public class SpellDecisionHelper {
             updatePerception(entity, false, 0);
         }
     }
+
     /**
      * 搜索最优连招组合，返回选定法术列表和尝试次数。
      * 算法尝试选择一个起始法术（消耗约60%法力）和一个终止法术，若最大连击数≥3则尝试插入中间法术。
      */
     private static SearchResult findOptimalCombo(SpellCache cache, float currentMana, RandomSource random) {
         List<SpellCache.SpellEntry> instants = cache.instantSortedByCost;
-        if (instants.isEmpty() || SpellDecisionHelper.COMBO_MAX_HITS < 2) return new SearchResult(null, 0);
+        if (instants.isEmpty() || MobSpellTactics.COMBO_MAX_HITS < 2) return new SearchResult(null, 0);
 
         // 从列表中选取消耗不超过上限的随机法术
         java.util.function.BiFunction<List<SpellCache.SpellEntry>, Float, SpellCache.SpellEntry> pickBelow = (list, max) -> {
@@ -268,7 +267,7 @@ public class SpellDecisionHelper {
             if (terminator == null) continue;
 
             // 若允许3连击，尝试插入中间法术
-            if (SpellDecisionHelper.COMBO_MAX_HITS >= 3) {
+            if (MobSpellTactics.COMBO_MAX_HITS >= 3) {
                 float remain = currentMana - first.cost - terminator.cost;
                 if (remain >= instants.getFirst().cost) {
                     List<SpellCache.SpellEntry> middleCandidates = instants.stream()
@@ -285,6 +284,7 @@ public class SpellDecisionHelper {
         }
         return new SearchResult(null, attempts);
     }
+
     /**
      * 验证法术源是否仍存在于实体的物品栏中（防止物品被换掉）。
      */
@@ -300,12 +300,14 @@ public class SpellDecisionHelper {
         }
         return true;
     }
+
     /**
      * 获取当前实体的感知值（法力感知，用于调整低法力延迟阈值）。
      */
     private static float getPerception(LivingEntity entity) {
         return entity.getPersistentData().getFloat(PERCEPTION_TAG);
     }
+
     /**
      * 更新感知值：法力短缺增加感知，施法成功则减少；搜索尝试次数也会影响增量。
      */
@@ -318,9 +320,10 @@ public class SpellDecisionHelper {
         float costFactor = searchAttempts > 0 ? (1.0f + (searchAttempts / (float) COMBO_SEARCH_ATTEMPTS)) : 1.0f;
         float scale = manaShortage ? (1.0f - offset / range) : (offset / range);
         float increment = baseIncrement * scale * costFactor;
-        float newPerception = Math.min(PERCEPTION_MAX, Math.max(PERCEPTION_INITIAL, perception + increment));
+        float newPerception = Math.clamp(perception + increment, PERCEPTION_INITIAL, PERCEPTION_MAX);
         entity.getPersistentData().putFloat(PERCEPTION_TAG, newPerception);
     }
+
     /**
      * 获取槽位名称（用于施法记录）。
      */

@@ -13,6 +13,10 @@
       "required": false
     },
     {
+      "id": "irons_spellbooks:sacrifice",
+      "required": false
+    },
+    {
       "id": "irons_spellbooks:shield",
       "required": false
     },
@@ -30,6 +34,10 @@
     },
     {
       "id": "irons_spellbooks:throw",
+      "required": false
+    },
+    {
+      "id": "irons_spellbooks:touch_dig",
       "required": false
     },
     {

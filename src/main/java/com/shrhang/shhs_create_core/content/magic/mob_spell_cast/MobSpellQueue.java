@@ -1,4 +1,4 @@
-package com.shrhang.shhs_create_core.content.util;
+package com.shrhang.shhs_create_core.content.magic.mob_spell_cast;
 
 import com.shrhang.shhs_create_core.content.util.SpellCastHelper.SpellSource;
 import io.redspace.ironsspellbooks.api.magic.MagicData;
@@ -11,9 +11,10 @@ import java.util.List;
 import java.util.WeakHashMap;
 
 import static com.shrhang.shhs_create_core.content.util.SpellCastHelper.attemptInitiateEntityCast;
+
 /** 管理生物的连招队列调度，仅在非施法状态下推进下一发法术。 */
-public class SpellQueueHelper {
-    private static final int COMBO_INTERVAL_TICKS = 5;
+public class MobSpellQueue {
+    private static final int COMBO_INTERVAL_TICKS = 5; //
     private static final WeakHashMap<LivingEntity, ComboState> QUEUES = new WeakHashMap<>();
 
     private static class ComboState {
@@ -28,16 +29,19 @@ public class SpellQueueHelper {
             this.manaShortage = false;
         }
     }
+
     /** 提交连招剩余部分，从指定延迟后开始施放。 */
     public static void submitCombo(LivingEntity entity, List<SpellSource> remainingSpells, long delayFromNow) {
         if (remainingSpells.isEmpty()) return;
         QUEUES.put(entity, new ComboState(remainingSpells, entity.level().getGameTime() + delayFromNow));
     }
+
     /** 检查是否有活动的连招队列。 */
     public static boolean hasActiveCombo(LivingEntity entity) {
         ComboState state = QUEUES.get(entity);
         return state != null && state.index < state.spells.size();
     }
+
     /** 每 tick 推进队列，仅在非施法时执行下一发。 */
     public static void tickQueue(LivingEntity entity) {
         ComboState state = QUEUES.get(entity);
@@ -68,10 +72,12 @@ public class SpellQueueHelper {
             QUEUES.remove(entity);
         }
     }
+
     /** 清除生物的连招队列。 */
     public static void clearQueue(LivingEntity entity) {
         QUEUES.remove(entity);
     }
+
     private static String getSlotName(EquipmentSlot slot) {
         if (slot == EquipmentSlot.MAINHAND) return "mainhand";
         if (slot == EquipmentSlot.OFFHAND) return "offhand";

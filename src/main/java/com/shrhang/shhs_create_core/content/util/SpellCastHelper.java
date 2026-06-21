@@ -2,7 +2,7 @@ package com.shrhang.shhs_create_core.content.util;
 
 import com.shrhang.shhs_create_core.api.events.SpellOnEntityCastEvent;
 import com.shrhang.shhs_create_core.api.events.SpellPreEntityCastEvent;
-import com.shrhang.shhs_create_core.content.magic.MobMagicManager;
+import com.shrhang.shhs_create_core.content.magic.mob_spell_cast.MobMagicManager;
 import io.redspace.ironsspellbooks.api.magic.MagicData;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.*;
@@ -104,6 +104,9 @@ public class SpellCastHelper {
         }
     }
 
+    /**
+     * 强制让实体面向目标，适用于施法时需要面向目标的情况。
+     */
     public static void forceLookAtTarget(LivingEntity entity, LivingEntity target) {
         if (target != null) {
             double d0 = target.getX() - entity.getX();
@@ -118,6 +121,9 @@ public class SpellCastHelper {
         }
     }
 
+    /**
+     * 设置实体的传送位置为目标的后方，距离由distance参数决定。适用于施法时需要传送到目标后方的情况。
+     */
     public static void setTeleportLocationBehindTarget(Targeting entity, int distance) {
         LivingEntity livingEntity = (LivingEntity) entity;
         var target = entity.getTarget();
@@ -147,10 +153,18 @@ public class SpellCastHelper {
         }
     }
 
+    /**
+     * 设置实体释放烈焰冲锋的方向数据。
+     */
     public static void setBurningDashDirectionData(LivingEntity entity) {
         MagicData.getPlayerMagicData(entity).setAdditionalCastData(new BurningDashSpell.BurningDashDirectionOverrideCastData());
     }
 
+    /**
+     * 获取实体身上的法术源
+     * @param entity 传入的实体
+     * @return {@link SpellSource} 列表
+     */
     public static List<SpellSource> getEntitySpells(LivingEntity entity) {
         Map<AbstractSpell, SpellSource> highestLevelSpells = new HashMap<>();
         for (EquipmentSlot slot : EquipmentSlot.values()) {
@@ -170,7 +184,7 @@ public class SpellCastHelper {
                         SpellData currentData = spellSlot.spellData();
                         AbstractSpell spell = currentData.getSpell();
                         if (spell == SpellRegistry.none()) continue;
-                        // 去重与最高等级筛选
+                        // 重复法术取等级更高者
                         SpellSource existingOption = highestLevelSpells.get(spell);
                         if (existingOption == null || currentData.getLevel() > existingOption.spellData().getLevel()) {
                             highestLevelSpells.put(spell, new SpellSource(currentData, castSource, slot));
@@ -182,5 +196,8 @@ public class SpellCastHelper {
         return new ArrayList<>(highestLevelSpells.values());
     }
 
+    /**
+     * 记录一个法术来源的信息，包括法术数据、施法源和所在的装备槽位。
+     */
     public record SpellSource(SpellData spellData, CastSource castSource, EquipmentSlot slot) {}
 }
