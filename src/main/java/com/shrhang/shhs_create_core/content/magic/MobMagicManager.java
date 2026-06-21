@@ -19,33 +19,19 @@ import java.util.Objects;
 import static com.shrhang.shhs_create_core.content.util.SpellCastHelper.entityCastSpell;
 import static io.redspace.ironsspellbooks.api.registry.AttributeRegistry.*;
 
+/** 管理生物当前施法的状态机推进，包括冷却计时、法术读条、持续施法触发与法力恢复。 */
 public class MobMagicManager {
     public static final int MANA_REGEN_TICKS = 10;
     public static final int CONTINUOUS_CAST_TICK_INTERVAL = 10;
-
-    public static boolean regenMana(LivingEntity entity, MagicData magicData) {
-        int maxMana = (int) entity.getAttributeValue(MAX_MANA); // 获取最大法力值
-        var mana = magicData.getMana(); // 获取当前法力值
-        if (mana != maxMana) {
-            var increment = maxMana * entity.getAttributeValue(MANA_REGEN) * .05f * ShHsConfig.SERVER.mobManaRegenMultiplier.get().floatValue(); // 计算法力值增量
-            magicData.setMana((float) Mth.clamp(magicData.getMana() + increment, 0, maxMana)); // 更新法力值，并确保不超过最大值
-            return true;
-        } else {
-            return false;
-        }
-    }
-
+    /** 每 tick 调用，推进当前施法状态。 */
     public static void tick(LivingEntity entity) {
         if (entity.level().isClientSide) return;
         Level level = entity.level();
         boolean doManaRegen = Objects.requireNonNull(level.getServer()).getTickCount() % MANA_REGEN_TICKS == 0;
-
         MagicData magicData = MagicData.getPlayerMagicData(entity);
-
-        // 冷却相关逻辑
+        // 冷却与重施法计时
         magicData.getPlayerCooldowns().tick(1);
         magicData.getPlayerRecasts().tick(2);
-
         if (magicData.isCasting()) {
             var spell = SpellRegistry.getSpell(magicData.getCastingSpellId());
             if ((spell.getCastType() == CastType.LONG && !entity.isUsingItem()) || spell.getCastType() == CastType.INSTANT) {
@@ -74,33 +60,36 @@ public class MobMagicManager {
                 spell.onServerCastTick(level, magicData.getCastingSpellLevel(), entity, magicData);
             }
         }
-
         if (doManaRegen) {
-            if (regenMana(entity, magicData)) {
-// TODO 暂时不知道有什么用，可能以后会写客户端同步怪物的法力值
-//                if (entity instanceof ServerPlayer serverPlayer) {
-//                    PacketDistributor.sendToPlayer(serverPlayer, new SyncManaPacket(magicData));
-//                }
-            }
+            regenMana(entity, magicData);
         }
-        
     }
-
+    /** 恢复法力值，每 10 tick 调用一次。 */
+    public static boolean regenMana(LivingEntity entity, MagicData magicData) {
+        int maxMana = (int) entity.getAttributeValue(MAX_MANA);
+        var mana = magicData.getMana();
+        if (mana != maxMana) {
+            var increment = maxMana * entity.getAttributeValue(MANA_REGEN) * .05f * ShHsConfig.SERVER.mobManaRegenMultiplier.get().floatValue();
+            magicData.setMana((float) Mth.clamp(magicData.getMana() + increment, 0, maxMana));
+            return true;
+        }
+        return false;
+    }
+    /** 消耗生物正在使用的卷轴。 */
     public static void removeMobsScroll(LivingEntity entity) {
         ItemStack potentialScroll = MagicData.getPlayerMagicData(entity).getPlayerCastingItem();
         if (potentialScroll.getItem() instanceof Scroll) {
             potentialScroll.shrink(1);
         }
     }
-
+    /** 给生物添加法术冷却。 */
     public static void addCooldown(LivingEntity entity, AbstractSpell spell, CastSource castSource) {
         int effectiveCooldown = getEffectiveSpellCooldown(spell, entity, castSource);
         MagicData.getPlayerMagicData(entity).getPlayerCooldowns().addCooldown(spell, effectiveCooldown);
     }
-
+    /** 计算法术的实际冷却时间，受属性与施法来源影响。 */
     public static int getEffectiveSpellCooldown(AbstractSpell spell, LivingEntity entity, CastSource castSource) {
         double cooldownModifier = entity.getAttributeValue(COOLDOWN_REDUCTION);
-
         float itemCoolDownModifer = 1;
         if (castSource == CastSource.SWORD) {
             itemCoolDownModifer = ServerConfigs.SWORDS_CD_MULTIPLIER.get().floatValue();
