@@ -2,22 +2,22 @@ package com.shrhang.shhs_create_core.api.registrate;
 
 import com.shrhang.shhs_create_core.ShHsCreateCore;
 import com.simibubi.create.api.registrate.CreateRegistrateRegistrationCallback;
-import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.simibubi.create.content.fluids.VirtualFluid;
+import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.tterrag.registrate.builders.BlockBuilder;
 import com.tterrag.registrate.builders.FluidBuilder;
 import com.tterrag.registrate.builders.ItemBuilder;
-import com.tterrag.registrate.util.nullness.NonNullSupplier;
 import com.tterrag.registrate.util.nullness.NonNullFunction;
+import com.tterrag.registrate.util.nullness.NonNullSupplier;
 import dev.xkmc.l2hostility.content.config.TraitConfig;
 import dev.xkmc.l2hostility.content.traits.base.MobTrait;
 import dev.xkmc.l2hostility.init.registrate.LHTraits;
 import dev.xkmc.l2serial.util.ModContainerHack;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
@@ -122,7 +122,7 @@ public class ShHsRegistrate extends CreateRegistrate {
     /**
      * 复刻了l2hostility的trait注册方法，注册时会自动生成对应的tag和物品。
      */
-    public final <T extends MobTrait> ShHsTraitBuilder<T> trait(String name, NonNullSupplier<T> sup,TraitConfig config) {
+    public <T extends MobTrait> ShHsTraitBuilder<T> trait(String name, NonNullSupplier<T> sup,TraitConfig config) {
         return entry(name, cb -> new ShHsTraitBuilder<>(this, this, name, cb, sup))
                 .dataMap(LHTraits.DATA.reg(), config)
                 .item().build();

@@ -11,7 +11,7 @@ import java.util.UUID;
 public record LogisticsNetworkLink(UUID networkId) {
 
     public static final Codec<LogisticsNetworkLink> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            UUIDUtil.CODEC.fieldOf("network").forGetter(LogisticsNetworkLink::networkId)
+            UUIDUtil.CODEC.fieldOf("Freq").forGetter(LogisticsNetworkLink::networkId)
     ).apply(instance, LogisticsNetworkLink::new));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, LogisticsNetworkLink> STREAM_CODEC = StreamCodec.composite(

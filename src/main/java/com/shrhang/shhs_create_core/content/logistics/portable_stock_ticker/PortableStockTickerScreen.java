@@ -145,7 +145,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
         PortableStockTickerClientData.Snapshot snapshot = PortableStockTickerClientData.get(menu.networkId);
         if (snapshot != null) {
             snapshot.tick();
-            if (!invalidStatusHandled && snapshot.status() == PortableStockTickerClientData.NetworkStatus.NO_NETWORK) {
+            if (!invalidStatusHandled && snapshot.status() == LogisticsNetworkStatus.NO_NETWORK) {
                 invalidStatusHandled = true;
                 if (minecraft != null && minecraft.player != null) {
                     minecraft.player.displayClientMessage(textComponent("portable_stock_ticker.no_network").withStyle(ChatFormatting.DARK_RED), true);
@@ -153,7 +153,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
                 onClose();
                 return;
             }
-            if (!invalidStatusHandled && snapshot.status() == PortableStockTickerClientData.NetworkStatus.UNLOADED) {
+            if (!invalidStatusHandled && snapshot.status() == LogisticsNetworkStatus.UNLOADED) {
                 invalidStatusHandled = true;
                 if (minecraft != null && minecraft.player != null) {
                     minecraft.player.displayClientMessage(textComponent("portable_stock_ticker.unloaded").withStyle(ChatFormatting.DARK_RED), true);

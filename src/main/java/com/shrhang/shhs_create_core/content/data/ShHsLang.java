@@ -1,5 +1,7 @@
 package com.shrhang.shhs_create_core.content.data;
 
+import com.shrhang.shhs_create_core.content.registries.ShHsKeys;
+import com.tterrag.registrate.providers.ProviderType;
 import joptsimple.internal.Strings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -12,6 +14,11 @@ import static com.shrhang.shhs_create_core.ShHsCreateCore.REGISTRATE;
 import static net.createmod.catnip.lang.LangBuilder.DEFAULT_SPACE_WIDTH;
 
 public class ShHsLang {
+
+    public static final String CATEGORY_KEY = "key.categories." + MODID;
+    public static String keyKey(String key) {
+        return "key." + MODID + "." + key;
+    }
 
     public static String textKey(String key) {
         return "text." + MODID + "." + key;
@@ -61,9 +68,12 @@ public class ShHsLang {
         REGISTRATE.addRawLang(tooltipKey("brass_ender_chest.locked"), "Locked: Only the owner can open.");
         REGISTRATE.addRawLang(tooltipKey("brass_ender_chest.unlocked"), "Unlocked: Anyone can open.");
 
-        REGISTRATE.addRawLang(textKey("portable_stock_ticker.tooltip.linked"), "Connected. Press [ALT] to show NetID.");
-        REGISTRATE.addRawLang(textKey("portable_stock_ticker.no_data"), "Not connected to a Logistics Network");
+        REGISTRATE.addRawLang(textKey("portable_stock_ticker.tooltip.linked"), "Linked.");
+        REGISTRATE.addRawLang(textKey("portable_stock_ticker.no_data"), "Not Linked to a Logistics Network");
         REGISTRATE.addRawLang(textKey("portable_stock_ticker.no_network"), "Linked Logistics Network no exists.");
         REGISTRATE.addRawLang(textKey("portable_stock_ticker.unloaded"), "Linked Logistics Network is unloaded.");
+
+        REGISTRATE.addRawLang(CATEGORY_KEY, "ShH's Create Core");
+        REGISTRATE.addDataGenerator(ProviderType.LANG, provider -> ShHsKeys.provideLang(provider::add));
     }
 }
