@@ -1,10 +1,14 @@
 package com.shrhang.shhs_create_core.content.event;
 
+import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.OpenPortableStockTickerPacket;
 import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerClientData;
 import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.network.PacketDistributor;
+
+import static com.shrhang.shhs_create_core.content.registries.ShHsKeys.OPEN_PORTABLE_STOCK_TICKER;
 
 public class ClientEvents {
     public static void init() {
@@ -27,5 +31,13 @@ public class ClientEvents {
             return;
         }
         PortableStockTickerClientData.pruneExpired(minecraft.level.getGameTime());
+
+        if (minecraft.player == null || minecraft.screen != null) {
+            return;
+        }
+
+        while (OPEN_PORTABLE_STOCK_TICKER.getKeybind().consumeClick()) {
+            PacketDistributor.sendToServer(OpenPortableStockTickerPacket.INSTANCE);
+        }
     }
 }

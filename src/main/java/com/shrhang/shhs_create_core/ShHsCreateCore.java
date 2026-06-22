@@ -1,15 +1,15 @@
 package com.shrhang.shhs_create_core;
 
-import com.shrhang.shhs_create_core.content.registries.*;
+import com.shrhang.shhs_create_core.api.registrate.ShHsAtlases;
+import com.shrhang.shhs_create_core.api.registrate.ShHsRegistrate;
 import com.shrhang.shhs_create_core.compat.Mods;
 import com.shrhang.shhs_create_core.compat.create_enchantment_industry.CreateEnchantmentIndustry;
-import com.shrhang.shhs_create_core.api.registrate.ShHsAtlases;
 import com.shrhang.shhs_create_core.content.data.ShHsLang;
-import com.shrhang.shhs_create_core.api.registrate.ShHsRegistrate;
 import com.shrhang.shhs_create_core.content.data.ShHsTagKey;
 import com.shrhang.shhs_create_core.content.event.ClientEvents;
 import com.shrhang.shhs_create_core.content.event.MagicEventHandler;
 import com.shrhang.shhs_create_core.content.event.ShHsAttackListener;
+import com.shrhang.shhs_create_core.content.registries.*;
 import com.simibubi.create.foundation.item.ItemDescription;
 import com.simibubi.create.foundation.item.KineticStats;
 import com.simibubi.create.foundation.item.TooltipModifier;
@@ -49,6 +49,9 @@ public class ShHsCreateCore {
         modEventBus.addListener(ShHsCreateCore::init);
         modEventBus.addListener(ShHsPackets::register);
         modEventBus.addListener(ShHsCreateCore::modifyEntityAttributes);
+        if (FMLEnvironment.dist.isClient()) {
+            modEventBus.addListener(ShHsKeys::register);
+        }
     }
 
     public static void init(final FMLCommonSetupEvent event) {

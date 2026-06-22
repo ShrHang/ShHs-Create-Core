@@ -16,7 +16,7 @@ public class PortableStockTickerClientData {
         lastPruneTick = Long.MIN_VALUE;
     }
 
-    public static void receiveStatus(UUID networkId, NetworkStatus status) {
+    public static void receiveStatus(UUID networkId, LogisticsNetworkStatus status) {
         Snapshot snapshot = SNAPSHOTS.computeIfAbsent(networkId, id -> new Snapshot());
         snapshot.touch(snapshot.lastStatusRequestTick);
         snapshot.status = status;
@@ -67,7 +67,7 @@ public class PortableStockTickerClientData {
         private List<List<BigItemStack>> stockSnapshot = List.of();
         private InventorySummary summary = new InventorySummary();
         private int ticksSinceLastUpdate;
-        private NetworkStatus status = NetworkStatus.UNKNOWN;
+        private LogisticsNetworkStatus status = LogisticsNetworkStatus.INACCESSIBLE;
         private long lastStatusUpdateTick = Long.MIN_VALUE;
         private long lastStatusRequestTick = Long.MIN_VALUE;
         private long lastAccessTick = Long.MIN_VALUE;
@@ -84,7 +84,7 @@ public class PortableStockTickerClientData {
             return ticksSinceLastUpdate;
         }
 
-        public NetworkStatus status() {
+        public LogisticsNetworkStatus status() {
             return status;
         }
 
@@ -123,10 +123,4 @@ public class PortableStockTickerClientData {
         }
     }
 
-    public enum NetworkStatus {
-        UNKNOWN,
-        AVAILABLE,
-        NO_NETWORK,
-        UNLOADED
-    }
 }

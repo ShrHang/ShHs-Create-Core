@@ -22,6 +22,10 @@ import java.util.UUID;
 import static com.shrhang.shhs_create_core.ShHsCreateCore.rl;
 
 public class StockInventoryPacket {
+
+    /**
+     * C2S，请求网络库存。
+     */
     public record StockRequestPacket(UUID networkId) implements CustomPacketPayload {
         public static final Type<StockRequestPacket> TYPE = new Type<>(rl("portable_stock_request"));
         private static final StreamCodec<RegistryFriendlyByteBuf, UUID> UUID_CODEC = UUIDUtil.STREAM_CODEC.cast();
@@ -75,6 +79,9 @@ public class StockInventoryPacket {
         }
     }
 
+    /**
+     * S2C，返回对应网络的库存信息。由于可能存在大量物品，因此分包发送，最后一个包会将lastPacket设置为true。
+     */
     public record StockResponsePacket(UUID networkId, boolean lastPacket, List<BigItemStack> items) implements CustomPacketPayload {
         public static final Type<StockResponsePacket> TYPE = new Type<>(rl("portable_stock_response"));
         private static final StreamCodec<RegistryFriendlyByteBuf, UUID> UUID_CODEC = UUIDUtil.STREAM_CODEC.cast();

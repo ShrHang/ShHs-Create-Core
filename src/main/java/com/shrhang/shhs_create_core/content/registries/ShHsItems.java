@@ -3,6 +3,7 @@ package com.shrhang.shhs_create_core.content.registries;
 import com.shrhang.shhs_create_core.content.hostility.EmptyTraitItem;
 import com.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerItem;
 import com.tterrag.registrate.util.entry.ItemEntry;
+import top.theillusivec4.curios.api.CuriosTags;
 
 import static com.shrhang.shhs_create_core.ShHsCreateCore.REGISTRATE;
 
@@ -18,6 +19,7 @@ public class ShHsItems {
                 .tooltipSummary("Allows you to connect to a _Logistics Network_ and remotely view its stock information.")
                 .tooltipBehaviour(1, "When used", "If linked network exists and _is loaded_, opens a request menu.")
                 .tooltipBehaviour(2, "When used in Sneak on Blocks", "If the target block is a _Stock Ticker_, _Stock Link_ or _Redstone Requester_, links to its network.")
+                .tag(CuriosTags.CURIO)
                 .register();
 
         EMPTY_TRAIT = REGISTRATE.item("empty_trait", EmptyTraitItem::new)

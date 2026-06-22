@@ -14,6 +14,10 @@ import java.util.UUID;
 import static com.shrhang.shhs_create_core.ShHsCreateCore.rl;
 
 public class StockStatusPacket {
+
+    /**
+     * C2S，请求网络状态。
+     */
     public record StockStatusRequestPacket(UUID networkId) implements CustomPacketPayload {
         public static final Type<StockStatusRequestPacket> TYPE = new Type<>(rl("portable_stock_status_request"));
         private static final StreamCodec<RegistryFriendlyByteBuf, UUID> UUID_CODEC = UUIDUtil.STREAM_CODEC.cast();
@@ -30,8 +34,8 @@ public class StockStatusPacket {
                 return;
 
             UUID networkId = packet.networkId();
-            PortableStockTickerClientData.NetworkStatus status = PortableStockTickerItem.getNetworkStatus(player, networkId);
-            if (status == PortableStockTickerClientData.NetworkStatus.UNKNOWN) {
+            LogisticsNetworkStatus status = LogisticsNetworkStatus.resolve(player, networkId);
+            if (status == LogisticsNetworkStatus.INACCESSIBLE) {
                 return;
             }
 
@@ -39,13 +43,16 @@ public class StockStatusPacket {
         }
     }
 
+    /**
+     * S2C，返回对应网络的状态。
+     */
     public record StockStatusResponsePacket(UUID networkId,
-                                            PortableStockTickerClientData.NetworkStatus status) implements CustomPacketPayload {
+                                            LogisticsNetworkStatus status) implements CustomPacketPayload {
         public static final Type<StockStatusResponsePacket> TYPE = new Type<>(rl("portable_stock_status"));
         private static final StreamCodec<RegistryFriendlyByteBuf, UUID> UUID_CODEC = UUIDUtil.STREAM_CODEC.cast();
-        private static final StreamCodec<RegistryFriendlyByteBuf, PortableStockTickerClientData.NetworkStatus> STATUS_CODEC =
-                ByteBufCodecs.VAR_INT.map(ordinal -> PortableStockTickerClientData.NetworkStatus.values()[ordinal],
-                        PortableStockTickerClientData.NetworkStatus::ordinal).cast();
+        private static final StreamCodec<RegistryFriendlyByteBuf, LogisticsNetworkStatus> STATUS_CODEC =
+                ByteBufCodecs.VAR_INT.map(ordinal -> LogisticsNetworkStatus.values()[ordinal],
+                        LogisticsNetworkStatus::ordinal).cast();
         public static final StreamCodec<RegistryFriendlyByteBuf, StockStatusResponsePacket> STREAM_CODEC = StreamCodec.composite(
                 UUID_CODEC, StockStatusResponsePacket::networkId,
                 STATUS_CODEC, StockStatusResponsePacket::status,

@@ -18,6 +18,9 @@ import java.util.UUID;
 
 import static com.shrhang.shhs_create_core.ShHsCreateCore.rl;
 
+/**
+ * C2S，发送包裹下单指令
+ */
 public record RemotePackageOrderPacket(UUID networkId, PackageOrderWithCrafts order,
                                        String address) implements CustomPacketPayload {
     public static final Type<RemotePackageOrderPacket> TYPE = new Type<>(rl("portable_package_order_request"));
