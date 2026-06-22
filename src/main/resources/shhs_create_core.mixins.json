@@ -7,7 +7,8 @@
   "plugin": "com.shrhang.shhs_create_core.mixin.MixinPlugin",
   "mixins": [
     "curios.common.data.CuriosEntityManagerMixin",
-    "irons_spellbooks.util.TooltipsUtilsMixin"
+    "irons_spellbooks.util.TooltipsUtilsMixin",
+    "irons_spellbooks.capabilities.magic.PlayerRecastsMixin"
   ],
   "client": [
   ],

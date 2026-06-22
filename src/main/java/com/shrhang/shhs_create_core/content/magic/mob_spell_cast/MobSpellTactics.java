@@ -25,16 +25,15 @@ import static io.redspace.ironsspellbooks.api.registry.AttributeRegistry.MAX_MAN
  */
 public class MobSpellTactics {
     // 决策参数
-    private static final float COMBO_TRIGGER_MANA_RATIO = 0.5f;   // 触发连招的最低法力比例
-    private static final float COMBO_CHANCE = 0.3f;              // 尝试连招的概率
-    private static final int COMBO_MAX_HITS = 3;                 // 连招最大法术数量
-    private static final float DELAY_CHANCE = 0.1f;              // 随机延迟施法的概率
-    private static final float LOW_MANA_DELAY_RATIO = 0.2f;      // 低法力延迟阈值系数
-    private static final int DECISION_INTERVAL = 40;             // 决策间隔（tick）
-    private static final float COMBO_TERMINATOR_SHORT_CHANCE = 0.25f; // 终止法术选择短施法类型的概率
-    private static final int COMBO_SEARCH_ATTEMPTS = 20;         // 连招搜索尝试次数
+    private static final float COMBO_TRIGGER_MANA_RATIO = 0.5f;
+    private static final float COMBO_CHANCE = 0.3f;
+    private static final int COMBO_MAX_HITS = 3;
+    private static final float DELAY_CHANCE = 0.1f;
+    private static final float LOW_MANA_DELAY_RATIO = 0.2f;
+    private static final int DECISION_INTERVAL = 40;
+    private static final float COMBO_TERMINATOR_SHORT_CHANCE = 0.25f;
+    private static final int COMBO_SEARCH_ATTEMPTS = 20;
     // 感知管理参数
-    private static final String PERCEPTION_TAG = "wizard_mana_perception";
     private static final float PERCEPTION_INITIAL = 1.0f;
     private static final float PERCEPTION_MAX = 2.0f;
     private static final float PERCEPTION_INCREASE = 0.2f;
@@ -66,12 +65,10 @@ public class MobSpellTactics {
 
         record SpellEntry(SpellSource source, int cost) {}
     }
-
     /**
      * 连招搜索结果，包含选中的法术列表和尝试次数。
      */
     private record SearchResult(List<SpellSource> combo, int attempts) {}
-
     /**
      * 决策入口，由外部每 tick 调用。
      * 仅当满足时间间隔、有目标、且不在连招队列中时才进行决策。
@@ -104,15 +101,14 @@ public class MobSpellTactics {
     private static boolean isDecisionTime(LivingEntity entity) {
         return entity.level().getGameTime() % DECISION_INTERVAL == 0;
     }
-
     /**
-     * 检查实体是否有有效的攻击目标。
+     * 检查实体是否有有效的攻击目标（目标非空且存活）。
      */
     private static boolean hasValidTarget(LivingEntity entity) {
         if (!(entity instanceof Targeting targeting)) return false;
-        return targeting.getTarget() != null;
+        LivingEntity target = targeting.getTarget();
+        return target != null && target.isAlive();
     }
-
     /**
      * 计算当前法力比例（当前法力/最大法力）。
      */
@@ -120,7 +116,6 @@ public class MobSpellTactics {
         float maxMana = (float) entity.getAttributeValue(MAX_MANA);
         return maxMana > 0 ? magicData.getMana() / maxMana : 0;
     }
-
     /**
      * 判断是否跳过本次决策（低法力或随机延迟）。
      */
@@ -128,14 +123,12 @@ public class MobSpellTactics {
         float threshold = LOW_MANA_DELAY_RATIO * perception;
         return manaRatio < threshold || entity.getRandom().nextFloat() < DELAY_CHANCE;
     }
-
     /**
      * 是否尝试连招（法力充足且随机概率命中）。
      */
     private static boolean shouldAttemptCombo(float manaRatio, RandomSource random) {
         return manaRatio > COMBO_TRIGGER_MANA_RATIO && random.nextFloat() < COMBO_CHANCE;
     }
-
     /**
      * 构建当前实体的法术缓存（从各个物品栏获取法术）。
      */
@@ -143,7 +136,6 @@ public class MobSpellTactics {
         List<SpellSource> allSpells = SpellCastHelper.getEntitySpells(entity);
         return allSpells.isEmpty() ? null : new SpellCache(allSpells);
     }
-
     /**
      * 尝试执行连招，若成功返回 true。
      * 会搜索最优连招，并立即施放第一个，其余加入队列。
@@ -184,7 +176,6 @@ public class MobSpellTactics {
         }
         return true;
     }
-
     /**
      * 执行单发法术：随机选取一个可用法术，校验后施放。
      */
@@ -212,7 +203,6 @@ public class MobSpellTactics {
             updatePerception(entity, false, 0);
         }
     }
-
     /**
      * 搜索最优连招组合，返回选定法术列表和尝试次数。
      * 算法尝试选择一个起始法术（消耗约60%法力）和一个终止法术，若最大连击数≥3则尝试插入中间法术。
@@ -284,7 +274,6 @@ public class MobSpellTactics {
         }
         return new SearchResult(null, attempts);
     }
-
     /**
      * 验证法术源是否仍存在于实体的物品栏中（防止物品被换掉）。
      */
@@ -300,19 +289,17 @@ public class MobSpellTactics {
         }
         return true;
     }
-
     /**
      * 获取当前实体的感知值（法力感知，用于调整低法力延迟阈值）。
      */
     private static float getPerception(LivingEntity entity) {
-        return entity.getPersistentData().getFloat(PERCEPTION_TAG);
+        return entity.getPersistentData().getFloat("wizard_mana_perception");
     }
-
     /**
      * 更新感知值：法力短缺增加感知，施法成功则减少；搜索尝试次数也会影响增量。
      */
     private static void updatePerception(LivingEntity entity, boolean manaShortage, int searchAttempts) {
-        float perception = getPerception(entity);
+        float perception = entity.getPersistentData().getFloat("wizard_mana_perception");
         if (perception == 0) perception = PERCEPTION_INITIAL;
         float range = PERCEPTION_MAX - PERCEPTION_INITIAL;
         float offset = perception - PERCEPTION_INITIAL;
@@ -321,9 +308,8 @@ public class MobSpellTactics {
         float scale = manaShortage ? (1.0f - offset / range) : (offset / range);
         float increment = baseIncrement * scale * costFactor;
         float newPerception = Math.clamp(perception + increment, PERCEPTION_INITIAL, PERCEPTION_MAX);
-        entity.getPersistentData().putFloat(PERCEPTION_TAG, newPerception);
+        entity.getPersistentData().putFloat("wizard_mana_perception", newPerception);
     }
-
     /**
      * 获取槽位名称（用于施法记录）。
      */

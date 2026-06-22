@@ -56,7 +56,6 @@ public class SpellCastHelper {
 
             int effectiveCastTime = spell.getEffectiveCastTime(spellLevel, entity);
 
-            // 施法初始化，会把isCasting置为true，设置持续时间等，之后在MobMagicManager里根据持续时间和施法类型调用entityCastSpell方法
             entityMagicData.initiateCast(spell, spellLevel, effectiveCastTime, castSource, castingEquipmentSlot);
             entityMagicData.setPlayerCastingItem(stack);
 
@@ -67,14 +66,19 @@ public class SpellCastHelper {
         return false;
     }
 
+    /**
+     * 判断法术是否允许被该实体使用。
+     * 移除重施法次数限制，允许多段法术。
+     */
     public static boolean isSpellAllowed(LivingEntity entity, AbstractSpell spell) {
-        return spell.getRecastCount(spell.getMaxLevel(), entity) <= 0 && !ENTITY_SPELL_BLACKLIST.contains(spell) && !(entity.getType().is(EntityTypeTags.UNDEAD) && spell.getSchoolType().getId() == HOLY_RESOURCE);
+        return !ENTITY_SPELL_BLACKLIST.contains(spell)
+                && !(entity.getType().is(EntityTypeTags.UNDEAD) && spell.getSchoolType().getId() == HOLY_RESOURCE);
     }
 
     public static CastResult canBeCastedBy(AbstractSpell spell, int spellLevel, CastSource castSource, MagicData entityMagicData, LivingEntity entity) {
-        if (entityMagicData.getPlayerCooldowns().isOnCooldown(spell)) // 检查冷却
+        if (entityMagicData.getPlayerCooldowns().isOnCooldown(spell))
             return new CastResult(CastResult.Type.FAILURE);
-        else if (castSource.consumesMana() && entityMagicData.getMana() < spell.getManaCost(spellLevel)) // 检查法力
+        else if (castSource.consumesMana() && entityMagicData.getMana() < spell.getManaCost(spellLevel))
             return new CastResult(CastResult.Type.FAILURE);
         else return new CastResult(CastResult.Type.SUCCESS);
     }
@@ -84,8 +88,8 @@ public class SpellCastHelper {
      */
     public static void entityCastSpell(AbstractSpell spell, Level world, int spellLevel, LivingEntity entity, CastSource castSource, boolean triggerCooldown) {
         MagicData magicData = MagicData.getPlayerMagicData(entity);
-        var entityRecasts = magicData.getPlayerRecasts(); // 判断是否多重施法
-        boolean entityAlreadyHasRecast = entityRecasts.hasRecastForSpell(spell.getSpellId()); // 如果已经有重施法了，就不再消耗法力了
+        var entityRecasts = magicData.getPlayerRecasts();
+        boolean entityAlreadyHasRecast = entityRecasts.hasRecastForSpell(spell.getSpellId());
 
         var event = new SpellOnEntityCastEvent(entity, spell.getSpellId(), spellLevel, spell.getManaCost(spellLevel), spell.getSchoolType(), castSource);
         NeoForge.EVENT_BUS.post(event);
@@ -171,8 +175,7 @@ public class SpellCastHelper {
             ItemStack stack = entity.getItemBySlot(slot);
             if (ISpellContainer.isSpellContainer(stack)) {
                 ISpellContainer spellContainer = ISpellContainer.get(stack);
-                if (spellContainer.isSpellWheel() && (!spellContainer.mustEquip() || !(slot.equals(MAINHAND) || slot.equals(OFFHAND)))) { // 如果是法术轮，并且不要求装备，或者当前槽位是主手/副手（即使要求装备也算）
-                    // 根据 ItemStack 的物品类型判断 CastSource
+                if (spellContainer.isSpellWheel() && (!spellContainer.mustEquip() || !(slot.equals(MAINHAND) || slot.equals(OFFHAND)))) {
                     CastSource castSource = CastSource.SWORD;
                     if (stack.getItem() instanceof Scroll) {
                         castSource = CastSource.SCROLL;
@@ -184,7 +187,6 @@ public class SpellCastHelper {
                         SpellData currentData = spellSlot.spellData();
                         AbstractSpell spell = currentData.getSpell();
                         if (spell == SpellRegistry.none()) continue;
-                        // 重复法术取等级更高者
                         SpellSource existingOption = highestLevelSpells.get(spell);
                         if (existingOption == null || currentData.getLevel() > existingOption.spellData().getLevel()) {
                             highestLevelSpells.put(spell, new SpellSource(currentData, castSource, slot));

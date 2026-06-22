@@ -3,6 +3,7 @@ package com.shrhang.shhs_create_core.content.traits;
 import com.shrhang.shhs_create_core.content.magic.mob_spell_cast.MobMagicManager;
 import com.shrhang.shhs_create_core.content.magic.mob_spell_cast.MobSpellQueue;
 import com.shrhang.shhs_create_core.content.magic.mob_spell_cast.MobSpellTactics;
+import com.shrhang.shhs_create_core.content.magic.mob_spell_cast.MobSummonManager;
 import com.shrhang.shhs_create_core.content.util.SpellCastHelper;
 import dev.xkmc.l2hostility.content.logic.TraitManager;
 import dev.xkmc.l2hostility.content.traits.legendary.LegendaryTrait;
@@ -24,6 +25,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.function.IntSupplier;
 
@@ -36,37 +38,30 @@ import static io.redspace.ironsspellbooks.api.registry.AttributeRegistry.MAX_MAN
  * 负责初始化法术书、增加法力/恢复属性，以及每 tick 推进施法状态机和法术决策。
  */
 public class WizardTrait extends LegendaryTrait {
-    // 法术书配置
     private static final int MAX_SPELLBOOK_SLOTS = 20;
-    private static final int MAX_RANDOM_ATTEMPTS = 30; // 最大尝试次数，防止死循环
+    private static final int MAX_RANDOM_ATTEMPTS = 30;
 
     public WizardTrait(IntSupplier color) {
         super(color);
     }
 
-    /**
-     * 根据词条等级增加最大法力和法力恢复属性。
-     * <p>{@link dev.xkmc.l2hostility.content.traits.base.AttributeTrait#initialize(LivingEntity, int)}</p>
-     */
     @Override
-    public void initialize(LivingEntity entity, int traitLV) {
+    public void initialize(@NotNull LivingEntity entity, int traitLV) {
         TraitManager.addAttribute(entity, MAX_MANA, "wizard_max_mana", SERVER.wizardMaxManaPerLev.get() * traitLV, AttributeModifier.Operation.ADD_VALUE);
         TraitManager.addAttribute(entity, MANA_REGEN, "wizard_mana_regen", SERVER.wizardManaRegenPerLev.get(), AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
     }
-    
-    /**
-     * 词条后初始化：应用属性加成、生成法术书、初始化魔力数据。
-     */
+
     @Override
-    public void postInit(LivingEntity entity, int traitLV) {
+    public void postInit(@NotNull LivingEntity entity, int traitLV) {
         grantSpellbook(entity, traitLV);
-        entity.setData(DataAttachmentRegistry.MAGIC_DATA, new MagicData(true)); // TODO 也许不把 isMob 设为 true 会更好？
+        MagicData magicData = new MagicData(false);
+        // 注册映射：MagicData -> 施法者
+        MobSummonManager.registerCaster(magicData, entity);
+        // 强制初始化 PlayerRecasts 并注册映射
+        MobSummonManager.registerRecasts(magicData.getPlayerRecasts(), magicData);
+        entity.setData(DataAttachmentRegistry.MAGIC_DATA, magicData);
     }
 
-    /**
-     * 生成法术书并填充随机法术，等级与词条等级相关。
-     * 若等级为0，则清除带有消失附魔的法术书。
-     */
     private void grantSpellbook(LivingEntity entity, int traitLV) {
         if (traitLV == 0) {
             ItemStack offhand = entity.getItemInHand(InteractionHand.OFF_HAND);
@@ -79,12 +74,10 @@ public class WizardTrait extends LegendaryTrait {
 
         ItemStack spellbook = new ItemStack(ItemRegistry.WIMPY_SPELL_BOOK.get());
 
-        // 添加毁灭附魔
         ItemEnchantments.Mutable enchants = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
         enchants.set(LHEnchantments.VANISH.holder(), 1);
         EnchantmentHelper.setEnchantments(spellbook, enchants.toImmutable());
 
-        // 生成法术书内容
         int spellbookSize = Math.min(traitLV * 2, MAX_SPELLBOOK_SLOTS);
         ISpellContainerMutable container = ISpellContainer.create(spellbookSize, true, false).mutableCopy();
         SpellFilter filter = new SpellFilter();
@@ -98,36 +91,36 @@ public class WizardTrait extends LegendaryTrait {
             }
         }
         ISpellContainer.set(spellbook, container.toImmutable());
-
-        // 法术书设置到实体的副手
-        entity.setItemInHand(InteractionHand.OFF_HAND, spellbook); // TODO 可能以后会换一个位置
+        // TODO 可能以后会换一个位置
+        entity.setItemInHand(InteractionHand.OFF_HAND, spellbook);
     }
 
-    /**
-     * 允许该词条的条件：实体是 Targeting 且不是 AbstractSpellCastingMob。
-     */
     @Override
-    public boolean allow(LivingEntity entity, int difficulty, int maxModLv) {
+    public boolean allow(@NotNull LivingEntity entity, int difficulty, int maxModLv) {
         return super.allow(entity, difficulty, maxModLv) &&
                 entity instanceof Targeting &&
                 !(entity instanceof AbstractSpellCastingMob);
     }
 
     /**
-     * 每 tick 调用：推进施法状态机、法术队列，然后委托法术决策。
+     * 尝试清除实体的法术队列（仅在实体死亡时执行清理，避免内存泄漏）。
      */
+    public static void tryClearCache(LivingEntity entity) {
+        if (!entity.isAlive()) {
+            MobSpellQueue.clearQueue(entity);
+        }
+    }
+
     @Override
-    public void tick(LivingEntity entity, int level) {
+    public void tick(@NotNull LivingEntity entity, int level) {
+        tryClearCache(entity);
         MobMagicManager.tick(entity);
         MobSpellQueue.tickQueue(entity);
         MobSpellTactics.tick(entity);
     }
 
-    /**
-     * 清除实体的法术队列（用于卸载或重置）。
-     */
     @SuppressWarnings("unused")
-    public static void clearCache(LivingEntity entity) { // TODO 还没写清理缓存的具体时机
+    public static void clearCache(LivingEntity entity) {
         MobSpellQueue.clearQueue(entity);
     }
 }
