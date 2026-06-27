@@ -17,38 +17,40 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 
+import java.util.function.IntSupplier;
+
 /**
- * 喷洒器行为：每 tick 消耗至多 4mB 流体，并按实际消耗比例线性衰减喷洒范围，
- * 调用 OpenPipeEffectHandler 应用效果，同时发射 Create 的 FLUID_PARTICLE 粒子，
- * 粒子在朝向方向的前半球内均匀分布，形成包络。
- * 喷洒范围非对称，直接硬编码最大几何尺寸（格数）。
+ * 喷洒行为：每 tick 消耗由 maxConsumptionSupplier 提供的最大量（mB），
+ * 实际消耗量取该值与当前存量较小者，按实际消耗比例线性缩放喷洒范围，
+ * 调用 OpenPipeEffectHandler 应用效果，并发射 Create 的 FLUID_PARTICLE 粒子。
  */
 public class SprayBehaviour extends BlockEntityBehaviour {
 
     public static final BehaviourType<SprayBehaviour> TYPE = new BehaviourType<>();
 
+    // 基准最大消耗（用于归一化比例，实际上限由 supplier 决定）
     private static final int MAX_CONSUMPTION = 4;
-    // 各方向最大范围（格数），乘以 ratio 得实际范围
-    // 竖直朝上
+
+    // 各方向最大范围（格数），乘以实际消耗比例得真实范围
     private static final double UP_HORIZONTAL = 8.0;
     private static final double UP_UP = 2.0;
     private static final double UP_DOWN = 0.0;
 
-    // 竖直朝下
     private static final double DOWN_HORIZONTAL = 8.0;
     private static final double DOWN_UP = 0.0;
     private static final double DOWN_DOWN = 10.5;
 
-    // 水平朝前（统一水平半径 8，竖直非对称）
     private static final double HORIZONTAL_HORIZONTAL = 8.0;
     private static final double HORIZONTAL_UP = 2.0;
     private static final double HORIZONTAL_DOWN = 6.0;
 
-    private final FluidTank tank;
+    protected final FluidTank tank;
+    private final IntSupplier maxConsumptionSupplier;
 
-    public SprayBehaviour(SmartBlockEntity be, FluidTank tank) {
+    public SprayBehaviour(SmartBlockEntity be, FluidTank tank, IntSupplier maxConsumptionSupplier) {
         super(be);
         this.tank = tank;
+        this.maxConsumptionSupplier = maxConsumptionSupplier;
     }
 
     @Override
@@ -60,8 +62,7 @@ public class SprayBehaviour extends BlockEntityBehaviour {
     }
 
     /**
-     * 尝试喷洒：先检查是否存在对应的流体效果处理器，若无则不消耗流体；
-     * 若有则消耗流体，计算比例，应用效果和粒子。
+     * 执行一次喷洒尝试：检查流体、获取处理器、计算消耗、应用效果、生成粒子。
      */
     private void trySpray(Level level) {
         FluidStack fluid = tank.getFluid();
@@ -70,10 +71,16 @@ public class SprayBehaviour extends BlockEntityBehaviour {
         OpenPipeEffectHandler handler = OpenPipeEffectHandler.REGISTRY.get(fluid.getFluid());
         if (handler == null) return;
 
-        int toDrain = Math.min(MAX_CONSUMPTION, fluid.getAmount());
+        int maxAllowed = maxConsumptionSupplier.getAsInt();
+        if (maxAllowed <= 0) return;
+
+        int toDrain = Math.min(maxAllowed, fluid.getAmount());
+        if (toDrain <= 0) return;
+
         FluidStack drained = tank.drain(toDrain, IFluidHandler.FluidAction.EXECUTE);
         if (drained.isEmpty()) return;
 
+        // 用基准最大值归一化，使范围与原有设计一致（4mB 对应满范围）
         float ratio = (float) drained.getAmount() / MAX_CONSUMPTION;
         Direction facing = blockEntity.getBlockState().getValue(SprayerBlock.FACING);
 
@@ -84,23 +91,22 @@ public class SprayBehaviour extends BlockEntityBehaviour {
     }
 
     /**
-     * 应用流体效果（如药水效果、灭火等）。
+     * 应用流体效果（如药水效果、灭火等）到范围内的实体。
      */
-    private void applyEffect(Level level, Direction facing, float ratio, FluidStack drained, OpenPipeEffectHandler handler) {
+    protected void applyEffect(Level level, Direction facing, float ratio, FluidStack drained, OpenPipeEffectHandler handler) {
         AABB aabb = buildAABB(blockEntity.getBlockPos(), facing, ratio);
         handler.apply(level, aabb, drained);
     }
 
     /**
-     * 发射 Create 的 FLUID_PARTICLE 粒子，形成锥形包络。
-     * 粒子数量根据最近玩家的距离动态调整：8 格内为最大，8~32 格线性减少，32 格外仍保留最小数量（2个），以便远处观察工况。
+     * 生成 Create 的 FLUID_PARTICLE 粒子，模拟喷洒锥形。
+     * 粒子数量根据最近玩家的距离动态调整，确保远处也能观察到工作状态。
      */
-    private void spawnParticles(ServerLevel serverLevel, Direction facing, float ratio, FluidStack drained) {
+    protected void spawnParticles(ServerLevel serverLevel, Direction facing, float ratio, FluidStack drained) {
         BlockPos pos = blockEntity.getBlockPos();
         Vec3 origin = Vec3.atCenterOf(pos)
                 .add(Vec3.atLowerCornerOf(facing.getNormal()).scale(0.5));
 
-        // 距离因子：8格内为1，8~32格线性衰减，32格外为0（但最后会补最小值）
         double distanceFactor = 0.0;
         Player nearestPlayer = serverLevel.getNearestPlayer(origin.x, origin.y, origin.z, 32.0, false);
         if (nearestPlayer != null) {
@@ -114,7 +120,6 @@ public class SprayBehaviour extends BlockEntityBehaviour {
 
         int baseCount = Math.max(4, (int) (ratio * 20));
         int count = (int) (baseCount * distanceFactor);
-        // 保证最小可见粒子数，即使无玩家也显示工作状态
         if (count < 2) count = 2;
 
         Vec3 dir = Vec3.atLowerCornerOf(facing.getNormal());
@@ -125,7 +130,6 @@ public class SprayBehaviour extends BlockEntityBehaviour {
         FluidParticleData particleData = new FluidParticleData(AllParticleTypes.FLUID_PARTICLE.get(), drained);
 
         for (int i = 0; i < count; i++) {
-            // 在前半球随机生成方向
             double theta = Math.random() * Math.PI / 2;
             double phi = Math.random() * 2 * Math.PI;
 
@@ -133,7 +137,6 @@ public class SprayBehaviour extends BlockEntityBehaviour {
                     .add(right.scale(Math.sin(theta) * Math.cos(phi)))
                     .add(up.scale(Math.sin(theta) * Math.sin(phi)));
 
-            // 速度随喷洒强度变化
             double speed = 0.1 + ratio * 0.5;
             Vec3 velocity = randomDir.scale(speed);
 
@@ -151,7 +154,7 @@ public class SprayBehaviour extends BlockEntityBehaviour {
      * 构建非对称 AABB，仅向朝向方向扩展，反向无效果。
      * 最大范围硬编码为半整数格数，乘以 ratio 线性缩放。
      */
-    private AABB buildAABB(BlockPos pos, Direction dir, float ratio) {
+    protected AABB buildAABB(BlockPos pos, Direction dir, float ratio) {
         Vec3 center = Vec3.atCenterOf(pos).add(Vec3.atLowerCornerOf(dir.getNormal()).scale(0.5));
         Vec3 normal = Vec3.atLowerCornerOf(dir.getNormal());
 

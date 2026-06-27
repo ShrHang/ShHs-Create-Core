@@ -37,13 +37,17 @@ public class ShHsBlocks {
                     .mapColor(MapColor.COLOR_GRAY)
                     .strength(1.5f, 600.0f)
                     .requiresCorrectToolForDrops()
+                    .noOcclusion()
             )
+            .blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry()))
             .blockTags(BlockTags.MINEABLE_WITH_PICKAXE)
             .item(item -> item
-                    .tooltipSummary("A fluid container that sprays effects at 5x rate.")
-                    .tooltipBehaviour(1, "Place facing direction", "Sprays fluid forward.")
+                    .tooltipSummary("A sprayer with adjustable flow rate via rotational input (valve handle).")
+                    .tooltipBehaviour(1, "Connect rotational power to the face", "Adjusts the maximum consumption rate from 0 to 4 mB/t.")
+                    .tooltipBehaviour(2, "Place facing direction", "Sprays fluid forward.")
             )
             .register();
 
-    public static void register() {}
+    public static void register() {
+    }
 }

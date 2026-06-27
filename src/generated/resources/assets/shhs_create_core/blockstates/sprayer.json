@@ -1,30 +1,244 @@
 {
   "variants": {
-    "facing=down": {
-      "model": "create:block/mechanical_pump/block",
-      "x": 180
+    "axis_along_first=false,enabled=false,facing=down,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_horizontal_closed",
+      "x": 180,
+      "y": 90
     },
-    "facing=east": {
-      "model": "create:block/mechanical_pump/block",
+    "axis_along_first=false,enabled=false,facing=down,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_horizontal_closed",
+      "x": 180,
+      "y": 90
+    },
+    "axis_along_first=false,enabled=false,facing=east,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_horizontal_closed",
       "x": 90,
       "y": 90
     },
-    "facing=north": {
-      "model": "create:block/mechanical_pump/block",
-      "x": 90
+    "axis_along_first=false,enabled=false,facing=east,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_horizontal_closed",
+      "x": 90,
+      "y": 90
     },
-    "facing=south": {
-      "model": "create:block/mechanical_pump/block",
+    "axis_along_first=false,enabled=false,facing=north,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_vertical_closed",
+      "x": 0,
+      "y": 270
+    },
+    "axis_along_first=false,enabled=false,facing=north,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_vertical_closed",
+      "x": 0,
+      "y": 270
+    },
+    "axis_along_first=false,enabled=false,facing=south,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_vertical_closed",
+      "x": 0,
+      "y": 90
+    },
+    "axis_along_first=false,enabled=false,facing=south,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_vertical_closed",
+      "x": 0,
+      "y": 90
+    },
+    "axis_along_first=false,enabled=false,facing=up,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_horizontal_closed",
+      "x": 0,
+      "y": 90
+    },
+    "axis_along_first=false,enabled=false,facing=up,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_horizontal_closed",
+      "x": 0,
+      "y": 90
+    },
+    "axis_along_first=false,enabled=false,facing=west,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_horizontal_closed",
+      "x": 90,
+      "y": 270
+    },
+    "axis_along_first=false,enabled=false,facing=west,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_horizontal_closed",
+      "x": 90,
+      "y": 270
+    },
+    "axis_along_first=false,enabled=true,facing=down,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_horizontal_open",
+      "x": 180,
+      "y": 90
+    },
+    "axis_along_first=false,enabled=true,facing=down,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_horizontal_open",
+      "x": 180,
+      "y": 90
+    },
+    "axis_along_first=false,enabled=true,facing=east,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_horizontal_open",
+      "x": 90,
+      "y": 90
+    },
+    "axis_along_first=false,enabled=true,facing=east,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_horizontal_open",
+      "x": 90,
+      "y": 90
+    },
+    "axis_along_first=false,enabled=true,facing=north,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_vertical_open",
+      "x": 0,
+      "y": 270
+    },
+    "axis_along_first=false,enabled=true,facing=north,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_vertical_open",
+      "x": 0,
+      "y": 270
+    },
+    "axis_along_first=false,enabled=true,facing=south,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_vertical_open",
+      "x": 0,
+      "y": 90
+    },
+    "axis_along_first=false,enabled=true,facing=south,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_vertical_open",
+      "x": 0,
+      "y": 90
+    },
+    "axis_along_first=false,enabled=true,facing=up,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_horizontal_open",
+      "x": 0,
+      "y": 90
+    },
+    "axis_along_first=false,enabled=true,facing=up,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_horizontal_open",
+      "x": 0,
+      "y": 90
+    },
+    "axis_along_first=false,enabled=true,facing=west,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_horizontal_open",
+      "x": 90,
+      "y": 270
+    },
+    "axis_along_first=false,enabled=true,facing=west,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_horizontal_open",
+      "x": 90,
+      "y": 270
+    },
+    "axis_along_first=true,enabled=false,facing=down,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_horizontal_closed",
+      "x": 180,
+      "y": 0
+    },
+    "axis_along_first=true,enabled=false,facing=down,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_horizontal_closed",
+      "x": 180,
+      "y": 0
+    },
+    "axis_along_first=true,enabled=false,facing=east,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_vertical_closed",
+      "x": 0,
+      "y": 0
+    },
+    "axis_along_first=true,enabled=false,facing=east,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_vertical_closed",
+      "x": 0,
+      "y": 0
+    },
+    "axis_along_first=true,enabled=false,facing=north,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_horizontal_closed",
       "x": 90,
       "y": 180
     },
-    "facing=up": {
-      "model": "create:block/mechanical_pump/block"
-    },
-    "facing=west": {
-      "model": "create:block/mechanical_pump/block",
+    "axis_along_first=true,enabled=false,facing=north,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_horizontal_closed",
       "x": 90,
-      "y": 270
+      "y": 180
+    },
+    "axis_along_first=true,enabled=false,facing=south,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_horizontal_closed",
+      "x": 90,
+      "y": 0
+    },
+    "axis_along_first=true,enabled=false,facing=south,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_horizontal_closed",
+      "x": 90,
+      "y": 0
+    },
+    "axis_along_first=true,enabled=false,facing=up,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_horizontal_closed",
+      "x": 0,
+      "y": 0
+    },
+    "axis_along_first=true,enabled=false,facing=up,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_horizontal_closed",
+      "x": 0,
+      "y": 0
+    },
+    "axis_along_first=true,enabled=false,facing=west,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_vertical_closed",
+      "x": 0,
+      "y": 180
+    },
+    "axis_along_first=true,enabled=false,facing=west,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_vertical_closed",
+      "x": 0,
+      "y": 180
+    },
+    "axis_along_first=true,enabled=true,facing=down,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_horizontal_open",
+      "x": 180,
+      "y": 0
+    },
+    "axis_along_first=true,enabled=true,facing=down,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_horizontal_open",
+      "x": 180,
+      "y": 0
+    },
+    "axis_along_first=true,enabled=true,facing=east,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_vertical_open",
+      "x": 0,
+      "y": 0
+    },
+    "axis_along_first=true,enabled=true,facing=east,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_vertical_open",
+      "x": 0,
+      "y": 0
+    },
+    "axis_along_first=true,enabled=true,facing=north,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_horizontal_open",
+      "x": 90,
+      "y": 180
+    },
+    "axis_along_first=true,enabled=true,facing=north,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_horizontal_open",
+      "x": 90,
+      "y": 180
+    },
+    "axis_along_first=true,enabled=true,facing=south,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_horizontal_open",
+      "x": 90,
+      "y": 0
+    },
+    "axis_along_first=true,enabled=true,facing=south,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_horizontal_open",
+      "x": 90,
+      "y": 0
+    },
+    "axis_along_first=true,enabled=true,facing=up,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_horizontal_open",
+      "x": 0,
+      "y": 0
+    },
+    "axis_along_first=true,enabled=true,facing=up,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_horizontal_open",
+      "x": 0,
+      "y": 0
+    },
+    "axis_along_first=true,enabled=true,facing=west,waterlogged=false": {
+      "model": "create:block/fluid_valve/block_vertical_open",
+      "x": 0,
+      "y": 180
+    },
+    "axis_along_first=true,enabled=true,facing=west,waterlogged=true": {
+      "model": "create:block/fluid_valve/block_vertical_open",
+      "x": 0,
+      "y": 180
     }
   }
 }

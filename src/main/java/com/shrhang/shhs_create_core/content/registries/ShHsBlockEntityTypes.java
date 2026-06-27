@@ -25,7 +25,7 @@ public class ShHsBlockEntityTypes {
             .transform(builder -> builder.registerCapability(event -> event.registerBlockEntity(
                     Capabilities.FluidHandler.BLOCK,
                     builder.getEntry(),
-                    (be, context) -> be.getFluidHandler()
+                    SprayerBlockEntity::getHandlerForSide // 使用侧边感知
             )))
             .register();
 
