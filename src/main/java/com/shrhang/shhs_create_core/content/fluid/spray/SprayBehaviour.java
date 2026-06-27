@@ -9,6 +9,7 @@ import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -55,31 +56,28 @@ public class SprayBehaviour extends BlockEntityBehaviour {
         super.tick();
         Level level = getWorld();
         if (level == null || level.isClientSide()) return;
-        level.getGameTime();
-
-        // 尝试进行喷洒
         trySpray(level);
     }
 
     /**
-     * 尝试喷洒：消耗流体，计算比例，应用效果和粒子。
+     * 尝试喷洒：先检查是否存在对应的流体效果处理器，若无则不消耗流体；
+     * 若有则消耗流体，计算比例，应用效果和粒子。
      */
     private void trySpray(Level level) {
         FluidStack fluid = tank.getFluid();
         if (fluid.isEmpty()) return;
+
+        OpenPipeEffectHandler handler = OpenPipeEffectHandler.REGISTRY.get(fluid.getFluid());
+        if (handler == null) return;
 
         int toDrain = Math.min(MAX_CONSUMPTION, fluid.getAmount());
         FluidStack drained = tank.drain(toDrain, IFluidHandler.FluidAction.EXECUTE);
         if (drained.isEmpty()) return;
 
         float ratio = (float) drained.getAmount() / MAX_CONSUMPTION;
-
         Direction facing = blockEntity.getBlockState().getValue(SprayerBlock.FACING);
 
-        // 应用效果
-        applyEffect(level, facing, ratio, drained);
-
-        // 发射粒子（服务端）
+        applyEffect(level, facing, ratio, drained, handler);
         if (level instanceof ServerLevel serverLevel) {
             spawnParticles(serverLevel, facing, ratio, drained);
         }
@@ -88,21 +86,36 @@ public class SprayBehaviour extends BlockEntityBehaviour {
     /**
      * 应用流体效果（如药水效果、灭火等）。
      */
-    private void applyEffect(Level level, Direction facing, float ratio, FluidStack drained) {
+    private void applyEffect(Level level, Direction facing, float ratio, FluidStack drained, OpenPipeEffectHandler handler) {
         AABB aabb = buildAABB(blockEntity.getBlockPos(), facing, ratio);
-        OpenPipeEffectHandler handler = OpenPipeEffectHandler.REGISTRY.get(drained.getFluid());
-        if (handler != null) {
-            handler.apply(level, aabb, drained);
-        }
+        handler.apply(level, aabb, drained);
     }
 
     /**
      * 发射 Create 的 FLUID_PARTICLE 粒子，形成锥形包络。
+     * 粒子数量根据最近玩家的距离动态调整：8 格内为最大，8~32 格线性减少，32 格外仍保留最小数量（2个），以便远处观察工况。
      */
     private void spawnParticles(ServerLevel serverLevel, Direction facing, float ratio, FluidStack drained) {
-        Vec3 origin = Vec3.atCenterOf(blockEntity.getBlockPos())
+        BlockPos pos = blockEntity.getBlockPos();
+        Vec3 origin = Vec3.atCenterOf(pos)
                 .add(Vec3.atLowerCornerOf(facing.getNormal()).scale(0.5));
-        int count = Math.max(4, (int) (ratio * 20));
+
+        // 距离因子：8格内为1，8~32格线性衰减，32格外为0（但最后会补最小值）
+        double distanceFactor = 0.0;
+        Player nearestPlayer = serverLevel.getNearestPlayer(origin.x, origin.y, origin.z, 32.0, false);
+        if (nearestPlayer != null) {
+            double dist = Math.sqrt(nearestPlayer.distanceToSqr(origin.x, origin.y, origin.z));
+            if (dist <= 8.0) {
+                distanceFactor = 1.0;
+            } else if (dist < 32.0) {
+                distanceFactor = 1.0 - (dist - 8.0) / (32.0 - 8.0);
+            }
+        }
+
+        int baseCount = Math.max(4, (int) (ratio * 20));
+        int count = (int) (baseCount * distanceFactor);
+        // 保证最小可见粒子数，即使无玩家也显示工作状态
+        if (count < 2) count = 2;
 
         Vec3 dir = Vec3.atLowerCornerOf(facing.getNormal());
         Vec3 up = Math.abs(dir.dot(new Vec3(0, 1, 0))) < 0.9 ? new Vec3(0, 1, 0) : new Vec3(1, 0, 0);
@@ -112,6 +125,7 @@ public class SprayBehaviour extends BlockEntityBehaviour {
         FluidParticleData particleData = new FluidParticleData(AllParticleTypes.FLUID_PARTICLE.get(), drained);
 
         for (int i = 0; i < count; i++) {
+            // 在前半球随机生成方向
             double theta = Math.random() * Math.PI / 2;
             double phi = Math.random() * 2 * Math.PI;
 
@@ -119,6 +133,7 @@ public class SprayBehaviour extends BlockEntityBehaviour {
                     .add(right.scale(Math.sin(theta) * Math.cos(phi)))
                     .add(up.scale(Math.sin(theta) * Math.sin(phi)));
 
+            // 速度随喷洒强度变化
             double speed = 0.1 + ratio * 0.5;
             Vec3 velocity = randomDir.scale(speed);
 
