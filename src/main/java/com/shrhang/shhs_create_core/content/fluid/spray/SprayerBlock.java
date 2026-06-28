@@ -2,7 +2,6 @@ package com.shrhang.shhs_create_core.content.fluid.spray;
 
 import com.simibubi.create.AllShapes;
 import com.simibubi.create.content.fluids.FluidPropagator;
-import com.simibubi.create.content.fluids.pipes.FluidPipeBlock;
 import com.simibubi.create.content.fluids.pipes.IAxisPipe;
 import com.simibubi.create.content.kinetics.base.DirectionalAxisKineticBlock;
 import com.simibubi.create.foundation.block.IBE;
@@ -16,7 +15,6 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -44,7 +42,8 @@ public class SprayerBlock extends DirectionalAxisKineticBlock
     }
 
     @Override
-    public @NotNull VoxelShape getShape(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos, @NotNull CollisionContext context) {
+    @NotNull
+    public VoxelShape getShape(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos, @NotNull CollisionContext context) {
         return AllShapes.FLUID_VALVE.get(getPipeAxis(state));
     }
 
@@ -53,29 +52,7 @@ public class SprayerBlock extends DirectionalAxisKineticBlock
         super.createBlockStateDefinition(builder.add(ENABLED, WATERLOGGED));
     }
 
-    /**
-     * 管道连接判定（仅作为辅助，实际连接由 FluidPipeBlock 决定，此处保留但基本无效）
-     */
-    @Override
-    protected boolean prefersConnectionTo(LevelReader reader, BlockPos pos, Direction direction, boolean shaftAxis) {
-        if (!shaftAxis) {
-            BlockState state = reader.getBlockState(pos);
-            if (!(state.getBlock() instanceof SprayerBlock)) return false;
-            Direction facing = state.getValue(FACING);
-            Axis driveAxis = getDriveAxis(state); // 使用传动轴而非管道轴
-            if (direction == facing || direction.getAxis() == driveAxis) {
-                return false; // 提示不要连接，但不会强制
-            }
-            BlockPos offset = pos.relative(direction);
-            BlockState neighbour = reader.getBlockState(offset);
-            return FluidPipeBlock.canConnectTo(reader, offset, neighbour, direction);
-        }
-        return super.prefersConnectionTo(reader, pos, direction, shaftAxis);
-    }
-
-    /**
-     * 管道轴（仅用于模型形状和 IAxisPipe），与应力轴不同。
-     */
+    @NotNull
     public static Axis getPipeAxis(BlockState state) {
         if (!(state.getBlock() instanceof SprayerBlock))
             throw new IllegalStateException("Provided BlockState is not for SprayerBlock.");
@@ -88,22 +65,15 @@ public class SprayerBlock extends DirectionalAxisKineticBlock
         }
     }
 
-    /**
-     * 获取真实的应力输入轴（传动杆轴），直接使用父类方法。
-     */
-    public static Axis getDriveAxis(BlockState state) {
-        if (!(state.getBlock() instanceof SprayerBlock block))
-            throw new IllegalStateException("Not a SprayerBlock");
-        return block.getRotationAxis(state);
+    @Override
+    @NotNull
+    public Axis getAxis(@NotNull BlockState state) {
+        return state.getValue(FACING).getAxis();
     }
 
     @Override
-    public Axis getAxis(BlockState state) {
-        return getPipeAxis(state); // IAxisPipe 接口要求，返回管道轴
-    }
-
-    @Override
-    public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean isMoving) {
+    public void onRemove(@NotNull BlockState state, @NotNull Level world, @NotNull BlockPos pos,
+                         @NotNull BlockState newState, boolean isMoving) {
         boolean blockTypeChanged = !state.is(newState.getBlock());
         if (blockTypeChanged && !world.isClientSide)
             FluidPropagator.propagateChangedPipe(world, pos, state);
@@ -111,7 +81,8 @@ public class SprayerBlock extends DirectionalAxisKineticBlock
     }
 
     @Override
-    public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean isMoving) {
+    public void onPlace(@NotNull BlockState state, @NotNull Level world, @NotNull BlockPos pos,
+                        @NotNull BlockState oldState, boolean isMoving) {
         super.onPlace(state, world, pos, oldState, isMoving);
         if (world.isClientSide)
             return;
@@ -120,8 +91,8 @@ public class SprayerBlock extends DirectionalAxisKineticBlock
     }
 
     @Override
-    public void neighborChanged(@NotNull BlockState state, @NotNull Level world, @NotNull BlockPos pos, @NotNull Block otherBlock, @NotNull BlockPos neighborPos,
-                                boolean isMoving) {
+    public void neighborChanged(@NotNull BlockState state, @NotNull Level world, @NotNull BlockPos pos,
+                                @NotNull Block otherBlock, @NotNull BlockPos neighborPos, boolean isMoving) {
         Direction d = FluidPropagator.validateNeighbourChange(state, world, pos, otherBlock, neighborPos, isMoving);
         if (d == null)
             return;
@@ -131,7 +102,7 @@ public class SprayerBlock extends DirectionalAxisKineticBlock
     }
 
     public static boolean isOpenAt(BlockState state, Direction d) {
-        return d.getAxis() == getPipeAxis(state); // 这里仍然使用管道轴，因为这是管道传播逻辑
+        return d.getAxis() == state.getValue(FACING).getAxis();
     }
 
     @Override
@@ -150,18 +121,20 @@ public class SprayerBlock extends DirectionalAxisKineticBlock
     }
 
     @Override
-    public @NotNull BlockState updateShape(@NotNull BlockState state, @NotNull Direction direction, @NotNull BlockState neighbourState, @NotNull LevelAccessor world,
-                                           @NotNull BlockPos pos, @NotNull BlockPos neighbourPos) {
+    @NotNull
+    public BlockState updateShape(@NotNull BlockState state, @NotNull Direction direction,
+                                  @NotNull BlockState neighbourState, @NotNull LevelAccessor world,
+                                  @NotNull BlockPos pos, @NotNull BlockPos neighbourPos) {
         updateWater(world, state, pos);
         return state;
     }
 
     @Override
-    public @NotNull FluidState getFluidState(@NotNull BlockState state) {
+    @NotNull
+    public FluidState getFluidState(@NotNull BlockState state) {
         return fluidState(state);
     }
 
-    // ===== IBE =====
     @Override
     public Class<SprayerBlockEntity> getBlockEntityClass() {
         return SprayerBlockEntity.class;

@@ -13,25 +13,20 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
 
-/**
- * 喷洒行为：每 tick 消耗由 maxConsumptionSupplier 提供的最大量（mB），
- * 实际消耗量取该值与当前存量较小者，按实际消耗比例线性缩放喷洒范围，
- * 调用 OpenPipeEffectHandler 应用效果，并发射 Create 的 FLUID_PARTICLE 粒子。
- */
 public class SprayBehaviour extends BlockEntityBehaviour {
 
     public static final BehaviourType<SprayBehaviour> TYPE = new BehaviourType<>();
 
-    // 基准最大消耗（用于归一化比例，实际上限由 supplier 决定）
     private static final int MAX_CONSUMPTION = 4;
 
-    // 各方向最大范围（格数），乘以实际消耗比例得真实范围
     private static final double UP_HORIZONTAL = 8.0;
     private static final double UP_UP = 2.0;
     private static final double UP_DOWN = 0.0;
@@ -46,11 +41,14 @@ public class SprayBehaviour extends BlockEntityBehaviour {
 
     protected final FluidTank tank;
     private final IntSupplier maxConsumptionSupplier;
+    private final BooleanSupplier shouldSpraySupplier;
 
-    public SprayBehaviour(SmartBlockEntity be, FluidTank tank, IntSupplier maxConsumptionSupplier) {
+    public SprayBehaviour(SmartBlockEntity be, FluidTank tank, IntSupplier maxConsumptionSupplier,
+                          BooleanSupplier shouldSpraySupplier) {
         super(be);
         this.tank = tank;
         this.maxConsumptionSupplier = maxConsumptionSupplier;
+        this.shouldSpraySupplier = shouldSpraySupplier;
     }
 
     @Override
@@ -58,18 +56,33 @@ public class SprayBehaviour extends BlockEntityBehaviour {
         super.tick();
         Level level = getWorld();
         if (level == null || level.isClientSide()) return;
+        if (!shouldSpraySupplier.getAsBoolean()) return;
         trySpray(level);
     }
 
-    /**
-     * 执行一次喷洒尝试：检查流体、获取处理器、计算消耗、应用效果、生成粒子。
-     */
     private void trySpray(Level level) {
+        // 如果储罐为空，尝试从后方抽取
+        if (tank.getFluid().isEmpty()) {
+            Direction facing = blockEntity.getBlockState().getValue(SprayerBlock.FACING);
+            BlockPos behind = blockEntity.getBlockPos().relative(facing.getOpposite());
+            IFluidHandler handler = level.getCapability(Capabilities.FluidHandler.BLOCK, behind, facing);
+            if (handler != null) {
+                int space = tank.getCapacity() - tank.getFluidAmount();
+                if (space > 0) {
+                    int toExtract = Math.min(MAX_CONSUMPTION, space);
+                    FluidStack extracted = handler.drain(toExtract, IFluidHandler.FluidAction.EXECUTE);
+                    if (!extracted.isEmpty()) {
+                        tank.fill(extracted, IFluidHandler.FluidAction.EXECUTE);
+                    }
+                }
+            }
+        }
+
         FluidStack fluid = tank.getFluid();
         if (fluid.isEmpty()) return;
 
-        OpenPipeEffectHandler handler = OpenPipeEffectHandler.REGISTRY.get(fluid.getFluid());
-        if (handler == null) return;
+        OpenPipeEffectHandler effectHandler = OpenPipeEffectHandler.REGISTRY.get(fluid.getFluid());
+        if (effectHandler == null) return;
 
         int maxAllowed = maxConsumptionSupplier.getAsInt();
         if (maxAllowed <= 0) return;
@@ -80,28 +93,20 @@ public class SprayBehaviour extends BlockEntityBehaviour {
         FluidStack drained = tank.drain(toDrain, IFluidHandler.FluidAction.EXECUTE);
         if (drained.isEmpty()) return;
 
-        // 用基准最大值归一化，使范围与原有设计一致（4mB 对应满范围）
         float ratio = (float) drained.getAmount() / MAX_CONSUMPTION;
         Direction facing = blockEntity.getBlockState().getValue(SprayerBlock.FACING);
 
-        applyEffect(level, facing, ratio, drained, handler);
+        applyEffect(level, facing, ratio, drained, effectHandler);
         if (level instanceof ServerLevel serverLevel) {
             spawnParticles(serverLevel, facing, ratio, drained);
         }
     }
 
-    /**
-     * 应用流体效果（如药水效果、灭火等）到范围内的实体。
-     */
     protected void applyEffect(Level level, Direction facing, float ratio, FluidStack drained, OpenPipeEffectHandler handler) {
         AABB aabb = buildAABB(blockEntity.getBlockPos(), facing, ratio);
         handler.apply(level, aabb, drained);
     }
 
-    /**
-     * 生成 Create 的 FLUID_PARTICLE 粒子，模拟喷洒锥形。
-     * 粒子数量根据最近玩家的距离动态调整，确保远处也能观察到工作状态。
-     */
     protected void spawnParticles(ServerLevel serverLevel, Direction facing, float ratio, FluidStack drained) {
         BlockPos pos = blockEntity.getBlockPos();
         Vec3 origin = Vec3.atCenterOf(pos)
@@ -150,10 +155,6 @@ public class SprayBehaviour extends BlockEntityBehaviour {
         }
     }
 
-    /**
-     * 构建非对称 AABB，仅向朝向方向扩展，反向无效果。
-     * 最大范围硬编码为半整数格数，乘以 ratio 线性缩放。
-     */
     protected AABB buildAABB(BlockPos pos, Direction dir, float ratio) {
         Vec3 center = Vec3.atCenterOf(pos).add(Vec3.atLowerCornerOf(dir.getNormal()).scale(0.5));
         Vec3 normal = Vec3.atLowerCornerOf(dir.getNormal());

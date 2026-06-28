@@ -12,20 +12,15 @@ public class ShHsBlockEntityTypes {
     public static final BlockEntityEntry<BrassEnderChestBlockEntity> BRASS_ENDER_CHEST_BE = REGISTRATE
             .blockEntity("brass_ender_chest", BrassEnderChestBlockEntity::new)
             .validBlocks(ShHsBlocks.BRASS_ENDER_CHEST)
-            .transform(builder -> builder.registerCapability(event -> event.registerBlockEntity(
-                    Capabilities.ItemHandler.BLOCK,
-                    builder.getEntry(),
-                    (be, context) -> be.getInventory()
-            )))
             .register();
 
     public static final BlockEntityEntry<SprayerBlockEntity> SPRAYER = REGISTRATE
             .blockEntity("sprayer", SprayerBlockEntity::new)
             .validBlocks(ShHsBlocks.SPRAYER)
             .transform(builder -> builder.registerCapability(event -> event.registerBlockEntity(
-                    Capabilities.FluidHandler.BLOCK,
+                    Capabilities.FluidHandler.BLOCK, // 正确使用 BLOCK 能力
                     builder.getEntry(),
-                    SprayerBlockEntity::getHandlerForSide // 使用侧边感知
+                    SprayerBlockEntity::getFluidHandlerForSide // 方法引用
             )))
             .register();
 

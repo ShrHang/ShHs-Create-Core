@@ -1,21 +1,22 @@
 package com.shrhang.shhs_create_core.content.fluid.spray;
 
+import com.simibubi.create.content.fluids.FluidPropagator;
+import com.simibubi.create.content.fluids.pipes.FluidPipeBlock;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
-import net.createmod.catnip.animation.LerpedFloat;
-import net.createmod.catnip.animation.LerpedFloat.Chaser;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Direction.Axis;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.ticks.TickPriority;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -27,13 +28,12 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
 
     private FluidTank tank;
     private float angle = 180f;
-    public LerpedFloat pointer;
+
+    private boolean hasFrontPipe = false;
+    private boolean hasBackPipe = false;
 
     public SprayerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
-        pointer = LerpedFloat.linear()
-                .startWithValue(0)
-                .chase(0, 0, Chaser.LINEAR);
     }
 
     @Override
@@ -44,95 +44,118 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
         behaviours.add(new SprayBehaviour(this, tank, () -> {
             float factor = Mth.clamp(angle / 180f, 0f, 1f);
             return (int) (MAX_CONSUMPTION * factor);
-        }));
+        }, this::shouldSpray));
+
+        behaviours.add(new SprayerFluidTransportBehaviour(this));
     }
 
-    @Override
-    public void onSpeedChanged(float previousSpeed) {
-        super.onSpeedChanged(previousSpeed);
-        float target = angle > 0 ? 1 : 0;
-        pointer.chase(target, getPointerChaseSpeed(), Chaser.LINEAR);
-        sendData();
+    private boolean shouldSpray() {
+        return !hasFrontPipe && angle > 0.001f;
     }
 
-    private float getPointerChaseSpeed() {
-        return Mth.clamp(Math.abs(getSpeed()) / 16f / 20f, 0, 1);
-    }
 
-    @Override
-    public void tick() {
-        super.tick();
-        pointer.tickChaser();
-
-        if (level != null && !level.isClientSide) {
-            float speed = getTheoreticalSpeed();
-            if (speed != 0) {
-                float delta = speed * ANGLE_SPEED_SCALE;
-                float newAngle = Mth.clamp(angle + delta, 0f, 180f);
-                if (newAngle != angle) {
-                    angle = newAngle;
-                    boolean enabled = angle > 0.001f;
-                    BlockState state = getBlockState();
-                    if (state.getValue(SprayerBlock.ENABLED) != enabled) {
-                        level.setBlock(worldPosition, state.setValue(SprayerBlock.ENABLED, enabled), 3);
-                    }
-                    setChanged();
-                    sendData();
-                    float target = angle / 180f;
-                    pointer.chase(target, getPointerChaseSpeed(), Chaser.LINEAR);
-                }
-            }
-        }
-    }
-
-    @Override
-    protected void read(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
-        super.read(compound, registries, clientPacket);
-        angle = compound.getFloat("Angle");
-        pointer.readNBT(compound.getCompound("Pointer"), clientPacket);
-        if (tank == null) {
-            tank = new FluidTank(TANK_CAPACITY);
-        }
-        tank.readFromNBT(registries, compound.getCompound("Tank"));
-    }
-
-    @Override
-    protected void write(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
-        super.write(compound, registries, clientPacket);
-        compound.putFloat("Angle", angle);
-        compound.put("Pointer", pointer.writeNBT());
-        if (tank != null) {
-            compound.put("Tank", tank.writeToNBT(registries, new CompoundTag()));
-        }
-    }
-
-    // ===== 侧边感知的流体能力 =====
-
-    /**
-     * 获取指定侧的流体处理器。
-     * 禁止 facing 面（喷洒出口）和传动杆轴方向（两个端面）注入，
-     * 其他所有侧面（包括背面、仪表面）允许输入。
-     */
-    public IFluidHandler getHandlerForSide(Direction side) {
-        if (side == null) {
-            return this;
-        }
-        Direction facing = getBlockState().getValue(SprayerBlock.FACING);
-        Axis driveAxis = SprayerBlock.getDriveAxis(getBlockState()); // 使用传动杆轴
-        if (side == facing || side.getAxis() == driveAxis) {
-            return new RestrictedFluidHandler(getTank());
-        }
-        return this;
-    }
-
-    private FluidTank getTank() {
+    public FluidTank getTank() {
         if (tank == null) {
             tank = new FluidTank(TANK_CAPACITY);
         }
         return tank;
     }
 
-    // ===== IFluidHandler 委托 =====
+    @Override
+    public void tick() {
+        super.tick();
+        if (level == null || level.isClientSide) return;
+
+        updatePipeConnections();
+        updateEnabledState();
+        updateAngle();
+    }
+
+    private void updatePipeConnections() {
+        Direction facing = getBlockState().getValue(SprayerBlock.FACING);
+        boolean front = isPipeConnected(facing);
+        boolean back = isPipeConnected(facing.getOpposite());
+
+        if (front != hasFrontPipe || back != hasBackPipe) {
+            hasFrontPipe = front;
+            hasBackPipe = back;
+            setChanged();
+            sendData();
+            refreshNetwork();
+        }
+    }
+
+    private void updateEnabledState() {
+        boolean isPipeMode = hasFrontPipe && hasBackPipe;
+        BlockState state = getBlockState();
+        boolean currentEnabled = state.getValue(SprayerBlock.ENABLED);
+        if (currentEnabled != isPipeMode) {
+            if (level != null) {
+                level.setBlock(worldPosition, state.setValue(SprayerBlock.ENABLED, isPipeMode), 3);
+                refreshNetwork();
+            }
+        }
+    }
+
+    private void refreshNetwork() {
+        if (level == null) return;
+        level.invalidateCapabilities(worldPosition);
+        FluidPropagator.propagateChangedPipe(level, worldPosition, getBlockState());
+        level.scheduleTick(worldPosition, getBlockState().getBlock(), 1, TickPriority.HIGH);
+        SprayerFluidTransportBehaviour behaviour = BlockEntityBehaviour.get(level, worldPosition, SprayerFluidTransportBehaviour.TYPE);
+        if (behaviour != null) {
+            behaviour.wipePressure();
+        }
+    }
+
+    private void updateAngle() {
+        float speed = getTheoreticalSpeed();
+        if (speed != 0) {
+            float delta = speed * ANGLE_SPEED_SCALE;
+            float newAngle = Mth.clamp(angle + delta, 0f, 180f);
+            if (newAngle != angle) {
+                angle = newAngle;
+                setChanged();
+                sendData();
+            }
+        }
+    }
+
+    private boolean isPipeConnected(Direction direction) {
+        BlockPos neighborPos = worldPosition.relative(direction);
+        BlockState neighborState;
+        if (level != null) {
+            neighborState = level.getBlockState(neighborPos);
+            return FluidPipeBlock.canConnectTo(level, neighborPos, neighborState, direction.getOpposite());
+        }
+        return false;
+    }
+
+    // ===== 流体能力提供（供注册表调用） =====
+
+    @Nullable
+    public IFluidHandler getFluidHandlerForSide(@Nullable Direction side) {
+        if (side == null) return null;
+
+        Direction facing = getBlockState().getValue(SprayerBlock.FACING);
+        if (side.getAxis() != facing.getAxis()) {
+            return null; // 侧面不接入
+        }
+
+        // 管道模式：不暴露能力（返回 null 使 hasFluidCapability 为 false）
+        if (hasFrontPipe && hasBackPipe) {
+            return null;
+        }
+
+        // 喷射模式：后方完全访问，前方只允许抽取
+        if (side == facing.getOpposite()) {
+            return this; // 后方：可填充和抽取
+        } else {
+            return new RestrictedFluidHandler(getTank()); // 前方：只允许抽取
+        }
+    }
+
+    // ===== IFluidHandler 实现（用于后方完全访问） =====
 
     @Override
     public int getTanks() {
@@ -169,7 +192,8 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
         return getTank().drain(maxDrain, action);
     }
 
-    // ===== 限制处理器（禁止注入） =====
+    // ===== 限制处理器（前方只抽取） =====
+
     private static class RestrictedFluidHandler implements IFluidHandler {
         private final FluidTank tank;
 
@@ -210,6 +234,31 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
         @Override
         public @NotNull FluidStack drain(int maxDrain, @NotNull FluidAction action) {
             return tank.drain(maxDrain, action);
+        }
+    }
+
+    // ===== NBT =====
+
+    @Override
+    protected void read(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
+        super.read(compound, registries, clientPacket);
+        angle = compound.getFloat("Angle");
+        hasFrontPipe = compound.getBoolean("HasFrontPipe");
+        hasBackPipe = compound.getBoolean("HasBackPipe");
+        if (tank == null) {
+            tank = new FluidTank(TANK_CAPACITY);
+        }
+        tank.readFromNBT(registries, compound.getCompound("Tank"));
+    }
+
+    @Override
+    protected void write(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
+        super.write(compound, registries, clientPacket);
+        compound.putFloat("Angle", angle);
+        compound.putBoolean("HasFrontPipe", hasFrontPipe);
+        compound.putBoolean("HasBackPipe", hasBackPipe);
+        if (tank != null) {
+            compound.put("Tank", tank.writeToNBT(registries, new CompoundTag()));
         }
     }
 }

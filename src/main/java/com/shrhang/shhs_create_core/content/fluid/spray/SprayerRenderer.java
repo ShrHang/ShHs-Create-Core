@@ -10,6 +10,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import org.jetbrains.annotations.NotNull;
 
 public class SprayerRenderer extends KineticBlockEntityRenderer<SprayerBlockEntity> {
 
@@ -18,9 +19,11 @@ public class SprayerRenderer extends KineticBlockEntityRenderer<SprayerBlockEnti
     }
 
     @Override
-    protected void renderSafe(SprayerBlockEntity be, float partialTicks, PoseStack ms,
-                              MultiBufferSource buffer, int light, int overlay) {
+    protected void renderSafe(@NotNull SprayerBlockEntity be, float partialTicks, @NotNull PoseStack ms,
+                              @NotNull MultiBufferSource buffer, int light, int overlay) {
+        // 1. 渲染壳（父类默认使用 be.getBlockState()）
         super.renderSafe(be, partialTicks, ms, buffer, light, overlay);
+        // 2. 渲染轴（沿传动轴方向，即侧面轴）
         BlockState shaftState = AllBlocks.SHAFT.getDefaultState()
                 .setValue(BlockStateProperties.AXIS, getRotationAxisOf(be));
         SuperByteBuffer shaftBuffer = CachedBuffers.block(shaftState);
