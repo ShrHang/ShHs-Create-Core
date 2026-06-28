@@ -39,9 +39,10 @@ public class ShHsBlocks {
                     .requiresCorrectToolForDrops()
                     .noOcclusion()
             )
-            .blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry()))
+            .blockstate((ctx, prov) -> {}) // TODO 喷洒器的模型
             .blockTags(BlockTags.MINEABLE_WITH_PICKAXE)
             .item(item -> item
+                    .model((ctx, prov) -> {})
                     .tooltipSummary("A sprayer with adjustable flow rate via rotational input (valve handle).")
                     .tooltipBehaviour(1, "Connect rotational power to the face", "Adjusts the maximum consumption rate from 0 to 4 mB/t.")
                     .tooltipBehaviour(2, "Place facing direction", "Sprays fluid forward.")
