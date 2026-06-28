@@ -17,16 +17,21 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
 
+/**
+ * 喷洒行为，控制流体消耗、效果应用与粒子生成。
+ */
 public class SprayBehaviour extends BlockEntityBehaviour {
 
     public static final BehaviourType<SprayBehaviour> TYPE = new BehaviourType<>();
 
     private static final int MAX_CONSUMPTION = 4;
 
+    // 各方向喷洒范围参数
     private static final double UP_HORIZONTAL = 8.0;
     private static final double UP_UP = 2.0;
     private static final double UP_DOWN = 0.0;
@@ -60,8 +65,11 @@ public class SprayBehaviour extends BlockEntityBehaviour {
         trySpray(level);
     }
 
+    /**
+     * 尝试执行喷洒：从后方抽取流体，应用效果并生成粒子。
+     */
     private void trySpray(Level level) {
-        // 如果储罐为空，尝试从后方抽取
+        // 若储罐为空，尝试从后方抽取
         if (tank.getFluid().isEmpty()) {
             Direction facing = blockEntity.getBlockState().getValue(SprayerBlock.FACING);
             BlockPos behind = blockEntity.getBlockPos().relative(facing.getOpposite());
@@ -102,16 +110,23 @@ public class SprayBehaviour extends BlockEntityBehaviour {
         }
     }
 
+    /**
+     * 应用流体效果到对应的 AABB 区域。
+     */
     protected void applyEffect(Level level, Direction facing, float ratio, FluidStack drained, OpenPipeEffectHandler handler) {
         AABB aabb = buildAABB(blockEntity.getBlockPos(), facing, ratio);
         handler.apply(level, aabb, drained);
     }
 
+    /**
+     * 在服务端生成喷洒粒子。
+     */
     protected void spawnParticles(ServerLevel serverLevel, Direction facing, float ratio, FluidStack drained) {
         BlockPos pos = blockEntity.getBlockPos();
         Vec3 origin = Vec3.atCenterOf(pos)
                 .add(Vec3.atLowerCornerOf(facing.getNormal()).scale(0.5));
 
+        // 根据玩家距离调整粒子数量
         double distanceFactor = 0.0;
         Player nearestPlayer = serverLevel.getNearestPlayer(origin.x, origin.y, origin.z, 32.0, false);
         if (nearestPlayer != null) {
@@ -155,6 +170,9 @@ public class SprayBehaviour extends BlockEntityBehaviour {
         }
     }
 
+    /**
+     * 根据朝向和比例构建喷洒影响的 AABB。
+     */
     protected AABB buildAABB(BlockPos pos, Direction dir, float ratio) {
         Vec3 center = Vec3.atCenterOf(pos).add(Vec3.atLowerCornerOf(dir.getNormal()).scale(0.5));
         Vec3 normal = Vec3.atLowerCornerOf(dir.getNormal());
@@ -212,7 +230,7 @@ public class SprayBehaviour extends BlockEntityBehaviour {
     }
 
     @Override
-    public BehaviourType<?> getType() {
+    public @NotNull BehaviourType<?> getType() {
         return TYPE;
     }
 }

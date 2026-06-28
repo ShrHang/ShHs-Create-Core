@@ -12,18 +12,20 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * 喷洒器渲染器，渲染外壳与传动轴。
+ */
 public class SprayerRenderer extends KineticBlockEntityRenderer<SprayerBlockEntity> {
 
     public SprayerRenderer(BlockEntityRendererProvider.Context context) {
         super(context);
     }
-
     @Override
     protected void renderSafe(@NotNull SprayerBlockEntity be, float partialTicks, @NotNull PoseStack ms,
                               @NotNull MultiBufferSource buffer, int light, int overlay) {
-        // 1. 渲染壳（父类默认使用 be.getBlockState()）
+        // 渲染外壳
         super.renderSafe(be, partialTicks, ms, buffer, light, overlay);
-        // 2. 渲染轴（沿传动轴方向，即侧面轴）
+        // 渲染传动轴
         BlockState shaftState = AllBlocks.SHAFT.getDefaultState()
                 .setValue(BlockStateProperties.AXIS, getRotationAxisOf(be));
         SuperByteBuffer shaftBuffer = CachedBuffers.block(shaftState);

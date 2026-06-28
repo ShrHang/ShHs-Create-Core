@@ -29,6 +29,10 @@ import org.jetbrains.annotations.NotNull;
 
 import static com.shrhang.shhs_create_core.content.registries.ShHsBlockEntityTypes.SPRAYER;
 
+/**
+ * 喷洒器方块，支持定向喷洒与流体管道模式。
+ * 管道模式相关逻辑未来可能移除。
+ */
 public class SprayerBlock extends DirectionalAxisKineticBlock
         implements IBE<SprayerBlockEntity>, ProperWaterloggedBlock, IAxisPipe {
 
@@ -42,8 +46,8 @@ public class SprayerBlock extends DirectionalAxisKineticBlock
     }
 
     @Override
-    @NotNull
-    public VoxelShape getShape(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos, @NotNull CollisionContext context) {
+    public @NotNull VoxelShape getShape(@NotNull BlockState state, @NotNull BlockGetter level,
+                                        @NotNull BlockPos pos, @NotNull CollisionContext context) {
         return AllShapes.FLUID_VALVE.get(getPipeAxis(state));
     }
 
@@ -52,6 +56,9 @@ public class SprayerBlock extends DirectionalAxisKineticBlock
         super.createBlockStateDefinition(builder.add(ENABLED, WATERLOGGED));
     }
 
+    /**
+     * 获取管道轴向，用于流体传播。
+     */
     @NotNull
     public static Axis getPipeAxis(BlockState state) {
         if (!(state.getBlock() instanceof SprayerBlock))
@@ -101,6 +108,9 @@ public class SprayerBlock extends DirectionalAxisKineticBlock
         world.scheduleTick(pos, this, 1, TickPriority.HIGH);
     }
 
+    /**
+     * 判断指定方向是否为管道连接开放方向。
+     */
     public static boolean isOpenAt(BlockState state, Direction d) {
         return d.getAxis() == state.getValue(FACING).getAxis();
     }
