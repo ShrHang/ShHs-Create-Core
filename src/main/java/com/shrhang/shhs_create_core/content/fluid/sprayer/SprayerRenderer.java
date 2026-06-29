@@ -1,4 +1,4 @@
-package com.shrhang.shhs_create_core.content.fluid.spray;
+package com.shrhang.shhs_create_core.content.fluid.sprayer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.AllBlocks;

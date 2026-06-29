@@ -1,4 +1,4 @@
-package com.shrhang.shhs_create_core.content.fluid.spray;
+package com.shrhang.shhs_create_core.content.fluid.spraypipe;
 
 import com.simibubi.create.AllShapes;
 import com.simibubi.create.content.fluids.FluidPropagator;
@@ -27,18 +27,18 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.ticks.TickPriority;
 import org.jetbrains.annotations.NotNull;
 
-import static com.shrhang.shhs_create_core.content.registries.ShHsBlockEntityTypes.SPRAYER;
-
 /**
- * 喷洒器方块，支持定向喷洒与流体管道模式。
- * 管道模式相关逻辑未来可能移除。
+ * 独立的管道方块，拥有与喷洒器相似的外观和动力，但无流体储存与喷洒能力。
+ * 仅负责流体管道连接与传输。
+ * <p>
+ * 此类位于独立的 spraypipe 包中，与喷洒器完全解耦。
  */
-public class SprayerBlock extends DirectionalAxisKineticBlock
-        implements IBE<SprayerBlockEntity>, ProperWaterloggedBlock, IAxisPipe {
+public class SprayerPipeBlock extends DirectionalAxisKineticBlock
+        implements IBE<SprayerPipeBlockEntity>, ProperWaterloggedBlock, IAxisPipe {
 
     public static final BooleanProperty ENABLED = BooleanProperty.create("enabled");
 
-    public SprayerBlock(Properties properties) {
+    public SprayerPipeBlock(Properties properties) {
         super(properties);
         registerDefaultState(defaultBlockState()
                 .setValue(ENABLED, false)
@@ -56,13 +56,10 @@ public class SprayerBlock extends DirectionalAxisKineticBlock
         super.createBlockStateDefinition(builder.add(ENABLED, WATERLOGGED));
     }
 
-    /**
-     * 获取管道轴向，用于流体传播。
-     */
     @NotNull
     public static Axis getPipeAxis(BlockState state) {
-        if (!(state.getBlock() instanceof SprayerBlock))
-            throw new IllegalStateException("Provided BlockState is not for SprayerBlock.");
+        if (!(state.getBlock() instanceof SprayerPipeBlock))
+            throw new IllegalStateException("Provided BlockState is not for SprayerPipeBlock.");
         Direction facing = state.getValue(FACING);
         boolean alongFirst = state.getValue(AXIS_ALONG_FIRST_COORDINATE);
         if (facing.getAxis().isVertical()) {
@@ -78,6 +75,7 @@ public class SprayerBlock extends DirectionalAxisKineticBlock
         return state.getValue(FACING).getAxis();
     }
 
+    // ----- 管道传播逻辑 -----
     @Override
     public void onRemove(@NotNull BlockState state, @NotNull Level world, @NotNull BlockPos pos,
                          @NotNull BlockState newState, boolean isMoving) {
@@ -91,8 +89,7 @@ public class SprayerBlock extends DirectionalAxisKineticBlock
     public void onPlace(@NotNull BlockState state, @NotNull Level world, @NotNull BlockPos pos,
                         @NotNull BlockState oldState, boolean isMoving) {
         super.onPlace(state, world, pos, oldState, isMoving);
-        if (world.isClientSide)
-            return;
+        if (world.isClientSide) return;
         if (state != oldState)
             world.scheduleTick(pos, this, 1, TickPriority.HIGH);
     }
@@ -101,16 +98,11 @@ public class SprayerBlock extends DirectionalAxisKineticBlock
     public void neighborChanged(@NotNull BlockState state, @NotNull Level world, @NotNull BlockPos pos,
                                 @NotNull Block otherBlock, @NotNull BlockPos neighborPos, boolean isMoving) {
         Direction d = FluidPropagator.validateNeighbourChange(state, world, pos, otherBlock, neighborPos, isMoving);
-        if (d == null)
-            return;
-        if (!isOpenAt(state, d))
-            return;
+        if (d == null) return;
+        if (!isOpenAt(state, d)) return;
         world.scheduleTick(pos, this, 1, TickPriority.HIGH);
     }
 
-    /**
-     * 判断指定方向是否为管道连接开放方向。
-     */
     public static boolean isOpenAt(BlockState state, Direction d) {
         return d.getAxis() == state.getValue(FACING).getAxis();
     }
@@ -120,6 +112,7 @@ public class SprayerBlock extends DirectionalAxisKineticBlock
         FluidPropagator.propagateChangedPipe(world, pos, state);
     }
 
+    // ----- 其他 -----
     @Override
     protected boolean isPathfindable(@NotNull BlockState state, @NotNull PathComputationType pathComputationType) {
         return false;
@@ -146,12 +139,12 @@ public class SprayerBlock extends DirectionalAxisKineticBlock
     }
 
     @Override
-    public Class<SprayerBlockEntity> getBlockEntityClass() {
-        return SprayerBlockEntity.class;
+    public Class<SprayerPipeBlockEntity> getBlockEntityClass() {
+        return SprayerPipeBlockEntity.class;
     }
 
     @Override
-    public BlockEntityType<? extends SprayerBlockEntity> getBlockEntityType() {
-        return SPRAYER.get();
+    public BlockEntityType<? extends SprayerPipeBlockEntity> getBlockEntityType() {
+        return null; // 未注册，纯占位
     }
 }

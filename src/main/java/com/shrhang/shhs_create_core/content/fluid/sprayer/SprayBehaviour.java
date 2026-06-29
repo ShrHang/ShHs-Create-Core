@@ -1,4 +1,4 @@
-package com.shrhang.shhs_create_core.content.fluid.spray;
+package com.shrhang.shhs_create_core.content.fluid.sprayer;
 
 import com.simibubi.create.AllParticleTypes;
 import com.simibubi.create.api.effect.OpenPipeEffectHandler;
@@ -18,7 +18,6 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import org.jetbrains.annotations.NotNull;
-
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
 
@@ -26,6 +25,7 @@ import java.util.function.IntSupplier;
  * 喷洒行为，控制流体消耗、效果应用与粒子生成。
  * <p>
  * 最大消耗量已提升至 32 mB/tick（原为 4 mB/tick），储罐容量相应提升至 32 mB。
+ * 喷洒频率改为每 5 tick 一次（通过 gameTime 控制）。
  */
 public class SprayBehaviour extends BlockEntityBehaviour {
     public static final BehaviourType<SprayBehaviour> TYPE = new BehaviourType<>();
@@ -58,6 +58,7 @@ public class SprayBehaviour extends BlockEntityBehaviour {
         super.tick();
         Level level = getWorld();
         if (level == null || level.isClientSide()) return;
+        if (level.getGameTime() % 5 != 0) return;
         if (!shouldSpraySupplier.getAsBoolean()) return;
         trySpray(level);
     }
@@ -233,7 +234,7 @@ public class SprayBehaviour extends BlockEntityBehaviour {
     }
 
     /**
-     * 执行喷洒效果与粒子生成（不涉及流体消耗），供外部调用（如滴灌）。
+     * 执行喷洒效果与粒子生成（不涉及流体消耗），供外部调用。
      *
      * @param level     世界
      * @param direction 喷洒方向（用于粒子发射）

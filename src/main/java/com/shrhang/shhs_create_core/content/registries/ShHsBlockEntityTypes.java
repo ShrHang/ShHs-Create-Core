@@ -1,6 +1,6 @@
 package com.shrhang.shhs_create_core.content.registries;
 
-import com.shrhang.shhs_create_core.content.fluid.spray.SprayerBlockEntity;
+import com.shrhang.shhs_create_core.content.fluid.sprayer.SprayerBlockEntity;
 import com.shrhang.shhs_create_core.content.logistics.brass_ender_chest.BrassEnderChestBlockEntity;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
 import net.neoforged.neoforge.capabilities.Capabilities;

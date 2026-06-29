@@ -1,6 +1,6 @@
 package com.shrhang.shhs_create_core.content.event;
 
-import com.shrhang.shhs_create_core.content.fluid.spray.SprayerRenderer;
+import com.shrhang.shhs_create_core.content.fluid.sprayer.SprayerRenderer;
 import com.shrhang.shhs_create_core.content.registries.ShHsBlockEntityTypes;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
