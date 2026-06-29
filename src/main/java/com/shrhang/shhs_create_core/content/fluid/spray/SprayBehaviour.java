@@ -24,22 +24,19 @@ import java.util.function.IntSupplier;
 
 /**
  * 喷洒行为，控制流体消耗、效果应用与粒子生成。
+ * <p>
+ * 最大消耗量已提升至 32 mB/tick（原为 4 mB/tick），储罐容量相应提升至 32 mB。
  */
 public class SprayBehaviour extends BlockEntityBehaviour {
-
     public static final BehaviourType<SprayBehaviour> TYPE = new BehaviourType<>();
-
-    private static final int MAX_CONSUMPTION = 4;
-
-    // 各方向喷洒范围参数
+    private static final int MAX_CONSUMPTION = 32; // 提升至 32 mB/tick
+    // 各方向喷洒范围参数（不变）
     private static final double UP_HORIZONTAL = 8.0;
     private static final double UP_UP = 2.0;
     private static final double UP_DOWN = 0.0;
-
     private static final double DOWN_HORIZONTAL = 8.0;
     private static final double DOWN_UP = 0.0;
     private static final double DOWN_DOWN = 10.5;
-
     private static final double HORIZONTAL_HORIZONTAL = 8.0;
     private static final double HORIZONTAL_UP = 2.0;
     private static final double HORIZONTAL_DOWN = 6.0;
@@ -69,6 +66,8 @@ public class SprayBehaviour extends BlockEntityBehaviour {
      * 尝试执行喷洒：从后方抽取流体，应用效果并生成粒子。
      */
     private void trySpray(Level level) {
+        if (tank == null) return;
+
         // 若储罐为空，尝试从后方抽取
         if (tank.getFluid().isEmpty()) {
             Direction facing = blockEntity.getBlockState().getValue(SprayerBlock.FACING);
@@ -125,7 +124,6 @@ public class SprayBehaviour extends BlockEntityBehaviour {
         BlockPos pos = blockEntity.getBlockPos();
         Vec3 origin = Vec3.atCenterOf(pos)
                 .add(Vec3.atLowerCornerOf(facing.getNormal()).scale(0.5));
-
         // 根据玩家距离调整粒子数量
         double distanceFactor = 0.0;
         Player nearestPlayer = serverLevel.getNearestPlayer(origin.x, origin.y, origin.z, 32.0, false);
@@ -137,7 +135,7 @@ public class SprayBehaviour extends BlockEntityBehaviour {
                 distanceFactor = 1.0 - (dist - 8.0) / (32.0 - 8.0);
             }
         }
-
+        // 粒子基数恢复原值，不随消耗提升而增加
         int baseCount = Math.max(4, (int) (ratio * 20));
         int count = (int) (baseCount * distanceFactor);
         if (count < 2) count = 2;
@@ -232,5 +230,26 @@ public class SprayBehaviour extends BlockEntityBehaviour {
     @Override
     public @NotNull BehaviourType<?> getType() {
         return TYPE;
+    }
+
+    /**
+     * 执行喷洒效果与粒子生成（不涉及流体消耗），供外部调用（如滴灌）。
+     *
+     * @param level     世界
+     * @param direction 喷洒方向（用于粒子发射）
+     * @param aabb      作用区域
+     * @param ratio     效果强度比例（用于粒子数量）
+     * @param fluid     已消耗的流体（用于效果和粒子）
+     */
+    public void performSpray(@NotNull Level level, @NotNull Direction direction, @NotNull AABB aabb,
+                             float ratio, @NotNull FluidStack fluid) {
+        if (fluid.isEmpty()) return;
+        OpenPipeEffectHandler effectHandler = OpenPipeEffectHandler.REGISTRY.get(fluid.getFluid());
+        if (effectHandler == null) return;
+
+        effectHandler.apply(level, aabb, fluid);
+        if (level instanceof ServerLevel serverLevel) {
+            spawnParticles(serverLevel, direction, ratio, fluid);
+        }
     }
 }
