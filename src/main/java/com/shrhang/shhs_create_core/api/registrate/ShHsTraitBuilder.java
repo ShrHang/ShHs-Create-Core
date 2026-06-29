@@ -2,7 +2,6 @@ package com.shrhang.shhs_create_core.api.registrate;
 
 import com.tterrag.registrate.builders.AbstractBuilder;
 import com.tterrag.registrate.builders.BuilderCallback;
-import com.tterrag.registrate.builders.ItemBuilder;
 import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import com.tterrag.registrate.util.nullness.NonNullBiConsumer;
@@ -39,7 +38,7 @@ public class ShHsTraitBuilder<T extends MobTrait>
         addBlacklist(Consumers.nop()).addWhitelist(Consumers.nop());
     }
 
-    public ItemBuilder<TraitSymbol, ShHsTraitBuilder<T>> item() {
+    public ShHsItemBuilder<TraitSymbol, ShHsTraitBuilder<T>> item() {
         return item(TraitSymbol::new);
     }
 
@@ -77,8 +76,8 @@ public class ShHsTraitBuilder<T extends MobTrait>
         return this;
     }
 
-    public <I extends TraitSymbol> ItemBuilder<I, ShHsTraitBuilder<T>> item(NonNullFunction<Item.Properties, I> sup) {
-        return getOwner().item(this, getName(), sup)
+    public <I extends TraitSymbol> ShHsItemBuilder<I, ShHsTraitBuilder<T>> item(NonNullFunction<Item.Properties, I> sup) {
+        return (ShHsItemBuilder<I, ShHsTraitBuilder<T>>) getOwner().item(this, getName(), sup)
                 .model((ctx, pvd) -> pvd.generated(ctx, pvd.modLoc("item/bg"),
                         pvd.modLoc("item/trait/" + ctx.getName())))
                 .setData(ProviderType.LANG, NonNullBiConsumer.noop())
