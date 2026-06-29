@@ -9,6 +9,7 @@ import com.shrhang.shhs_create_core.content.data.ShHsTagKey;
 import com.shrhang.shhs_create_core.content.event.ClientEvents;
 import com.shrhang.shhs_create_core.content.event.MagicEventHandler;
 import com.shrhang.shhs_create_core.content.event.ShHsAttackListener;
+import com.shrhang.shhs_create_core.content.event.ShHsClientModEvents;
 import com.shrhang.shhs_create_core.content.registries.*;
 import com.simibubi.create.foundation.item.ItemDescription;
 import com.simibubi.create.foundation.item.KineticStats;
@@ -51,6 +52,7 @@ public class ShHsCreateCore {
         modEventBus.addListener(ShHsCreateCore::modifyEntityAttributes);
         if (FMLEnvironment.dist.isClient()) {
             modEventBus.addListener(ShHsKeys::register);
+            modEventBus.addListener(ShHsClientModEvents::registerRenderers);
         }
     }
 
