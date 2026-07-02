@@ -21,6 +21,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
+import org.jetbrains.annotations.NotNull;
 
 public class ShHsRegistrate extends CreateRegistrate {
     private ResourceKey<CreativeModeTab> defaultTab;
@@ -42,29 +43,29 @@ public class ShHsRegistrate extends CreateRegistrate {
     }
 
     @Override
-    public ShHsRegistrate defaultCreativeTab(ResourceKey<CreativeModeTab> creativeModeTab) {
+    public @NotNull ShHsRegistrate defaultCreativeTab(@NotNull ResourceKey<CreativeModeTab> creativeModeTab) {
         defaultTab = creativeModeTab;
         super.defaultCreativeTab(creativeModeTab);
         return this;
     }
 
     @Override
-    public <T extends Item> ShHsItemBuilder<T, CreateRegistrate> item(NonNullFunction<Item.Properties, T> factory) {
+    public <T extends Item> @NotNull ShHsItemBuilder<T, CreateRegistrate> item(@NotNull NonNullFunction<Item.Properties, T> factory) {
         return item(this, factory);
     }
 
     @Override
-    public <T extends Item> ShHsItemBuilder<T, CreateRegistrate> item(String name, NonNullFunction<Item.Properties, T> factory) {
+    public <T extends Item> @NotNull ShHsItemBuilder<T, CreateRegistrate> item(@NotNull String name, @NotNull NonNullFunction<Item.Properties, T> factory) {
         return item(this, name, factory);
     }
 
     @Override
-    public <T extends Item, P> ShHsItemBuilder<T, P> item(P parent, NonNullFunction<Item.Properties, T> factory) {
+    public <T extends Item, P> @NotNull ShHsItemBuilder<T, P> item(@NotNull P parent, @NotNull NonNullFunction<Item.Properties, T> factory) {
         return item(parent, currentName(), factory);
     }
 
     @Override
-    public <T extends Item, P> ShHsItemBuilder<T, P> item(P parent, String name, NonNullFunction<Item.Properties, T> factory) {
+    public <T extends Item, P> @NotNull ShHsItemBuilder<T, P> item(@NotNull P parent, @NotNull String name, @NotNull NonNullFunction<Item.Properties, T> factory) {
         ItemBuilder<T, P> builder = entry(name, callback -> {
             ShHsItemBuilder<T, P> itemBuilder = ShHsItemBuilder.create(this, parent, name, callback, factory);
             return defaultTab == null ? itemBuilder : itemBuilder.tab(defaultTab);
@@ -73,25 +74,25 @@ public class ShHsRegistrate extends CreateRegistrate {
     }
 
     @Override
-    public <T extends Block> ShHsBlockBuilder<T, CreateRegistrate> block(NonNullFunction<BlockBehaviour.Properties, T> factory) {
+    public <T extends Block> @NotNull ShHsBlockBuilder<T, CreateRegistrate> block(@NotNull NonNullFunction<BlockBehaviour.Properties, T> factory) {
         return block(this, factory);
     }
 
     @Override
-    public <T extends Block> ShHsBlockBuilder<T, CreateRegistrate> block(String name,
-                                                                         NonNullFunction<BlockBehaviour.Properties, T> factory) {
+    public <T extends Block> @NotNull ShHsBlockBuilder<T, CreateRegistrate> block(@NotNull String name,
+                                                                                  @NotNull NonNullFunction<BlockBehaviour.Properties, T> factory) {
         return block(this, name, factory);
     }
 
     @Override
-    public <T extends Block, P> ShHsBlockBuilder<T, P> block(P parent,
-                                                             NonNullFunction<BlockBehaviour.Properties, T> factory) {
+    public <T extends Block, P> @NotNull ShHsBlockBuilder<T, P> block(@NotNull P parent,
+                                                                      @NotNull NonNullFunction<BlockBehaviour.Properties, T> factory) {
         return block(parent, currentName(), factory);
     }
 
     @Override
-    public <T extends Block, P> ShHsBlockBuilder<T, P> block(P parent, String name,
-                                                             NonNullFunction<BlockBehaviour.Properties, T> factory) {
+    public <T extends Block, P> @NotNull ShHsBlockBuilder<T, P> block(@NotNull P parent, @NotNull String name,
+                                                                      @NotNull NonNullFunction<BlockBehaviour.Properties, T> factory) {
         BlockBuilder<T, P> builder = entry(name, callback -> ShHsBlockBuilder.create(this, parent, name, callback, factory));
         return (ShHsBlockBuilder<T, P>) builder;
     }
@@ -118,7 +119,6 @@ public class ShHsRegistrate extends CreateRegistrate {
     public ShHsPotionBuilder<ShHsRegistrate> potion(String name) {
         return entry(name, cb -> new ShHsPotionBuilder<>(this, this, name, cb));
     }
-
     /**
      * 复刻了l2hostility的trait注册方法，注册时会自动生成对应的tag和物品。
      */
