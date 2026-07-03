@@ -1,5 +1,6 @@
 package com.shrhang.shhs_create_core.api.registrate;
 
+import com.simibubi.create.api.stress.BlockStressValues;
 import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.builders.BlockBuilder;
 import com.tterrag.registrate.builders.BlockEntityBuilder.BlockEntityFactory;
@@ -52,6 +53,11 @@ public class ShHsBlockBuilder<T extends Block, P> extends BlockBuilder<T, P> {
         return this;
     }
 
+    public ShHsBlockBuilder<T, P> stressImpact(double impact) {
+        onRegister(block -> BlockStressValues.IMPACTS.register(block, () -> impact));
+        return this;
+    }
+
     @Override
     public ShHsItemBuilder<BlockItem, BlockBuilder<T, P>> item() {
         return (ShHsItemBuilder<BlockItem, BlockBuilder<T, P>>) super.item();
@@ -69,7 +75,6 @@ public class ShHsBlockBuilder<T extends Block, P> extends BlockBuilder<T, P> {
         blockEntity(factory).build();
         return this;
     }
-
     @Override
     public ShHsBlockBuilder<T, P> properties(NonNullUnaryOperator<BlockBehaviour.Properties> func) {
         super.properties(func);
