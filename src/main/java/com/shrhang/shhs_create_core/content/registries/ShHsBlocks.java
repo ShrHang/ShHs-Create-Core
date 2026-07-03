@@ -2,12 +2,14 @@ package com.shrhang.shhs_create_core.content.registries;
 
 import com.shrhang.shhs_create_core.content.fluid.sprayer.SprayerBlock;
 import com.shrhang.shhs_create_core.content.hostility.absorber.HostilityAbsorberBlock;
+import com.shrhang.shhs_create_core.content.hostility.absorber.HostilityAbsorberMovementBehaviour;
 import com.shrhang.shhs_create_core.content.logistics.brass_ender_chest.BrassEnderChestBlock;
 import com.tterrag.registrate.util.entry.BlockEntry;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.material.MapColor;
 
 import static com.shrhang.shhs_create_core.ShHsCreateCore.REGISTRATE;
+import static com.simibubi.create.api.behaviour.movement.MovementBehaviour.movementBehaviour;
 
 public class ShHsBlocks {
 
@@ -64,9 +66,8 @@ public class ShHsBlocks {
                     .requiresCorrectToolForDrops()
                     .noOcclusion()
             )
-            .blockstate((ctx, prov) ->{}) // TODO 石磨的模型
+            .blockstate((ctx, prov) -> {})
             .blockTags(BlockTags.MINEABLE_WITH_PICKAXE)
-            .stressImpact(4.0)
             .item(item -> item
                     .model((ctx, prov) -> {})
                     .tooltipSummary("A dynamic absorber that clears hostile traits from chunks based on rotational speed.")
@@ -77,6 +78,8 @@ public class ShHsBlocks {
                     .tooltipBehaviour(3, "When broken",
                             "Restores all cleared chunks within the last radius.")
             )
+            .stressImpact(4.0)
+            .onRegister(movementBehaviour(new HostilityAbsorberMovementBehaviour()))
             .register();
 
     public static void register() {
