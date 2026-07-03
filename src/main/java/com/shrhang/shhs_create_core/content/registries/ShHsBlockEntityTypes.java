@@ -2,6 +2,7 @@ package com.shrhang.shhs_create_core.content.registries;
 
 import com.shrhang.shhs_create_core.content.fluid.sprayer.SprayerBlockEntity;
 import com.shrhang.shhs_create_core.content.hostility.absorber.HostilityAbsorberBlockEntity;
+import com.shrhang.shhs_create_core.content.hostility.absorber.HostilityAbsorberRenderer;
 import com.shrhang.shhs_create_core.content.logistics.brass_ender_chest.BrassEnderChestBlockEntity;
 import com.simibubi.create.AllPartialModels;
 import com.simibubi.create.content.kinetics.base.SingleAxisRotatingVisual;
@@ -27,7 +28,7 @@ public class ShHsBlockEntityTypes {
      */
     public static final BlockEntityEntry<SprayerBlockEntity> SPRAYER = REGISTRATE
             .blockEntity("sprayer", SprayerBlockEntity::new)
-            .visual(() -> SingleAxisRotatingVisual.of(AllPartialModels.SHAFT), false)
+            .visual(() -> SingleAxisRotatingVisual.of(AllPartialModels.SHAFT))
             .validBlocks(ShHsBlocks.SPRAYER)
             .transform(builder -> builder.registerCapability(event -> event.registerBlockEntity(
                     Capabilities.FluidHandler.BLOCK,
@@ -42,7 +43,8 @@ public class ShHsBlockEntityTypes {
      */
     public static final BlockEntityEntry<HostilityAbsorberBlockEntity> HOSTILITY_ABSORBER_BE = REGISTRATE
             .blockEntity("hostility_absorber", HostilityAbsorberBlockEntity::new)
-            .visual(() -> SingleAxisRotatingVisual.of(AllPartialModels.MILLSTONE_COG), false)
+            .visual(() -> SingleAxisRotatingVisual.of(AllPartialModels.MILLSTONE_COG))
+            .renderer(() -> HostilityAbsorberRenderer::new)
             .validBlocks(ShHsBlocks.HOSTILITY_ABSORBER)
             .register();
 

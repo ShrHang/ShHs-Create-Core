@@ -63,13 +63,10 @@ public class HostilityAbsorberBlockEntity extends KineticBlockEntity {
         @Override
         public void tick() {
             super.tick();
-
             Level level = getWorld();
             if (level == null || level.isClientSide()) return;
-
             float speed = getSpeed();
             int currentHalfLength = calculateHalfLength(speed);
-
             // 范围变化时应用脉冲
             if (currentHalfLength != lastHalfLength) {
                 if (currentHalfLength > lastHalfLength) {
@@ -91,7 +88,6 @@ public class HostilityAbsorberBlockEntity extends KineticBlockEntity {
                 }
                 lastHalfLength = currentHalfLength;
             }
-
             // 定期清扫当前范围（仅当工作状态，即 halfLength >= 0）
             // 使用游戏刻取模，全服务器同步
             if (currentHalfLength >= 0) {
@@ -109,13 +105,11 @@ public class HostilityAbsorberBlockEntity extends KineticBlockEntity {
             }
             super.destroy();
         }
-
         @Override
         public void write(@NotNull CompoundTag compound, @NotNull HolderLookup.Provider registries, boolean clientPacket) {
             super.write(compound, registries, clientPacket);
             compound.putInt("LastHalfLength", lastHalfLength);
         }
-
         @Override
         public void read(@NotNull CompoundTag compound, @NotNull HolderLookup.Provider registries, boolean clientPacket) {
             super.read(compound, registries, clientPacket);
