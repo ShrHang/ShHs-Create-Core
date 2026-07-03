@@ -66,6 +66,7 @@ public class ShHsBlocks {
             )
             .blockstate((ctx, prov) ->{}) // TODO 石磨的模型
             .blockTags(BlockTags.MINEABLE_WITH_PICKAXE)
+            .stressImpact(4.0)
             .item(item -> item
                     .model((ctx, prov) -> {})
                     .tooltipSummary("A dynamic absorber that clears hostile traits from chunks based on rotational speed.")
