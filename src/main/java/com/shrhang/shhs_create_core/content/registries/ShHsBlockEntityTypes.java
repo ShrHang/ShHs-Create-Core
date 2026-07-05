@@ -1,6 +1,7 @@
 package com.shrhang.shhs_create_core.content.registries;
 
 import com.shrhang.shhs_create_core.content.fluid.sprayer.SprayerBlockEntity;
+import com.shrhang.shhs_create_core.content.fluid.sprayer.SprayerRenderer;
 import com.shrhang.shhs_create_core.content.hostility.absorber.HostilityAbsorberBlockEntity;
 import com.shrhang.shhs_create_core.content.hostility.absorber.HostilityAbsorberRenderer;
 import com.shrhang.shhs_create_core.content.logistics.brass_ender_chest.BrassEnderChestBlockEntity;
@@ -29,6 +30,7 @@ public class ShHsBlockEntityTypes {
     public static final BlockEntityEntry<SprayerBlockEntity> SPRAYER = REGISTRATE
             .blockEntity("sprayer", SprayerBlockEntity::new)
             .visual(() -> SingleAxisRotatingVisual.of(AllPartialModels.SHAFT))
+            .renderer(() -> SprayerRenderer::new)
             .validBlocks(ShHsBlocks.SPRAYER)
             .transform(builder -> builder.registerCapability(event -> event.registerBlockEntity(
                     Capabilities.FluidHandler.BLOCK,
