@@ -1,6 +1,7 @@
 package com.shrhang.shhs_create_core.content.registries;
 
 import com.shrhang.shhs_create_core.content.fluid.sprayer.SprayerBlock;
+import com.shrhang.shhs_create_core.content.fluid.sprayer.SprayerMovementBehaviour;
 import com.shrhang.shhs_create_core.content.hostility.absorber.HostilityAbsorberBlock;
 import com.shrhang.shhs_create_core.content.hostility.absorber.HostilityAbsorberMovementBehaviour;
 import com.shrhang.shhs_create_core.content.logistics.brass_ender_chest.BrassEnderChestBlock;
@@ -52,6 +53,7 @@ public class ShHsBlocks {
                     .tooltipBehaviour(2, "Place facing direction",
                             "Sprays forward every 0.25 seconds, consuming up to 32 mB per spray when fully open.")
             )
+            .onRegister(movementBehaviour(new SprayerMovementBehaviour()))
             .register();
 
     /**
