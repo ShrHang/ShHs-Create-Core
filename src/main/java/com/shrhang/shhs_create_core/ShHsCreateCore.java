@@ -10,11 +10,13 @@ import com.shrhang.shhs_create_core.content.event.ClientEvents;
 import com.shrhang.shhs_create_core.content.event.MagicEventHandler;
 import com.shrhang.shhs_create_core.content.event.ShHsAttackListener;
 import com.shrhang.shhs_create_core.content.registries.*;
+import com.shrhang.shhs_create_core.infrastructure.ponder.ShHsPonderPlugin;
 import com.simibubi.create.foundation.item.ItemDescription;
 import com.simibubi.create.foundation.item.KineticStats;
 import com.simibubi.create.foundation.item.TooltipModifier;
 import dev.xkmc.curseofpandora.init.registrate.CoPAttrs;
 import net.createmod.catnip.lang.FontHelper;
+import net.createmod.ponder.foundation.PonderIndex;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -53,28 +55,41 @@ public class ShHsCreateCore {
             modEventBus.addListener(ShHsKeys::register);
         }
     }
-
+    /**
+     * 通用初始化（服务端 + 客户端）。
+     * 在 FMLCommonSetupEvent 中执行，所有注册工作均在此完成。
+     */
     public static void init(final FMLCommonSetupEvent event) {
         event.enqueueWork(ShHsInventoryIdentifiers::register);
         event.enqueueWork(ShHsOpenPipeEffects::register);
         if (FMLEnvironment.dist.isClient()) {
             ClientEvents.init();
+            event.enqueueWork(() -> PonderIndex.addPlugin(new ShHsPonderPlugin()));
         }
         MagicEventHandler.init();
         ShHsAttackListener.init();
         Mods.CREATE_ENCHANTMENT_INDUSTRY.executeIfInstalled(() -> CreateEnchantmentIndustry::init);
     }
-
+    /**
+     * 为所有实体类型添加 Reality 属性（兼容 Curse of Pandora）。
+     */
     public static void modifyEntityAttributes(final EntityAttributeModificationEvent event) {
         event.getTypes().forEach(entityType -> event.add(entityType, CoPAttrs.REALITY));
     }
-
+    /**
+     * 收集数据（精灵图、语言、标签）。
+     */
     private static void gatherData() {
         ShHsAtlases.init();
         ShHsLang.init();
         ShHsTagKey.init();
     }
-
+    /**
+     * 快捷获取本模组的 ResourceLocation。
+     *
+     * @param id 资源路径
+     * @return ResourceLocation 对象
+     */
     public static ResourceLocation rl(String id) {
         return ResourceLocation.fromNamespaceAndPath(MODID, id);
     }
