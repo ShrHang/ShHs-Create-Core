@@ -72,7 +72,7 @@ public class ShHsBlocks {
             .blockTags(BlockTags.MINEABLE_WITH_PICKAXE)
             .item(item -> item
                     .model((ctx, prov) -> {})
-                    .tooltipSummary("A dynamic absorber that clears hostile traits from chunks based on rotational speed.")
+                    .tooltipSummary("A dynamic absorber that clears hostility from chunks based on rotational speed.")
                     .tooltipBehaviour(1, "Connect rotational power",
                             "Higher speed increases the absorption radius up to config limit.")
                     .tooltipBehaviour(2, "When speed decreases",

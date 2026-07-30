@@ -13,7 +13,7 @@
   "block.shhs_create_core.hostility_absorber.tooltip.condition1": "接入旋转动力",
   "block.shhs_create_core.hostility_absorber.tooltip.condition2": "转速降低时",
   "block.shhs_create_core.hostility_absorber.tooltip.condition3": "被破坏时",
-  "block.shhs_create_core.hostility_absorber.tooltip.summary": "一个动态吸收器，根据旋转速度清除区块中的恶意词条。",
+  "block.shhs_create_core.hostility_absorber.tooltip.summary": "一个动态吸收器，根据旋转速度清除区块中的恶意。",
 
   "block.shhs_create_core.sprayer": "喷洒器",
   "block.shhs_create_core.sprayer.tooltip.behaviour1": "转速控制阀门角度0~180度，线性调节喷洒速率。",

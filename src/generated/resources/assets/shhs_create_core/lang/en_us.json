@@ -12,7 +12,7 @@
   "block.shhs_create_core.hostility_absorber.tooltip.condition1": "Connect rotational power",
   "block.shhs_create_core.hostility_absorber.tooltip.condition2": "When speed decreases",
   "block.shhs_create_core.hostility_absorber.tooltip.condition3": "When broken",
-  "block.shhs_create_core.hostility_absorber.tooltip.summary": "A dynamic absorber that clears hostile traits from chunks based on rotational speed.",
+  "block.shhs_create_core.hostility_absorber.tooltip.summary": "A dynamic absorber that clears hostility from chunks based on rotational speed.",
   "block.shhs_create_core.sprayer": "Sprayer",
   "block.shhs_create_core.sprayer.tooltip.behaviour1": "Rotational speed controls a valve angle from 0 to 180 degrees, linearly adjusting the spray rate.",
   "block.shhs_create_core.sprayer.tooltip.behaviour2": "Sprays forward every 0.25 seconds, consuming up to 32 mB per spray when fully open.",
