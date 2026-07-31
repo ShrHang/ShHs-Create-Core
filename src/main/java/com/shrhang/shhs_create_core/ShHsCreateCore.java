@@ -10,7 +10,7 @@ import com.shrhang.shhs_create_core.content.event.ClientEvents;
 import com.shrhang.shhs_create_core.content.event.MagicEventHandler;
 import com.shrhang.shhs_create_core.content.event.ShHsAttackListener;
 import com.shrhang.shhs_create_core.content.registries.*;
-import com.shrhang.shhs_create_core.infrastructure.ponder.ShHsPonderPlugin;
+import com.shrhang.shhs_create_core.content.ponder.ShHsPonderPlugin;
 import com.simibubi.create.foundation.item.ItemDescription;
 import com.simibubi.create.foundation.item.KineticStats;
 import com.simibubi.create.foundation.item.TooltipModifier;

@@ -1,7 +1,7 @@
 package com.shrhang.shhs_create_core.content.data;
 
 import com.shrhang.shhs_create_core.content.registries.ShHsKeys;
-import com.shrhang.shhs_create_core.infrastructure.ponder.ShHsPonderPlugin;
+import com.shrhang.shhs_create_core.content.ponder.ShHsPonderPlugin;
 import com.tterrag.registrate.providers.ProviderType;
 import joptsimple.internal.Strings;
 import net.createmod.ponder.foundation.registration.DefaultPonderSceneRegistrationHelper;

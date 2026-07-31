@@ -1,4 +1,4 @@
-package com.shrhang.shhs_create_core.infrastructure.ponder.scenes;
+package com.shrhang.shhs_create_core.content.ponder.scenes;
 
 import com.shrhang.shhs_create_core.content.registries.ShHsBlocks;
 import com.simibubi.create.AllBlocks;
@@ -11,9 +11,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 
 public class BrassEnderChestScenes {
-    public static void introduce(SceneBuilder builder, SceneBuildingUtil util) {
+    public static void intro(SceneBuilder builder, SceneBuildingUtil util) {
         CreateSceneBuilder scene = new CreateSceneBuilder(builder);
-        scene.title("brass_ender_chest.introduce", "Features of Brass Ender Chest");
+        scene.title("brass_ender_chest.intro", "Features of Brass Ender Chest");
         scene.world().showSection(util.select().layer(0), Direction.DOWN);
         scene.idle(10);
 

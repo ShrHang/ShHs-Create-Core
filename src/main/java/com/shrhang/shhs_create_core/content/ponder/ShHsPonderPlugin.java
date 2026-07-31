@@ -1,4 +1,4 @@
-package com.shrhang.shhs_create_core.infrastructure.ponder;
+package com.shrhang.shhs_create_core.content.ponder;
 
 import com.shrhang.shhs_create_core.ShHsCreateCore;
 import net.createmod.ponder.api.level.PonderLevel;
