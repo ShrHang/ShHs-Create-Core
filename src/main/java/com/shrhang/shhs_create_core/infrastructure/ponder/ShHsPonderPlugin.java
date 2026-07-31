@@ -1,7 +1,6 @@
 package com.shrhang.shhs_create_core.infrastructure.ponder;
 
 import com.shrhang.shhs_create_core.ShHsCreateCore;
-import com.shrhang.shhs_create_core.content.registries.ShHsPonderScenes;
 import net.createmod.ponder.api.level.PonderLevel;
 import net.createmod.ponder.api.registration.IndexExclusionHelper;
 import net.createmod.ponder.api.registration.PonderPlugin;
@@ -62,6 +61,6 @@ public class ShHsPonderPlugin implements PonderPlugin {
      */
     @Override
     public void indexExclusions(IndexExclusionHelper helper) {
-        // 本模组暂无需排除，留空
+
     }
 }

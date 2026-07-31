@@ -156,6 +156,9 @@ public class BrassEnderChestBlockEntity extends SmartBlockEntity implements IHav
         return true;
     }
 
+    /**
+     * 提供物品处理能力，允许其他方块实体或物品与黄铜末影箱交互。
+     */
     @Nullable
     public IItemHandler getInventory() {
         if (level == null || level.isClientSide || targetUUID == null)

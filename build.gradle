@@ -153,6 +153,8 @@ dependencies {
 
     implementation "maven.modrinth:create-wizardry:YoUVUmtF"
 
+    implementation "maven.modrinth:voXQB5Hr:WTBoHB1r"
+
     implementation("mezz.jei:jei-$minecraft_version-neoforge:$jei_version") // JEI
     runtimeOnly "vazkii.patchouli:Patchouli:$minecraft_version-$patchouli_version-NEOFORGE-SNAPSHOT" // Patchouli
 

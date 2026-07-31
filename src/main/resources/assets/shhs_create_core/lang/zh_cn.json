@@ -5,7 +5,6 @@
   "block.shhs_create_core.brass_ender_chest.tooltip.condition1": "潜行右键时",
   "block.shhs_create_core.brass_ender_chest.tooltip.condition2": "与剪贴板交互时",
   "block.shhs_create_core.brass_ender_chest.tooltip.summary": "一个可以与_漏斗_、_溜槽_、_打包机_等_物流原件_交互的末影箱，只能访问其_所有者_的末影箱库存。若其所有者_离线_，黄铜末影箱将_无法被交互_。",
-
   "block.shhs_create_core.hostility_absorber": "恶意吸收器",
   "block.shhs_create_core.hostility_absorber.tooltip.behaviour1": "转速越高，吸收半径越大，最高可达配置上限。",
   "block.shhs_create_core.hostility_absorber.tooltip.behaviour2": "转速降低时，自动还原先前清除的区块。",
@@ -14,33 +13,36 @@
   "block.shhs_create_core.hostility_absorber.tooltip.condition2": "转速降低时",
   "block.shhs_create_core.hostility_absorber.tooltip.condition3": "被破坏时",
   "block.shhs_create_core.hostility_absorber.tooltip.summary": "一个动态吸收器，根据旋转速度清除区块中的恶意。",
-
   "block.shhs_create_core.sprayer": "喷洒器",
   "block.shhs_create_core.sprayer.tooltip.behaviour1": "转速控制阀门角度0~180度，线性调节喷洒速率。",
   "block.shhs_create_core.sprayer.tooltip.behaviour2": "每0.25秒喷洒一次，全开时每次消耗最多32 mB。",
   "block.shhs_create_core.sprayer.tooltip.condition1": "向侧面接入旋转动力",
   "block.shhs_create_core.sprayer.tooltip.condition2": "放置方向决定喷洒方向",
   "block.shhs_create_core.sprayer.tooltip.summary": "向前方喷洒流体的喷洒器，速率由旋转输入控制。",
-
   "fluid.shhs_create_core.hostility": "恶意",
   "fluid.shhs_create_core.wonder": "奇迹",
-
   "item.shhs_create_core.empty_trait": "空词条",
   "item.shhs_create_core.empty_trait.tooltip.behaviour1": "_蓄力_后，_吸收__一级_目标身上随机一个_词条_并将其转化成对应的_词条物品_。",
   "item.shhs_create_core.empty_trait.tooltip.condition1": "潜行使用时",
   "item.shhs_create_core.empty_trait.tooltip.summary": "一个渴望从附近生物那里汲取一点_恶意_的_空容器_。",
-
   "item.shhs_create_core.portable_stock_ticker": "便携仓储发报机",
   "item.shhs_create_core.portable_stock_ticker.tooltip.behaviour1": "如果连接的网络存在且_已加载_，打开_库存请求_界面。",
   "item.shhs_create_core.portable_stock_ticker.tooltip.behaviour2": "如果目标方块是一个_仓储发报机_、_仓储连接器_或_红石请求器_，则连接至其网络。",
   "item.shhs_create_core.portable_stock_ticker.tooltip.condition1": "使用时",
   "item.shhs_create_core.portable_stock_ticker.tooltip.condition2": "对方块潜行使用时",
   "item.shhs_create_core.portable_stock_ticker.tooltip.summary": "允许你连接至一个_仓储发报机_，并远程查看其库存信息。",
-
   "itemGroup.shhs_create_core.shhs_stuff": "什物",
   "key.categories.shhs_create_core": "什行的机械动力：核心",
   "key.shhs_create_core.open_portable_stock_ticker": "打开便携仓储发报机",
-
+  "shhs_create_core.ponder.brass_ender_chest.introduce.header": "黄铜末影箱的特点",
+  "shhs_create_core.ponder.brass_ender_chest.introduce.text_1": "黄铜末影箱被放置时会自动绑定其放置者的末影箱库存。",
+  "shhs_create_core.ponder.brass_ender_chest.introduce.text_2": "任何人打开黄铜末影箱都只能访问其所有者的末影箱库存。",
+  "shhs_create_core.ponder.brass_ender_chest.introduce.text_3": "佩戴工程师护目镜时，玩家可以看到黄铜末影箱的所有者和锁定状态。",
+  "shhs_create_core.ponder.brass_ender_chest.introduce.text_4": "所有者可以潜行右键黄铜末影箱来切换其锁定状态。",
+  "shhs_create_core.ponder.brass_ender_chest.introduce.text_5": "锁住时，只有其所有者可以打开黄铜末影箱。",
+  "shhs_create_core.ponder.brass_ender_chest.introduce.text_6": "剪贴板可以复制黄铜末影箱的所有者和锁定状态，并应用到到其它黄铜末影箱上。",
+  "shhs_create_core.ponder.scene.shhs_create_core.hostility_absorber.intro.header": "Hostility Absorber",
+  "shhs_create_core.ponder.scene.shhs_create_core.sprayer.intro.header": "Sprayer",
   "text.shhs_create_core.empty_trait_no_target": "视线内没有有效目标。",
   "text.shhs_create_core.empty_trait_no_traits": "无法从该目标身上提取词条。",
   "text.shhs_create_core.no_enough_spell_tolerance": "至少需要 %s 点魔力耐性才能施放这个法术。",
@@ -48,15 +50,12 @@
   "text.shhs_create_core.portable_stock_ticker.no_network": "连接的物流网络无效。",
   "text.shhs_create_core.portable_stock_ticker.tooltip.linked": "已连接。",
   "text.shhs_create_core.portable_stock_ticker.unloaded": "连接的物流网络已卸载。",
-
   "title.shhs_create_core.container.endchest": "%s的%s",
-
   "tooltip.shhs_create_core.brass_ender_chest.header": "末影箱信息",
   "tooltip.shhs_create_core.brass_ender_chest.locked": "已锁定：仅所有者可打开。",
   "tooltip.shhs_create_core.brass_ender_chest.owner": "所有者：%s",
   "tooltip.shhs_create_core.brass_ender_chest.owner_unknown": "无法找到其所有者 %s",
   "tooltip.shhs_create_core.brass_ender_chest.unlocked": "未锁定：任何人均可打开。",
-
   "trait.shhs_create_core.augmented_reality": "增强现实",
   "trait.shhs_create_core.wizard": "巫师",
   "trait.shhs_create_core.wizard.desc": "生物可释放法术。"

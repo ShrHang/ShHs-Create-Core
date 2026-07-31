@@ -1,10 +1,14 @@
-package com.shrhang.shhs_create_core.content.registries;
+package com.shrhang.shhs_create_core.infrastructure.ponder;
 
+import com.shrhang.shhs_create_core.content.registries.ShHsBlocks;
+import com.shrhang.shhs_create_core.infrastructure.ponder.scenes.BrassEnderChestScenes;
+import com.simibubi.create.foundation.ponder.CreateSceneBuilder;
 import com.tterrag.registrate.util.entry.ItemProviderEntry;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import net.createmod.ponder.api.registration.PonderSceneRegistrationHelper;
 import net.createmod.ponder.api.scene.SceneBuilder;
 import net.createmod.ponder.api.scene.SceneBuildingUtil;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 
 /**
@@ -26,7 +30,9 @@ public class ShHsPonderScenes {
 
         // 黄铜末影箱
         HELPER.forComponents(ShHsBlocks.BRASS_ENDER_CHEST)
-                .addStoryBoard("brass_ender_chest/intro", ShHsPonderScenes::brassEnderChestIntro);
+                .addStoryBoard("brass_ender_chest/introduce", BrassEnderChestScenes::introduce)
+//                .addStoryBoard("brass_ender_chest/transit", BrassEnderChestScenes::transit)
+                ;
 
         // 喷洒器
         HELPER.forComponents(ShHsBlocks.SPRAYER)
@@ -41,7 +47,10 @@ public class ShHsPonderScenes {
      * 黄铜末影箱的空白思索场景。
      */
     public static void brassEnderChestIntro(SceneBuilder builder, SceneBuildingUtil util) {
-        builder.title("scene.shhs_create_core.brass_ender_chest.intro", "Brass Ender Chest");
+        CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+        scene.title("brass_ender_chest", "Brass Ender Chest");
+        scene.world().showSection(util.select().layer(0), Direction.DOWN);
+        scene.idle(5);
     }
 
     /**
