@@ -1,10 +1,10 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "com.shrhang.shhs_create_core.mixin",
+  "package": "io.github.shrhang.shhs_create_core.mixin",
   "refmap": "shhs_create_core.refmap.json",
   "compatibilityLevel": "JAVA_21",
-  "plugin": "com.shrhang.shhs_create_core.mixin.MixinPlugin",
+  "plugin": "io.github.shrhang.shhs_create_core.mixin.MixinPlugin",
   "mixins": [
     "curios.common.data.CuriosEntityManagerMixin",
     "irons_spellbooks.util.TooltipsUtilsMixin",

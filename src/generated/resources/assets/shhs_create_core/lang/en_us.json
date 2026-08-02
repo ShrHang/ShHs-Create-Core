@@ -41,8 +41,6 @@
   "shhs_create_core.ponder.brass_ender_chest.intro.text_4": "Owners can right-click the brass ender chest in sneaking to toggle its locked state.",
   "shhs_create_core.ponder.brass_ender_chest.intro.text_5": "When locked, only the owner can open the brass ender chest.",
   "shhs_create_core.ponder.brass_ender_chest.intro.text_6": "The clipboard can copy a Brass Ender Chest’s owner and lock status, then apply them to other Brass Ender Chests.",
-  "shhs_create_core.ponder.scene.shhs_create_core.hostility_absorber.intro.header": "Hostility Absorber",
-  "shhs_create_core.ponder.scene.shhs_create_core.sprayer.intro.header": "Sprayer",
   "text.shhs_create_core.empty_trait_no_target": "No valid target in sight.",
   "text.shhs_create_core.empty_trait_no_traits": "No traits can be extracted from this target.",
   "text.shhs_create_core.no_enough_spell_tolerance": "At least %s Spell Tolerance is required to cast this spell.",
