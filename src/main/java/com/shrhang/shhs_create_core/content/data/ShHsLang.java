@@ -1,13 +1,22 @@
 package com.shrhang.shhs_create_core.content.data;
 
 import com.shrhang.shhs_create_core.content.registries.ShHsKeys;
+import com.shrhang.shhs_create_core.content.ponder.ShHsPonderPlugin;
 import com.tterrag.registrate.providers.ProviderType;
 import joptsimple.internal.Strings;
+import net.createmod.ponder.foundation.registration.DefaultPonderSceneRegistrationHelper;
+import net.createmod.ponder.foundation.registration.DefaultSharedTextRegistrationHelper;
+import net.createmod.ponder.foundation.registration.PonderLocalization;
+import net.createmod.ponder.foundation.registration.PonderSceneRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+
+import java.util.Map;
+import java.util.function.BiConsumer;
 
 import static com.shrhang.shhs_create_core.ShHsCreateCore.MODID;
 import static com.shrhang.shhs_create_core.ShHsCreateCore.REGISTRATE;
@@ -74,6 +83,41 @@ public class ShHsLang {
         REGISTRATE.addRawLang(textKey("portable_stock_ticker.unloaded"), "Linked Logistics Network is unloaded.");
 
         REGISTRATE.addRawLang(CATEGORY_KEY, "ShH's Create Core");
-        REGISTRATE.addDataGenerator(ProviderType.LANG, provider -> ShHsKeys.provideLang(provider::add));
+        REGISTRATE.addDataGenerator(ProviderType.LANG, provider -> {
+            ShHsKeys.provideLang(provider::add);
+            providePonderLang(provider::add);
+        });
+    }
+
+    private static void providePonderLang(BiConsumer<String, String> consumer) {
+        ShHsPonderPlugin plugin = new ShHsPonderPlugin();
+        PonderLocalization localization = new PonderLocalization();
+        PonderSceneRegistry scenes = new PonderSceneRegistry(localization);
+
+        plugin.registerSharedText(new DefaultSharedTextRegistrationHelper(MODID, localization));
+        plugin.registerScenes(new DefaultPonderSceneRegistrationHelper(MODID, scenes));
+
+        scenes.getRegisteredEntries()
+                .forEach(entry -> PonderSceneRegistry.compileScene(localization, entry.getValue(), null));
+
+        localization.shared.forEach((key, value) ->
+                consumer.accept(ponderSharedLangKey(key), value));
+        localization.specific.entrySet()
+                .stream()
+                .filter(entry -> MODID.equals(entry.getKey().getNamespace()))
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> entry.getValue()
+                        .entrySet()
+                        .stream()
+                        .sorted(Map.Entry.comparingByKey())
+                        .forEach(text -> consumer.accept(ponderSpecificLangKey(entry.getKey(), text.getKey()), text.getValue())));
+    }
+
+    private static String ponderSharedLangKey(ResourceLocation key) {
+        return key.getNamespace() + ".ponder.shared." + key.getPath();
+    }
+
+    private static String ponderSpecificLangKey(ResourceLocation sceneId, String key) {
+        return sceneId.getNamespace() + ".ponder." + sceneId.getPath() + "." + key;
     }
 }

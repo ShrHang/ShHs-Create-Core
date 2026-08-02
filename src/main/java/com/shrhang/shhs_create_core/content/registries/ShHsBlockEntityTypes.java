@@ -21,6 +21,11 @@ public class ShHsBlockEntityTypes {
     public static final BlockEntityEntry<BrassEnderChestBlockEntity> BRASS_ENDER_CHEST_BE = REGISTRATE
             .blockEntity("brass_ender_chest", BrassEnderChestBlockEntity::new)
             .validBlocks(ShHsBlocks.BRASS_ENDER_CHEST)
+            .transform(builder -> builder.registerCapability(event -> event.registerBlockEntity(
+                    Capabilities.ItemHandler.BLOCK,
+                    builder.getEntry(),
+                    (be, context) -> be.getInventory()
+            )))
             .register();
 
     /**
