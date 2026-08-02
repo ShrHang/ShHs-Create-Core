@@ -9,8 +9,8 @@ import com.shrhang.shhs_create_core.content.data.ShHsTagKey;
 import com.shrhang.shhs_create_core.content.event.ClientEvents;
 import com.shrhang.shhs_create_core.content.event.MagicEventHandler;
 import com.shrhang.shhs_create_core.content.event.ShHsAttackListener;
-import com.shrhang.shhs_create_core.content.registries.*;
 import com.shrhang.shhs_create_core.content.ponder.ShHsPonderPlugin;
+import com.shrhang.shhs_create_core.content.registries.*;
 import com.simibubi.create.foundation.item.ItemDescription;
 import com.simibubi.create.foundation.item.KineticStats;
 import com.simibubi.create.foundation.item.TooltipModifier;
@@ -47,6 +47,7 @@ public class ShHsCreateCore {
         ShHsComponentTypes.register(modEventBus);
         ShHsCreativeTabs.register(modEventBus);
         ShHsMenuTypes.register(modEventBus);
+        Mods.CREATE_ENCHANTMENT_INDUSTRY.executeIfInstalled(() -> () -> CreateEnchantmentIndustry.register(modEventBus));
 
         modEventBus.addListener(ShHsCreateCore::init);
         modEventBus.addListener(ShHsPackets::register);
@@ -68,7 +69,6 @@ public class ShHsCreateCore {
         }
         MagicEventHandler.init();
         ShHsAttackListener.init();
-        Mods.CREATE_ENCHANTMENT_INDUSTRY.executeIfInstalled(() -> CreateEnchantmentIndustry::init);
     }
     /**
      * 为所有实体类型添加 Reality 属性（兼容 Curse of Pandora）。
