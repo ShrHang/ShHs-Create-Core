@@ -15,10 +15,8 @@ public class ShHsPonderScenes {
 
         // 黄铜末影箱
         HELPER.forComponents(ShHsBlocks.BRASS_ENDER_CHEST)
-                .addStoryBoard("brass_ender_chest/intro", BrassEnderChestScenes::intro, AllCreatePonderTags.LOGISTICS)
-        // TODO
-//                .addStoryBoard("brass_ender_chest/transit", BrassEnderChestScenes::transit)
-                ;
+                .addStoryBoard("brass_ender_chest/transit", BrassEnderChestScenes::transit, AllCreatePonderTags.LOGISTICS)
+                .addStoryBoard("brass_ender_chest/feature", BrassEnderChestScenes::feature);
 
         // 喷洒器
 //        HELPER.forComponents(ShHsBlocks.SPRAYER)

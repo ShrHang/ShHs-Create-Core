@@ -7,7 +7,6 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * 喷洒器的渲染器，仅负责渲染传动杆。
- * 后续可由美工扩展添加更多细节。
  */
 public class SprayerRenderer extends KineticBlockEntityRenderer<SprayerBlockEntity> {
     public SprayerRenderer(BlockEntityRendererProvider.Context context) {super(context);}
