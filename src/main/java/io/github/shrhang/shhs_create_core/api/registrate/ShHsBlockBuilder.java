@@ -1,11 +1,13 @@
 package io.github.shrhang.shhs_create_core.api.registrate;
 
+import com.google.gson.JsonElement;
 import com.simibubi.create.api.stress.BlockStressValues;
 import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.builders.BlockBuilder;
 import com.tterrag.registrate.builders.BlockEntityBuilder.BlockEntityFactory;
 import com.tterrag.registrate.builders.BuilderCallback;
 import com.tterrag.registrate.providers.DataGenContext;
+import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.providers.RegistrateBlockstateProvider;
 import com.tterrag.registrate.util.nullness.*;
 import net.minecraft.tags.TagKey;
@@ -14,6 +16,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.neoforged.neoforge.client.model.generators.BlockStateProvider;
+
+import java.util.Optional;
 
 public class ShHsBlockBuilder<T extends Block, P> extends BlockBuilder<T, P> {
 
@@ -60,14 +65,33 @@ public class ShHsBlockBuilder<T extends Block, P> extends BlockBuilder<T, P> {
 
     @Override
     public ShHsItemBuilder<BlockItem, BlockBuilder<T, P>> item() {
-        return (ShHsItemBuilder<BlockItem, BlockBuilder<T, P>>) super.item();
+        return item(BlockItem::new);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <I extends Item> ShHsItemBuilder<I, BlockBuilder<T, P>> item(
             NonNullBiFunction<? super T, Item.Properties, ? extends I> factory) {
-        return (ShHsItemBuilder<I, BlockBuilder<T, P>>) super.item(factory);
+        NonNullSupplier<T> block = asSupplier();
+        ShHsItemBuilder<I, BlockBuilder<T, P>> builder =
+                (ShHsItemBuilder<I, BlockBuilder<T, P>>) getOwner()
+                        .<I, BlockBuilder<T, P>>item(this, getName(), properties -> factory.apply(getEntry(), properties));
+
+        builder.setData(ProviderType.LANG, NonNullBiConsumer.noop());
+        builder.model((ctx, prov) -> {
+            Optional<String> model = getOwner().getDataProvider(ProviderType.BLOCKSTATE)
+                    .flatMap(provider -> provider.getExistingVariantBuilder(getEntry()))
+                    .map(variantBuilder -> variantBuilder.getModels().get(variantBuilder.partialState()))
+                    .map(BlockStateProvider.ConfiguredModelList::toJSON)
+                    .filter(JsonElement::isJsonObject)
+                    .map(json -> json.getAsJsonObject().get("model"))
+                    .map(JsonElement::getAsString);
+            if (model.isPresent()) {
+                prov.withExistingParent(ctx.getName(), model.get());
+            } else {
+                prov.blockItem(block);
+            }
+        });
+        return builder;
     }
 
     @Override

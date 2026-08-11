@@ -1,0 +1,100 @@
+{
+  "variants": {
+    "axis_along_first=false,facing=down,waterlogged=false": {
+      "model": "shhs_create_core:block/sprayer/block_horizontal",
+      "x": 270,
+      "y": 90
+    },
+    "axis_along_first=false,facing=down,waterlogged=true": {
+      "model": "shhs_create_core:block/sprayer/block_horizontal",
+      "x": 270,
+      "y": 90
+    },
+    "axis_along_first=false,facing=east,waterlogged=false": {
+      "model": "shhs_create_core:block/sprayer/block_horizontal",
+      "y": 270
+    },
+    "axis_along_first=false,facing=east,waterlogged=true": {
+      "model": "shhs_create_core:block/sprayer/block_horizontal",
+      "y": 270
+    },
+    "axis_along_first=false,facing=north,waterlogged=false": {
+      "model": "shhs_create_core:block/sprayer/block_vertical",
+      "y": 180
+    },
+    "axis_along_first=false,facing=north,waterlogged=true": {
+      "model": "shhs_create_core:block/sprayer/block_vertical",
+      "y": 180
+    },
+    "axis_along_first=false,facing=south,waterlogged=false": {
+      "model": "shhs_create_core:block/sprayer/block_vertical"
+    },
+    "axis_along_first=false,facing=south,waterlogged=true": {
+      "model": "shhs_create_core:block/sprayer/block_vertical"
+    },
+    "axis_along_first=false,facing=up,waterlogged=false": {
+      "model": "shhs_create_core:block/sprayer/block_horizontal",
+      "x": 90,
+      "y": 90
+    },
+    "axis_along_first=false,facing=up,waterlogged=true": {
+      "model": "shhs_create_core:block/sprayer/block_horizontal",
+      "x": 90,
+      "y": 90
+    },
+    "axis_along_first=false,facing=west,waterlogged=false": {
+      "model": "shhs_create_core:block/sprayer/block_horizontal",
+      "y": 90
+    },
+    "axis_along_first=false,facing=west,waterlogged=true": {
+      "model": "shhs_create_core:block/sprayer/block_horizontal",
+      "y": 90
+    },
+    "axis_along_first=true,facing=down,waterlogged=false": {
+      "model": "shhs_create_core:block/sprayer/block_horizontal",
+      "x": 270
+    },
+    "axis_along_first=true,facing=down,waterlogged=true": {
+      "model": "shhs_create_core:block/sprayer/block_horizontal",
+      "x": 270
+    },
+    "axis_along_first=true,facing=east,waterlogged=false": {
+      "model": "shhs_create_core:block/sprayer/block_vertical",
+      "y": 270
+    },
+    "axis_along_first=true,facing=east,waterlogged=true": {
+      "model": "shhs_create_core:block/sprayer/block_vertical",
+      "y": 270
+    },
+    "axis_along_first=true,facing=north,waterlogged=false": {
+      "model": "shhs_create_core:block/sprayer/block_horizontal",
+      "y": 180
+    },
+    "axis_along_first=true,facing=north,waterlogged=true": {
+      "model": "shhs_create_core:block/sprayer/block_horizontal",
+      "y": 180
+    },
+    "axis_along_first=true,facing=south,waterlogged=false": {
+      "model": "shhs_create_core:block/sprayer/block_horizontal"
+    },
+    "axis_along_first=true,facing=south,waterlogged=true": {
+      "model": "shhs_create_core:block/sprayer/block_horizontal"
+    },
+    "axis_along_first=true,facing=up,waterlogged=false": {
+      "model": "shhs_create_core:block/sprayer/block_horizontal",
+      "x": 90
+    },
+    "axis_along_first=true,facing=up,waterlogged=true": {
+      "model": "shhs_create_core:block/sprayer/block_horizontal",
+      "x": 90
+    },
+    "axis_along_first=true,facing=west,waterlogged=false": {
+      "model": "shhs_create_core:block/sprayer/block_vertical",
+      "y": 90
+    },
+    "axis_along_first=true,facing=west,waterlogged=true": {
+      "model": "shhs_create_core:block/sprayer/block_vertical",
+      "y": 90
+    }
+  }
+}

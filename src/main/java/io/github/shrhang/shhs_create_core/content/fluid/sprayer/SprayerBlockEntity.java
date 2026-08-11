@@ -21,7 +21,7 @@ import java.util.List;
 
 /**
  * 喷洒器方块实体，管理流体储罐、角度调节和喷洒条件。
- * 管道模式已完全移除，ENABLED 仅用于控制渲染（阀门开/关）。
+ * 管道模式已完全移除。
  */
 public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHandler {
 
@@ -32,6 +32,7 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
 
     private FluidTank tank;
     private float angle = 180f;
+    private float prevAngle = 180f;
     private boolean frontBlocked = false;
 
     public SprayerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
@@ -62,12 +63,16 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
 
     @Override
     public void tick() {
+        prevAngle = angle;
         if (level != null && !level.isClientSide) {
             updateFrontBlocked();
             updateAngle();
-            updateEnabledState(); // 更新 ENABLED 用于渲染
         }
         super.tick();
+    }
+
+    public float getRenderedAngle(float partialTicks) {
+        return Mth.lerp(partialTicks, prevAngle, angle);
     }
 
     // ===== 阻风检测 =====
@@ -101,18 +106,6 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
                 angle = newAngle;
                 setChanged();
                 sendData();
-            }
-        }
-    }
-
-    // ===== 渲染状态更新（ENABLED 仅用于模型切换） =====
-    private void updateEnabledState() {
-        boolean shouldEnable = shouldSpray(); // 与喷洒条件一致
-        BlockState state = getBlockState();
-        boolean currentEnabled = state.getValue(SprayerBlock.ENABLED);
-        if (currentEnabled != shouldEnable) {
-            if (level != null) {
-                level.setBlock(worldPosition, state.setValue(SprayerBlock.ENABLED, shouldEnable), 3);
             }
         }
     }
@@ -169,7 +162,9 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
     @Override
     protected void read(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
         super.read(compound, registries, clientPacket);
+        float previousAngle = angle;
         angle = compound.getFloat("Angle");
+        prevAngle = clientPacket ? previousAngle : angle;
         if (tank == null) {
             tank = new FluidTank(TANK_CAPACITY);
         }

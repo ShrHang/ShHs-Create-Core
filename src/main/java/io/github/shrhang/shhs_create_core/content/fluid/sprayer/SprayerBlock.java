@@ -14,7 +14,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition.Builder;
-import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -25,17 +24,13 @@ import static io.github.shrhang.shhs_create_core.content.registries.ShHsBlockEnt
 
 /**
  * 喷洒器方块，仅负责定向喷洒，不再包含管道功能。
- * 保留 ENABLED 属性仅用于渲染控制（复用流体阀门模型）。
  */
 public class SprayerBlock extends DirectionalAxisKineticBlock
         implements IBE<SprayerBlockEntity>, ProperWaterloggedBlock {
 
-    public static final BooleanProperty ENABLED = BooleanProperty.create("enabled");
-
     public SprayerBlock(Properties properties) {
         super(properties);
         registerDefaultState(defaultBlockState()
-                .setValue(ENABLED, false)
                 .setValue(WATERLOGGED, false));
     }
 
@@ -58,7 +53,7 @@ public class SprayerBlock extends DirectionalAxisKineticBlock
 
     @Override
     protected void createBlockStateDefinition(Builder<Block, BlockState> builder) {
-        super.createBlockStateDefinition(builder.add(ENABLED, WATERLOGGED));
+        super.createBlockStateDefinition(builder.add(WATERLOGGED));
     }
 
 

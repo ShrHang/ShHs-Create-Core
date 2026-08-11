@@ -1,16 +1,22 @@
 package io.github.shrhang.shhs_create_core.content.registries;
 
+import com.simibubi.create.foundation.data.AssetLookup;
+import com.simibubi.create.foundation.data.BlockStateGen;
+import com.simibubi.create.foundation.data.CreateRegistrate;
+import com.simibubi.create.foundation.data.SharedProperties;
+import com.tterrag.registrate.util.entry.BlockEntry;
 import io.github.shrhang.shhs_create_core.content.fluid.sprayer.SprayerBlock;
+import io.github.shrhang.shhs_create_core.content.fluid.sprayer.SprayerModel;
 import io.github.shrhang.shhs_create_core.content.fluid.sprayer.SprayerMovementBehaviour;
 import io.github.shrhang.shhs_create_core.content.hostility.absorber.HostilityAbsorberBlock;
 import io.github.shrhang.shhs_create_core.content.hostility.absorber.HostilityAbsorberMovementBehaviour;
 import io.github.shrhang.shhs_create_core.content.logistics.brass_ender_chest.BrassEnderChestBlock;
-import com.tterrag.registrate.util.entry.BlockEntry;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.material.MapColor;
 
-import static io.github.shrhang.shhs_create_core.ShHsCreateCore.REGISTRATE;
 import static com.simibubi.create.api.behaviour.movement.MovementBehaviour.movementBehaviour;
+import static com.simibubi.create.foundation.data.TagGen.pickaxeOnly;
+import static io.github.shrhang.shhs_create_core.ShHsCreateCore.REGISTRATE;
 
 public class ShHsBlocks {
 
@@ -37,22 +43,20 @@ public class ShHsBlocks {
     public static final BlockEntry<SprayerBlock> SPRAYER = REGISTRATE
             .block("sprayer", SprayerBlock::new)
             .lang("Sprayer")
-            .properties(p -> p
-                    .mapColor(MapColor.COLOR_GRAY)
-                    .strength(1.5f, 600.0f)
-                    .requiresCorrectToolForDrops()
-                    .noOcclusion()
-            )
-            .blockstate((ctx, prov) -> {}) // TODO 喷洒器的模型
-            .blockTags(BlockTags.MINEABLE_WITH_PICKAXE)
+            .initialProperties(SharedProperties::copperMetal)
             .item(item -> item
-                    .model((ctx, prov) -> {})
+                    .model(AssetLookup::customItemModel)
                     .tooltipSummary("A sprayer that sprays fluid forward, with rate controlled by rotational input.")
                     .tooltipBehaviour(1, "Connect rotational power to the face",
                             "Rotational speed controls a valve angle from 0 to 180 degrees, linearly adjusting the spray rate.")
                     .tooltipBehaviour(2, "Place facing direction",
                             "Sprays forward every 0.25 seconds, consuming up to 32 mB per spray when fully open.")
             )
+            .transform(pickaxeOnly())
+            .blockstate((ctx, prov) -> BlockStateGen.directionalAxisBlock(ctx, prov,
+                    (state, vertical) -> AssetLookup.partialBaseModel(ctx, prov,
+                            vertical ? "vertical" : "horizontal")))
+            .onRegister(CreateRegistrate.blockModel(() -> SprayerModel::withAO))
             .onRegister(movementBehaviour(new SprayerMovementBehaviour()))
             .register();
 

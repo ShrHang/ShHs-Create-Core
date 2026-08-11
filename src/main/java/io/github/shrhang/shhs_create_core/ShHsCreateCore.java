@@ -40,6 +40,7 @@ public class ShHsCreateCore {
 
         ShHsBlocks.register();
         ShHsBlockEntityTypes.register();
+        ShHsPartialModels.register();
         ShHsItems.register();
         ShHsFluids.register();
         ShHsTraits.register();
