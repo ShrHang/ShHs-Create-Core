@@ -14,25 +14,25 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 /**
- * 喷洒器方块实体，管理流体储罐、角度调节和喷洒条件。
- * 管道模式已完全移除。
+ * 喷洒器方块实体，管理流体储罐、角度调节（0~270°）和喷洒条件。
+ * 角度直接影响消耗速率：0°关闭，270°全开。
  */
 public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHandler {
 
     private static final int TANK_CAPACITY = 32;
     private static final int MAX_CONSUMPTION = 32;
+    private static final float MAX_ANGLE = 270.0f;
     private static final float ANGLE_SPEED_SCALE = 0.3f;
     private static final float ANGLE_EPSILON = 1e-6f;
 
     private FluidTank tank;
-    private float angle = 180f;
-    private float prevAngle = 180f;
+    private float angle = MAX_ANGLE;
+    private float prevAngle = MAX_ANGLE;
     private boolean frontBlocked = false;
 
     public SprayerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
@@ -45,11 +45,15 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
             tank = new FluidTank(TANK_CAPACITY);
         }
         behaviours.add(new SprayBehaviour(this, tank, () -> {
-            float factor = Mth.clamp(angle / 180f, 0f, 1f);
+            // 消耗因子 = angle / 270，0~1 线性
+            float factor = Mth.clamp(angle / MAX_ANGLE, 0f, 1f);
             return (int) (MAX_CONSUMPTION * factor);
         }, this::shouldSpray));
     }
 
+    /**
+     * 喷洒条件：前方无阻挡且角度大于阈值。
+     */
     private boolean shouldSpray() {
         return !frontBlocked && angle > ANGLE_EPSILON;
     }
@@ -71,6 +75,9 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
         super.tick();
     }
 
+    /**
+     * 供渲染使用的插值角度。
+     */
     public float getRenderedAngle(float partialTicks) {
         return Mth.lerp(partialTicks, prevAngle, angle);
     }
@@ -96,12 +103,12 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
         return !shape.isEmpty();
     }
 
-    // ===== 角度更新 =====
+    // ===== 角度更新（范围 0~270） =====
     private void updateAngle() {
         float speed = getTheoreticalSpeed();
         if (speed != 0) {
             float delta = speed * ANGLE_SPEED_SCALE;
-            float newAngle = Mth.clamp(angle + delta, 0f, 180f);
+            float newAngle = Mth.clamp(angle + delta, 0f, MAX_ANGLE);
             if (newAngle != angle) {
                 angle = newAngle;
                 setChanged();
@@ -129,7 +136,7 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
     }
 
     @Override
-    public @NotNull FluidStack getFluidInTank(int tankIndex) {
+    public FluidStack getFluidInTank(int tankIndex) {
         return getTank().getFluidInTank(tankIndex);
     }
 
@@ -139,31 +146,33 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
     }
 
     @Override
-    public boolean isFluidValid(int tankIndex, @NotNull FluidStack stack) {
+    public boolean isFluidValid(int tankIndex, FluidStack stack) {
         return getTank().isFluidValid(tankIndex, stack);
     }
 
     @Override
-    public int fill(@NotNull FluidStack resource, @NotNull FluidAction action) {
+    public int fill(FluidStack resource, FluidAction action) {
         return getTank().fill(resource, action);
     }
 
     @Override
-    public @NotNull FluidStack drain(@NotNull FluidStack resource, @NotNull FluidAction action) {
+    public FluidStack drain(FluidStack resource, FluidAction action) {
         return getTank().drain(resource, action);
     }
 
     @Override
-    public @NotNull FluidStack drain(int maxDrain, @NotNull FluidAction action) {
+    public FluidStack drain(int maxDrain, FluidAction action) {
         return getTank().drain(maxDrain, action);
     }
 
-    // ===== NBT =====
+    // ===== NBT 读写 =====
     @Override
     protected void read(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
         super.read(compound, registries, clientPacket);
         float previousAngle = angle;
         angle = compound.getFloat("Angle");
+        // 确保角度在有效范围内
+        angle = Mth.clamp(angle, 0f, MAX_ANGLE);
         prevAngle = clientPacket ? previousAngle : angle;
         if (tank == null) {
             tank = new FluidTank(TANK_CAPACITY);

@@ -1,4 +1,5 @@
 package io.github.shrhang.shhs_create_core.content.fluid.sprayer;
+
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsPartialModels;
@@ -13,45 +14,36 @@ import net.minecraft.core.Direction.AxisDirection;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * 喷洒器的渲染器，负责渲染传动杆、仪表和指针。
+ * 喷洒器的渲染器，应与 Flywheel Visual 一致。
  */
 public class SprayerRenderer extends KineticBlockEntityRenderer<SprayerBlockEntity> {
-    public SprayerRenderer(BlockEntityRendererProvider.Context context) {super(context);}
+
+    public SprayerRenderer(BlockEntityRendererProvider.Context context) {
+        super(context);
+    }
+
     @Override
-    protected void renderSafe(SprayerBlockEntity be, float partialTicks, PoseStack ms, MultiBufferSource buffer, int light, int overlay) {
+    protected void renderSafe(SprayerBlockEntity be, float partialTicks, PoseStack ms,
+                              MultiBufferSource buffer, int light, int overlay) {
         super.renderSafe(be, partialTicks, ms, buffer, light, overlay);
 
         BlockState state = be.getBlockState();
-        Axis gaugeAxis = getGaugeAxis(state.getValue(SprayerBlock.FACING).getAxis(), getRotationAxisOf(be));
+        Direction facing = state.getValue(SprayerBlock.FACING);
+        Axis shaftAxis = getRotationAxisOf(be);
+        Axis gaugeAxis = getGaugeAxis(facing.getAxis(), shaftAxis);
 
-        renderDial(be, partialTicks, state, Direction.get(AxisDirection.POSITIVE, gaugeAxis), ms, buffer, light);
-        renderDial(be, partialTicks, state, Direction.get(AxisDirection.NEGATIVE, gaugeAxis), ms, buffer, light);
+        Direction positiveFace = Direction.get(AxisDirection.POSITIVE, gaugeAxis);
+        Direction negativeFace = Direction.get(AxisDirection.NEGATIVE, gaugeAxis);
+
+        renderGauge(state, positiveFace, ms, buffer, light);
+        renderGauge(state, negativeFace, ms, buffer, light);
+        renderPointer(be, partialTicks, state, positiveFace, ms, buffer, light);
+        renderPointer(be, partialTicks, state, negativeFace, ms, buffer, light);
     }
 
     @Override
     protected BlockState getRenderedBlockState(SprayerBlockEntity be) {
         return shaft(getRotationAxisOf(be));
-    }
-
-    private static void renderDial(SprayerBlockEntity be, float partialTicks, BlockState state, Direction face,
-                                   PoseStack ms, MultiBufferSource buffer, int light) {
-        renderGauge(state, face, ms, buffer, light);
-        renderPointer(be, partialTicks, state, face, ms, buffer, light);
-    }
-
-    private static void renderGauge(BlockState state, Direction face, PoseStack ms, MultiBufferSource buffer, int light) {
-        SuperByteBuffer gauge = CachedBuffers.partial(ShHsPartialModels.SPRAYER_GAUGE, state);
-        rotateToFace(gauge, face)
-                .light(light)
-                .renderInto(ms, buffer.getBuffer(RenderType.cutoutMipped()));
-    }
-
-    private static void renderPointer(SprayerBlockEntity be, float partialTicks, BlockState state, Direction face,
-                                      PoseStack ms, MultiBufferSource buffer, int light) {
-        SuperByteBuffer pointer = CachedBuffers.partial(ShHsPartialModels.SPRAYER_POINTER, state);
-        rotateToFace(pointer, face)
-                .light(light)
-                .renderInto(ms, buffer.getBuffer(RenderType.cutoutMipped()));
     }
 
     private static Axis getGaugeAxis(Axis facingAxis, Axis shaftAxis) {
@@ -63,24 +55,46 @@ public class SprayerRenderer extends KineticBlockEntityRenderer<SprayerBlockEnti
         return Axis.Y;
     }
 
-    private static SuperByteBuffer rotateToFace(SuperByteBuffer buffer, Direction face) {
+    /**
+     * 与 SprayerVisual 相似的面朝向角度计算。
+     */
+    private static float[] getRotationForFace(Direction face) {
         return switch (face) {
-            case NORTH -> buffer;
-            case SOUTH -> buffer.center()
-                    .rotateYDegrees(180)
-                    .uncenter();
-            case EAST -> buffer.center()
-                    .rotateYDegrees(90)
-                    .uncenter();
-            case WEST -> buffer.center()
-                    .rotateYDegrees(270)
-                    .uncenter();
-            case UP -> buffer.center()
-                    .rotateXDegrees(90)
-                    .uncenter();
-            case DOWN -> buffer.center()
-                    .rotateXDegrees(270)
-                    .uncenter();
+            case NORTH -> new float[]{0, 0};
+            case SOUTH -> new float[]{180, 0};
+            case EAST  -> new float[]{90, 0};
+            case WEST  -> new float[]{270, 0};
+            case UP    -> new float[]{0, 90};
+            case DOWN  -> new float[]{0, 270};
         };
+    }
+
+    private static void renderGauge(BlockState state, Direction face, PoseStack ms,
+                                    MultiBufferSource buffer, int light) {
+        float[] angles = getRotationForFace(face);
+        SuperByteBuffer gauge = CachedBuffers.partial(ShHsPartialModels.SPRAYER_GAUGE, state);
+        gauge.center()
+                .rotateYDegrees(angles[0])
+                .rotateXDegrees(angles[1])
+                .uncenter()
+                .light(light)
+                .renderInto(ms, buffer.getBuffer(RenderType.cutoutMipped()));
+    }
+
+    private static void renderPointer(SprayerBlockEntity be, float partialTicks, BlockState state,
+                                      Direction face, PoseStack ms, MultiBufferSource buffer, int light) {
+        float angle = be.getRenderedAngle(partialTicks);
+        float pointerRotation = angle;
+        pointerRotation = Math.min(pointerRotation, 270);
+
+        float[] angles = getRotationForFace(face);
+        SuperByteBuffer pointer = CachedBuffers.partial(ShHsPartialModels.SPRAYER_POINTER, state);
+        pointer.center()
+                .rotateYDegrees(angles[0])
+                .rotateXDegrees(angles[1])
+                .rotateZDegrees(pointerRotation)
+                .uncenter()
+                .light(light)
+                .renderInto(ms, buffer.getBuffer(RenderType.cutoutMipped()));
     }
 }
