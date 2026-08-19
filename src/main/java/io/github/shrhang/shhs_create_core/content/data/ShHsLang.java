@@ -81,6 +81,10 @@ public class ShHsLang {
         REGISTRATE.addRawLang(textKey("portable_stock_ticker.no_data"), "Not Linked to a Logistics Network");
         REGISTRATE.addRawLang(textKey("portable_stock_ticker.no_network"), "Linked Logistics Network no exists.");
         REGISTRATE.addRawLang(textKey("portable_stock_ticker.unloaded"), "Linked Logistics Network is unloaded.");
+        // 喷洒器护目镜提示
+        REGISTRATE.addRawLang(tooltipKey("sprayer.header"), "Sprayer Info");
+        REGISTRATE.addRawLang(tooltipKey("sprayer.angle"), "Angle: %s / %s°");
+        REGISTRATE.addRawLang(tooltipKey("sprayer.range"), "Range: %s x %s x %s");
 
         REGISTRATE.addRawLang(CATEGORY_KEY, "ShH's Create Core");
         REGISTRATE.addDataGenerator(ProviderType.LANG, provider -> {

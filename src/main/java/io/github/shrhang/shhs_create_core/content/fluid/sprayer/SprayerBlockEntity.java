@@ -1,16 +1,22 @@
 package io.github.shrhang.shhs_create_core.content.fluid.sprayer;
 
 import com.simibubi.create.AllTags;
+import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
+import io.github.shrhang.shhs_create_core.content.data.ShHsLang;
+import io.github.shrhang.shhs_create_core.content.util.SprayHelper;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
@@ -21,12 +27,13 @@ import java.util.List;
 /**
  * 喷洒器方块实体，管理流体储罐、角度调节（0~270°）和喷洒条件。
  * 角度直接影响消耗速率：0°关闭，270°全开。
+ * 同时提供护目镜信息（当前角度、喷洒范围）。
  */
-public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHandler {
+public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHandler, IHaveGoggleInformation {
 
     private static final int TANK_CAPACITY = 32;
     private static final int MAX_CONSUMPTION = 32;
-    private static final float MAX_ANGLE = 270.0f;
+    public static final float MAX_ANGLE = 270.0f;
     private static final float ANGLE_SPEED_SCALE = 0.3f;
     private static final float ANGLE_EPSILON = 1e-6f;
 
@@ -44,16 +51,11 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
         if (tank == null) {
             tank = new FluidTank(TANK_CAPACITY);
         }
-        behaviours.add(new SprayBehaviour(this, tank, () -> {
-            // 消耗因子 = angle / 270，0~1 线性
-            float factor = Mth.clamp(angle / MAX_ANGLE, 0f, 1f);
-            return (int) (MAX_CONSUMPTION * factor);
-        }, this::shouldSpray));
+        behaviours.add(new SprayBehaviour(this, tank,
+                () -> (int) (MAX_CONSUMPTION * Mth.clamp(angle / MAX_ANGLE, 0f, 1f)),
+                this::shouldSpray));
     }
 
-    /**
-     * 喷洒条件：前方无阻挡且角度大于阈值。
-     */
     private boolean shouldSpray() {
         return !frontBlocked && angle > ANGLE_EPSILON;
     }
@@ -67,7 +69,7 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
 
     @Override
     public void tick() {
-        prevAngle = angle;
+        updatePrevAngle();
         if (level != null && !level.isClientSide) {
             updateFrontBlocked();
             updateAngle();
@@ -75,14 +77,10 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
         super.tick();
     }
 
-    /**
-     * 供渲染使用的插值角度。
-     */
-    public float getRenderedAngle(float partialTicks) {
-        return Mth.lerp(partialTicks, prevAngle, angle);
+    private void updatePrevAngle() {
+        prevAngle = angle;
     }
 
-    // ===== 阻风检测 =====
     private void updateFrontBlocked() {
         Direction facing = getBlockState().getValue(SprayerBlock.FACING);
         BlockPos frontPos = worldPosition.relative(facing);
@@ -99,11 +97,9 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
         if (state.isAir()) return false;
         if (state.is(AllTags.AllBlockTags.FAN_TRANSPARENT.tag)) return false;
         if (level == null) return true;
-        VoxelShape shape = state.getCollisionShape(level, pos);
-        return !shape.isEmpty();
+        return !state.getCollisionShape(level, pos).isEmpty();
     }
 
-    // ===== 角度更新（范围 0~270） =====
     private void updateAngle() {
         float speed = getTheoreticalSpeed();
         if (speed != 0) {
@@ -117,19 +113,51 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
         }
     }
 
-    // ===== 流体能力（仅后方可访问） =====
+    public float getRenderedAngle(float partialTicks) {
+        return Mth.lerp(partialTicks, prevAngle, angle);
+    }
+
+    // ========== 护目镜工具提示 ==========
+    @Override
+    public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
+        tooltip.add(ShHsLang.tooltipComponentForGoggles("sprayer.header"));
+
+        // 角度行：天蓝色（包括数值、斜杠和度符号）
+        Component angleLine = Component.literal("    ") // 4 个空格缩进
+                .append(Component.literal("角度：").withStyle(ChatFormatting.WHITE))
+                .append(Component.literal(String.format("%.1f", angle)).withStyle(ChatFormatting.AQUA))
+                .append(Component.literal(" / ").withStyle(ChatFormatting.AQUA))
+                .append(Component.literal(String.format("%.1f", MAX_ANGLE)).withStyle(ChatFormatting.AQUA))
+                .append(Component.literal("°").withStyle(ChatFormatting.AQUA));
+        tooltip.add(angleLine);
+
+        // 喷洒范围行：橙色（包括数值和乘号）
+        Direction facing = getBlockState().getValue(SprayerBlock.FACING);
+        Vec3 center = Vec3.atCenterOf(worldPosition);
+        float ratio = angle / MAX_ANGLE;
+        AABB aabb = SprayHelper.buildAABB(center, facing, ratio);
+        Component rangeLine = Component.literal("    ")
+                .append(Component.literal("喷洒范围：").withStyle(ChatFormatting.WHITE))
+                .append(Component.literal(String.format("%.1f", aabb.getXsize())).withStyle(ChatFormatting.GOLD))
+                .append(Component.literal(" x ").withStyle(ChatFormatting.GOLD))
+                .append(Component.literal(String.format("%.1f", aabb.getYsize())).withStyle(ChatFormatting.GOLD))
+                .append(Component.literal(" x ").withStyle(ChatFormatting.GOLD))
+                .append(Component.literal(String.format("%.1f", aabb.getZsize())).withStyle(ChatFormatting.GOLD));
+        tooltip.add(rangeLine);
+
+        return true;
+    }
+
+    // ========== 流体能力（仅后方可访问） ==========
     @Nullable
     public IFluidHandler getFluidHandlerForSide(@Nullable Direction side) {
         if (side == null) return null;
         Direction facing = getBlockState().getValue(SprayerBlock.FACING);
         if (side.getAxis() != facing.getAxis()) return null;
-        if (side == facing.getOpposite()) {
-            return this;
-        }
-        return null;
+        return side == facing.getOpposite() ? this : null;
     }
 
-    // ===== IFluidHandler 实现 =====
+    // ========== IFluidHandler 实现 ==========
     @Override
     public int getTanks() {
         return getTank().getTanks();
@@ -165,14 +193,12 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
         return getTank().drain(maxDrain, action);
     }
 
-    // ===== NBT 读写 =====
+    // ========== NBT 读写 ==========
     @Override
     protected void read(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
         super.read(compound, registries, clientPacket);
         float previousAngle = angle;
-        angle = compound.getFloat("Angle");
-        // 确保角度在有效范围内
-        angle = Mth.clamp(angle, 0f, MAX_ANGLE);
+        angle = Mth.clamp(compound.getFloat("Angle"), 0f, MAX_ANGLE);
         prevAngle = clientPacket ? previousAngle : angle;
         if (tank == null) {
             tank = new FluidTank(TANK_CAPACITY);
@@ -187,5 +213,9 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
         if (tank != null) {
             compound.put("Tank", tank.writeToNBT(registries, new CompoundTag()));
         }
+    }
+
+    public float getAngle() {
+        return angle;
     }
 }

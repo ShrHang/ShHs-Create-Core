@@ -6,7 +6,6 @@ import io.github.shrhang.shhs_create_core.compat.Mods;
 import io.github.shrhang.shhs_create_core.compat.create_enchantment_industry.CreateEnchantmentIndustry;
 import io.github.shrhang.shhs_create_core.content.data.ShHsLang;
 import io.github.shrhang.shhs_create_core.content.data.ShHsTagKey;
-import io.github.shrhang.shhs_create_core.content.event.ClientEvents;
 import io.github.shrhang.shhs_create_core.content.event.MagicEventHandler;
 import io.github.shrhang.shhs_create_core.content.event.ShHsAttackListener;
 import io.github.shrhang.shhs_create_core.content.ponder.ShHsPonderPlugin;
@@ -53,10 +52,8 @@ public class ShHsCreateCore {
         modEventBus.addListener(ShHsCreateCore::init);
         modEventBus.addListener(ShHsPackets::register);
         modEventBus.addListener(ShHsCreateCore::modifyEntityAttributes);
-        if (FMLEnvironment.dist.isClient()) {
-            modEventBus.addListener(ShHsKeys::register);
-        }
     }
+
     /**
      * 通用初始化（服务端 + 客户端）。
      * 在 FMLCommonSetupEvent 中执行，所有注册工作均在此完成。
@@ -65,18 +62,19 @@ public class ShHsCreateCore {
         event.enqueueWork(ShHsInventoryIdentifiers::register);
         event.enqueueWork(ShHsOpenPipeEffects::register);
         if (FMLEnvironment.dist.isClient()) {
-            ClientEvents.init();
             event.enqueueWork(() -> PonderIndex.addPlugin(new ShHsPonderPlugin()));
         }
         MagicEventHandler.init();
         ShHsAttackListener.init();
     }
+
     /**
      * 为所有实体类型添加 Reality 属性（兼容 Curse of Pandora）。
      */
     public static void modifyEntityAttributes(final EntityAttributeModificationEvent event) {
         event.getTypes().forEach(entityType -> event.add(entityType, CoPAttrs.REALITY));
     }
+
     /**
      * 收集数据（精灵图、语言、标签）。
      */
@@ -85,11 +83,9 @@ public class ShHsCreateCore {
         ShHsLang.init();
         ShHsTagKey.init();
     }
+
     /**
      * 快捷获取本模组的 ResourceLocation。
-     *
-     * @param id 资源路径
-     * @return ResourceLocation 对象
      */
     public static ResourceLocation rl(String id) {
         return ResourceLocation.fromNamespaceAndPath(MODID, id);

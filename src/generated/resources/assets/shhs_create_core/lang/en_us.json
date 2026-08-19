@@ -57,6 +57,9 @@
   "tooltip.shhs_create_core.brass_ender_chest.owner": "Owner: %s",
   "tooltip.shhs_create_core.brass_ender_chest.owner_unknown": "Cannot find owner %s",
   "tooltip.shhs_create_core.brass_ender_chest.unlocked": "Unlocked: Anyone can open.",
+  "tooltip.shhs_create_core.sprayer.angle": "Angle: %s / %s°",
+  "tooltip.shhs_create_core.sprayer.header": "Sprayer Info",
+  "tooltip.shhs_create_core.sprayer.range": "Range: %s x %s x %s",
   "trait.shhs_create_core.augmented_reality": "Augmented Reality",
   "trait.shhs_create_core.wizard": "Wizard",
   "trait.shhs_create_core.wizard.desc": "The mob can cast spells."

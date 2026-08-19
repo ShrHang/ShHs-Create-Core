@@ -17,13 +17,13 @@ import net.neoforged.neoforge.fluids.FluidStack;
  */
 public class SprayHelper {
     // 各方向喷洒范围参数（与 SprayBehaviour 保持一致）
-    private static final double UP_HORIZONTAL = 8.0;
-    private static final double UP_UP = 2.0;
+    private static final double UP_HORIZONTAL = 6.0;      // 原 8.0
+    private static final double UP_UP = 4.0;
     private static final double UP_DOWN = 0.0;
-    private static final double DOWN_HORIZONTAL = 8.0;
+    private static final double DOWN_HORIZONTAL = 6.0;    // 原 8.0
     private static final double DOWN_UP = 0.0;
     private static final double DOWN_DOWN = 10.5;
-    private static final double HORIZONTAL_HORIZONTAL = 8.0;
+    private static final double HORIZONTAL_HORIZONTAL = 6.0; // 原 8.0
     private static final double HORIZONTAL_UP = 2.0;
     private static final double HORIZONTAL_DOWN = 6.0;
 
@@ -36,58 +36,81 @@ public class SprayHelper {
      * @return 受影响区域的 AABB
      */
     public static AABB buildAABB(Vec3 center, Direction dir, float ratio) {
+        // 标准化方向向量
         Vec3 normal = Vec3.atLowerCornerOf(dir.getNormal());
 
-        Vec3 upAxis, rightAxis;
+        // 构建两个正交的水平向量（垂直于 normal）
+        Vec3 right, up;
         if (dir.getAxis() == Direction.Axis.Y) {
-            rightAxis = new Vec3(1, 0, 0);
-            upAxis = new Vec3(0, 0, 1);
+            // 上下方向，水平面为 XZ 平面
+            right = new Vec3(1, 0, 0);
+            up = new Vec3(0, 0, 1);
         } else {
-            upAxis = new Vec3(0, 1, 0);
-            rightAxis = normal.cross(upAxis).normalize();
-            if (rightAxis.lengthSqr() < 1e-6) {
-                rightAxis = new Vec3(0, 0, 1);
+            // 水平方向，一个水平向量为 Y 轴，另一个通过叉积计算
+            up = new Vec3(0, 1, 0);
+            right = normal.cross(up).normalize();
+            if (right.lengthSqr() < 1e-6) {
+                right = new Vec3(0, 0, 1);
             }
-            upAxis = rightAxis.cross(normal).normalize();
+            up = right.cross(normal).normalize();
         }
 
-        double lenForward, lenBack, lenUp, lenDown, lenRight, lenLeft;
+        double minX, minY, minZ, maxX, maxY, maxZ;
         if (dir == Direction.UP) {
-            lenRight = lenLeft = UP_HORIZONTAL;
-            lenUp = UP_UP;
-            lenDown = UP_DOWN;
-            lenForward = lenBack = 0;
+            double horiz = UP_HORIZONTAL * ratio;
+            // 水平两个轴（X 和 Z）对称扩展
+            minX = center.x - horiz;
+            maxX = center.x + horiz;
+            minZ = center.z - horiz;
+            maxZ = center.z + horiz;
+            // 垂直方向（Y轴）
+            minY = center.y - UP_DOWN * ratio;
+            maxY = center.y + UP_UP * ratio;
         } else if (dir == Direction.DOWN) {
-            lenRight = lenLeft = DOWN_HORIZONTAL;
-            lenUp = DOWN_UP;
-            lenDown = DOWN_DOWN;
-            lenForward = lenBack = 0;
+            double horiz = DOWN_HORIZONTAL * ratio;
+            minX = center.x - horiz;
+            maxX = center.x + horiz;
+            minZ = center.z - horiz;
+            maxZ = center.z + horiz;
+            minY = center.y - DOWN_DOWN * ratio;
+            maxY = center.y + DOWN_UP * ratio;
         } else {
-            lenForward = HORIZONTAL_HORIZONTAL;
-            lenBack = 0;
-            lenRight = HORIZONTAL_HORIZONTAL;
-            lenLeft = HORIZONTAL_HORIZONTAL;
-            lenUp = HORIZONTAL_UP;
-            lenDown = HORIZONTAL_DOWN;
+            // 水平方向喷洒（非 Y 轴）
+            double lenForward = HORIZONTAL_HORIZONTAL * ratio;
+            double lenBack = 0;
+            double lenRight = HORIZONTAL_HORIZONTAL * ratio;
+            double lenLeft = HORIZONTAL_HORIZONTAL * ratio;
+            double lenUp = HORIZONTAL_UP * ratio;
+            double lenDown = HORIZONTAL_DOWN * ratio;
+
+            double fx = lenForward * normal.x;
+            double fy = lenForward * normal.y;
+            double fz = lenForward * normal.z;
+            double bx = lenBack * normal.x;
+            double by = lenBack * normal.y;
+            double bz = lenBack * normal.z;
+            double rx = lenRight * right.x;
+            double ry = lenRight * right.y;
+            double rz = lenRight * right.z;
+            double lx = lenLeft * right.x;
+            double ly = lenLeft * right.y;
+            double lz = lenLeft * right.z;
+            double ux = lenUp * up.x;
+            double uy = lenUp * up.y;
+            double uz = lenUp * up.z;
+            double dx = lenDown * up.x;
+            double dy = lenDown * up.y;
+            double dz = lenDown * up.z;
+
+            minX = center.x - lx - bx - dx;
+            maxX = center.x + rx + fx + ux;
+            minY = center.y - ly - by - dy;
+            maxY = center.y + ry + fy + uy;
+            minZ = center.z - lz - bz - dz;
+            maxZ = center.z + rz + fz + uz;
         }
-
-        lenForward *= ratio;
-        lenBack *= ratio;
-        lenRight *= ratio;
-        lenLeft *= ratio;
-        lenUp *= ratio;
-        lenDown *= ratio;
-
-        double minX = center.x - lenLeft * rightAxis.x - lenBack * normal.x - lenDown * upAxis.x;
-        double maxX = center.x + lenRight * rightAxis.x + lenForward * normal.x + lenUp * upAxis.x;
-        double minY = center.y - lenLeft * rightAxis.y - lenBack * normal.y - lenDown * upAxis.y;
-        double maxY = center.y + lenRight * rightAxis.y + lenForward * normal.y + lenUp * upAxis.y;
-        double minZ = center.z - lenLeft * rightAxis.z - lenBack * normal.z - lenDown * upAxis.z;
-        double maxZ = center.z + lenRight * rightAxis.z + lenForward * normal.z + lenUp * upAxis.z;
-
         AABB aabb = new AABB(minX, minY, minZ, maxX, maxY, maxZ);
-        AABB near = new AABB(center, center).expandTowards(0.5, 0.5, 0.5);
-        return aabb.minmax(near);
+        return aabb;
     }
 
     /**
@@ -144,7 +167,7 @@ public class SprayHelper {
                     .add(right.scale(Math.sin(theta) * Math.cos(phi)))
                     .add(up.scale(Math.sin(theta) * Math.sin(phi)));
 
-            double speed = 0.1 + ratio * 0.5;
+            double speed = 0.1 + ratio * 0.7;
             Vec3 velocity = randomDir.scale(speed);
 
             level.sendParticles(
