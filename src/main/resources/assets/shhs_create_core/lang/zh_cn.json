@@ -57,6 +57,9 @@
   "tooltip.shhs_create_core.brass_ender_chest.owner": "所有者：%s",
   "tooltip.shhs_create_core.brass_ender_chest.owner_unknown": "无法找到其所有者 %s",
   "tooltip.shhs_create_core.brass_ender_chest.unlocked": "未锁定：任何人均可打开。",
+  "tooltip.shhs_create_core.sprayer.header": "喷洒器信息",
+  "tooltip.shhs_create_core.sprayer.angle": "角度：%s / %s°",
+  "tooltip.shhs_create_core.sprayer.range": "喷洒范围：%s x %s x %s",
   "trait.shhs_create_core.augmented_reality": "增强现实",
   "trait.shhs_create_core.wizard": "巫师",
   "trait.shhs_create_core.wizard.desc": "生物可释放法术。"

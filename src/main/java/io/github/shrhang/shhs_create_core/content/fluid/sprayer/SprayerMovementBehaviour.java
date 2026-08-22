@@ -55,7 +55,7 @@ public class SprayerMovementBehaviour implements MovementBehaviour {
 
         float actualRatio = (float) drained.getAmount() / MAX_CONSUMPTION;
 
-        Vec3 center = context.position;
+        Vec3 center = context.position.add(Vec3.atLowerCornerOf(facing.getNormal()).scale(0.5));
         Vec3 origin = center.add(Vec3.atLowerCornerOf(facing.getNormal()).scale(0.5));
 
         AABB aabb = SprayHelper.buildAABB(center, facing, actualRatio);
