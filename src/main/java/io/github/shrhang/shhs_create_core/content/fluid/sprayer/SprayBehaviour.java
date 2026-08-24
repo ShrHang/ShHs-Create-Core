@@ -1,6 +1,6 @@
 package io.github.shrhang.shhs_create_core.content.fluid.sprayer;
 
-import io.github.shrhang.shhs_create_core.content.util.SprayHelper;
+import io.github.shrhang.shhs_create_core.content.util.sprayer.SprayerHelper;
 import com.simibubi.create.api.effect.OpenPipeEffectHandler;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BehaviourType;
@@ -88,17 +88,16 @@ public class SprayBehaviour extends BlockEntityBehaviour {
         FluidStack drained = tank.drain(toDrain, IFluidHandler.FluidAction.EXECUTE);
         if (drained.isEmpty()) return;
 
-        float ratio = (float) drained.getAmount() / MAX_CONSUMPTION;
+        float ratio = SprayerHelper.getFluidRatio(drained.getAmount(), MAX_CONSUMPTION);
         Direction facing = blockEntity.getBlockState().getValue(SprayerBlock.FACING);
         BlockPos pos = blockEntity.getBlockPos();
-        Vec3 center = Vec3.atCenterOf(pos).add(Vec3.atLowerCornerOf(facing.getNormal()).scale(0.5));
-        Vec3 origin = center; // 或者保留原偏移，但中心已偏移，origin 可设为 center
+        Vec3 center = SprayerHelper.getSprayCenter(pos, facing);
 
-        AABB aabb = SprayHelper.buildAABB(center, facing, ratio);
-        SprayHelper.applyEffect(level, aabb, drained);
+        AABB aabb = SprayerHelper.buildAABB(center, facing, ratio);
+        SprayerHelper.applyEffect(level, aabb, drained);
 
         if (level instanceof ServerLevel serverLevel) {
-            SprayHelper.spawnParticles(serverLevel, origin, facing, ratio, drained);
+            SprayerHelper.spawnParticles(serverLevel, center, facing, ratio, drained);
         }
     }
 

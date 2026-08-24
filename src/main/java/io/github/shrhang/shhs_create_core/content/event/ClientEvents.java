@@ -2,6 +2,7 @@ package io.github.shrhang.shhs_create_core.content.event;
 
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.OpenPortableStockTickerPacket;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerClientData;
+import io.github.shrhang.shhs_create_core.content.fluid.sprayer.SprayerOutlineHandler;
 import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
@@ -31,6 +32,7 @@ public class ClientEvents {
             return;
         }
         PortableStockTickerClientData.pruneExpired(minecraft.level.getGameTime());
+        SprayerOutlineHandler.tick();
 
         if (minecraft.player == null || minecraft.screen != null) {
             return;

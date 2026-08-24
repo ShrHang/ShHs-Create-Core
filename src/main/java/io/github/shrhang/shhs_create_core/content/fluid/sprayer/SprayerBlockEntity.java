@@ -3,9 +3,10 @@ package io.github.shrhang.shhs_create_core.content.fluid.sprayer;
 import com.simibubi.create.AllTags;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.content.kinetics.transmission.sequencer.SequencerInstructions;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import io.github.shrhang.shhs_create_core.content.data.ShHsLang;
-import io.github.shrhang.shhs_create_core.content.util.SprayHelper;
+import io.github.shrhang.shhs_create_core.content.util.sprayer.SprayerHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -34,13 +35,13 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
     private static final int TANK_CAPACITY = 32;
     private static final int MAX_CONSUMPTION = 32;
     public static final float MAX_ANGLE = 270.0f;
-    private static final float ANGLE_SPEED_SCALE = 0.3f;
     private static final float ANGLE_EPSILON = 1e-6f;
 
     private FluidTank tank;
     private float angle = MAX_ANGLE;
     private float prevAngle = MAX_ANGLE;
     private boolean frontBlocked = false;
+    private boolean consumedSequenceInput = false;
 
     public SprayerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -52,7 +53,7 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
             tank = new FluidTank(TANK_CAPACITY);
         }
         behaviours.add(new SprayBehaviour(this, tank,
-                () -> (int) (MAX_CONSUMPTION * Mth.clamp(angle / MAX_ANGLE, 0f, 1f)),
+                () -> SprayerHelper.getMaxConsumption(angle, MAX_ANGLE, MAX_CONSUMPTION),
                 this::shouldSpray));
     }
 
@@ -101,15 +102,30 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
     }
 
     private void updateAngle() {
+        if (sequenceContext != null && sequenceContext.instruction() == SequencerInstructions.TURN_ANGLE) {
+            if (!consumedSequenceInput) {
+                float speed = getTheoreticalSpeed();
+                float signedAngle = (float) sequenceContext.getEffectiveValue(speed) * Math.signum(speed);
+                setAngle(angle + signedAngle);
+                consumedSequenceInput = true;
+            }
+            return;
+        }
+
+        consumedSequenceInput = false;
+
         float speed = getTheoreticalSpeed();
         if (speed != 0) {
-            float delta = speed * ANGLE_SPEED_SCALE;
-            float newAngle = Mth.clamp(angle + delta, 0f, MAX_ANGLE);
-            if (newAngle != angle) {
-                angle = newAngle;
-                setChanged();
-                sendData();
-            }
+            setAngle(angle + KineticBlockEntity.convertToAngular(speed));
+        }
+    }
+
+    private void setAngle(float newAngle) {
+        newAngle = Mth.clamp(newAngle, 0f, MAX_ANGLE);
+        if (newAngle != angle) {
+            angle = newAngle;
+            setChanged();
+            sendData();
         }
     }
 
@@ -133,9 +149,9 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
 
         // 喷洒范围行：橙色（包括数值和乘号）
         Direction facing = getBlockState().getValue(SprayerBlock.FACING);
-        Vec3 center = Vec3.atCenterOf(worldPosition);
-        float ratio = angle / MAX_ANGLE;
-        AABB aabb = SprayHelper.buildAABB(center, facing, ratio);
+        Vec3 center = SprayerHelper.getSprayCenter(worldPosition, facing);
+        float ratio = SprayerHelper.getAngleRatio(angle, MAX_ANGLE);
+        AABB aabb = SprayerHelper.buildAABB(center, facing, ratio);
         Component rangeLine = Component.literal("    ")
                 .append(Component.literal("喷洒范围：").withStyle(ChatFormatting.WHITE))
                 .append(Component.literal(String.format("%.1f", aabb.getXsize())).withStyle(ChatFormatting.GOLD))

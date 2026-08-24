@@ -3,6 +3,8 @@ package io.github.shrhang.shhs_create_core.content.fluid.sprayer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsPartialModels;
+import io.github.shrhang.shhs_create_core.content.util.sprayer.SprayerRenderHelper;
+import io.github.shrhang.shhs_create_core.content.util.sprayer.SprayerRenderHelper.FaceRotation;
 import net.createmod.catnip.render.CachedBuffers;
 import net.createmod.catnip.render.SuperByteBuffer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -30,7 +32,7 @@ public class SprayerRenderer extends KineticBlockEntityRenderer<SprayerBlockEnti
         BlockState state = be.getBlockState();
         Direction facing = state.getValue(SprayerBlock.FACING);
         Axis shaftAxis = getRotationAxisOf(be);
-        Axis gaugeAxis = getGaugeAxis(facing.getAxis(), shaftAxis);
+        Axis gaugeAxis = SprayerRenderHelper.getGaugeAxis(facing.getAxis(), shaftAxis);
 
         Direction positiveFace = Direction.get(AxisDirection.POSITIVE, gaugeAxis);
         Direction negativeFace = Direction.get(AxisDirection.NEGATIVE, gaugeAxis);
@@ -46,36 +48,13 @@ public class SprayerRenderer extends KineticBlockEntityRenderer<SprayerBlockEnti
         return shaft(getRotationAxisOf(be));
     }
 
-    private static Axis getGaugeAxis(Axis facingAxis, Axis shaftAxis) {
-        for (Axis axis : Axis.values()) {
-            if (axis != facingAxis && axis != shaftAxis) {
-                return axis;
-            }
-        }
-        return Axis.Y;
-    }
-
-    /**
-     * 与 SprayerVisual 相似的面朝向角度计算。
-     */
-    private static float[] getRotationForFace(Direction face) {
-        return switch (face) {
-            case NORTH -> new float[]{0, 0};
-            case SOUTH -> new float[]{180, 0};
-            case EAST  -> new float[]{90, 0};
-            case WEST  -> new float[]{270, 0};
-            case UP    -> new float[]{0, 90};
-            case DOWN  -> new float[]{0, 270};
-        };
-    }
-
     private static void renderGauge(BlockState state, Direction face, PoseStack ms,
                                     MultiBufferSource buffer, int light) {
-        float[] angles = getRotationForFace(face);
+        FaceRotation rotation = SprayerRenderHelper.getRotationForFace(face);
         SuperByteBuffer gauge = CachedBuffers.partial(ShHsPartialModels.SPRAYER_GAUGE, state);
         gauge.center()
-                .rotateYDegrees(angles[0])
-                .rotateXDegrees(angles[1])
+                .rotateYDegrees(rotation.yDegrees())
+                .rotateXDegrees(rotation.xDegrees())
                 .uncenter()
                 .light(light)
                 .renderInto(ms, buffer.getBuffer(RenderType.cutoutMipped()));
@@ -83,15 +62,14 @@ public class SprayerRenderer extends KineticBlockEntityRenderer<SprayerBlockEnti
 
     private static void renderPointer(SprayerBlockEntity be, float partialTicks, BlockState state,
                                       Direction face, PoseStack ms, MultiBufferSource buffer, int light) {
-        float angle = be.getRenderedAngle(partialTicks);
-        float pointerRotation = angle;
+        float pointerRotation = be.getRenderedAngle(partialTicks);
         pointerRotation = Math.min(pointerRotation, 270);
 
-        float[] angles = getRotationForFace(face);
+        FaceRotation rotation = SprayerRenderHelper.getRotationForFace(face);
         SuperByteBuffer pointer = CachedBuffers.partial(ShHsPartialModels.SPRAYER_POINTER, state);
         pointer.center()
-                .rotateYDegrees(angles[0])
-                .rotateXDegrees(angles[1])
+                .rotateYDegrees(rotation.yDegrees())
+                .rotateXDegrees(rotation.xDegrees())
                 .rotateZDegrees(pointerRotation)
                 .uncenter()
                 .light(light)

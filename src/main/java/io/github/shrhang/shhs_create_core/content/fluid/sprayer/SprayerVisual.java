@@ -1,11 +1,7 @@
 package io.github.shrhang.shhs_create_core.content.fluid.sprayer;
 
-import java.lang.reflect.Field;
-import java.util.function.Consumer;
-
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import com.simibubi.create.content.kinetics.base.ShaftVisual;
-
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.visual.DynamicVisual;
 import dev.engine_room.flywheel.api.visualization.VisualizationContext;
@@ -14,10 +10,13 @@ import dev.engine_room.flywheel.lib.instance.TransformedInstance;
 import dev.engine_room.flywheel.lib.model.Models;
 import dev.engine_room.flywheel.lib.visual.SimpleDynamicVisual;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsPartialModels;
+import io.github.shrhang.shhs_create_core.content.util.sprayer.SprayerRenderHelper;
+import io.github.shrhang.shhs_create_core.content.util.sprayer.SprayerRenderHelper.FaceRotation;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Direction.Axis;
 import net.minecraft.core.Direction.AxisDirection;
 import net.minecraft.world.level.block.state.BlockState;
+
+import java.util.function.Consumer;
 
 /**
  * 喷洒器的飞轮可视化对象，负责渲染外壳（gauge）和指针（pointer）。
@@ -30,23 +29,23 @@ public class SprayerVisual extends ShaftVisual<SprayerBlockEntity> implements Si
     private final TransformedInstance pointerPositive;
     private final TransformedInstance pointerNegative;
 
-    // 缓存两个面的方向（保持不变）
-    private final Direction positiveFace;
-    private final Direction negativeFace;
+    private final FaceRotation positiveRotation;
+    private final FaceRotation negativeRotation;
+    private float lastPointerRotation = Float.NaN;
 
     public SprayerVisual(VisualizationContext context, SprayerBlockEntity blockEntity, float partialTick) {
         super(context, blockEntity, partialTick);
 
-        // 移除父类传动轴（避免干扰）
-        removeParentShaft();
-
         BlockState state = blockEntity.getBlockState();
-        Direction facing = state.getValue(SprayerBlock.FACING);
-        Axis shaftAxis = KineticBlockEntityRenderer.getRotationAxisOf(blockEntity);
-        Axis gaugeAxis = getGaugeAxis(facing.getAxis(), shaftAxis);
+        var facing = state.getValue(SprayerBlock.FACING);
+        var shaftAxis = KineticBlockEntityRenderer.getRotationAxisOf(blockEntity);
+        var gaugeAxis = SprayerRenderHelper.getGaugeAxis(facing.getAxis(), shaftAxis);
 
-        positiveFace = Direction.get(AxisDirection.POSITIVE, gaugeAxis);
-        negativeFace = Direction.get(AxisDirection.NEGATIVE, gaugeAxis);
+        // 缓存两个面的方向（保持不变）
+        var positiveFace = Direction.get(AxisDirection.POSITIVE, gaugeAxis);
+        var negativeFace = Direction.get(AxisDirection.NEGATIVE, gaugeAxis);
+        positiveRotation = SprayerRenderHelper.getRotationForFace(positiveFace);
+        negativeRotation = SprayerRenderHelper.getRotationForFace(negativeFace);
 
         var provider = instancerProvider();
         gaugePositive = provider.instancer(InstanceTypes.TRANSFORMED,
@@ -58,98 +57,51 @@ public class SprayerVisual extends ShaftVisual<SprayerBlockEntity> implements Si
         pointerNegative = provider.instancer(InstanceTypes.TRANSFORMED,
                 Models.partial(ShHsPartialModels.SPRAYER_POINTER)).createInstance();
 
-        transform(partialTick);
+        transformGauges();
+        transformPointers(partialTick);
     }
 
     @Override
     public void beginFrame(DynamicVisual.Context ctx) {
-        transform(ctx.partialTick());
+        transformPointers(ctx.partialTick());
     }
 
-    private static Axis getGaugeAxis(Axis facingAxis, Axis shaftAxis) {
-        for (Axis axis : Axis.values()) {
-            if (axis != facingAxis && axis != shaftAxis) {
-                return axis;
-            }
-        }
-        return Axis.Y;
+    private void transformGauges() {
+        transformGauge(gaugePositive, positiveRotation);
+        transformGauge(gaugeNegative, negativeRotation);
     }
 
-    /**
-     * 与 SprayerRenderer 完全相同的面朝向角度计算（静态，供两者共用）。
-     */
-    private static float[] getRotationForFace(Direction face) {
-        return switch (face) {
-            case NORTH -> new float[]{0, 0};
-            case SOUTH -> new float[]{180, 0};
-            case EAST  -> new float[]{90, 0};
-            case WEST  -> new float[]{270, 0};
-            case UP    -> new float[]{0, 90};
-            case DOWN  -> new float[]{0, 270};
-        };
-    }
-
-    private void transform(float partialTick) {
+    private void transformPointers(float partialTick) {
         float angle = blockEntity.getRenderedAngle(partialTick);
-        float pointerRotation = angle;
-        pointerRotation = Math.min(pointerRotation, 270);
+        float pointerRotation = Math.min(angle, SprayerBlockEntity.MAX_ANGLE);
+        if (pointerRotation == lastPointerRotation) {
+            return;
+        }
 
-        // 获取两个面的角度
-        float[] posAngles = getRotationForFace(positiveFace);
-        float[] negAngles = getRotationForFace(negativeFace);
+        lastPointerRotation = pointerRotation;
+        transformPointer(pointerPositive, positiveRotation, pointerRotation);
+        transformPointer(pointerNegative, negativeRotation, pointerRotation);
+    }
 
-        // ---- 外壳（gauge）变换：仅旋转到面方向 ----
-        gaugePositive.setIdentityTransform()
+    private void transformGauge(TransformedInstance gauge, FaceRotation rotation) {
+        gauge.setIdentityTransform()
                 .translate(getVisualPosition())
                 .center()
-                .rotateYDegrees(posAngles[0])
-                .rotateXDegrees(posAngles[1])
-                .uncenter()
-                .setChanged();
-
-        gaugeNegative.setIdentityTransform()
-                .translate(getVisualPosition())
-                .center()
-                .rotateYDegrees(negAngles[0])
-                .rotateXDegrees(negAngles[1])
-                .uncenter()
-                .setChanged();
-
-        // ---- 指针（pointer）变换：面朝向 + Z 轴偏转 ----
-        pointerPositive.setIdentityTransform()
-                .translate(getVisualPosition())
-                .center()
-                .rotateYDegrees(posAngles[0])
-                .rotateXDegrees(posAngles[1])
-                .rotateZDegrees(pointerRotation)
-                .uncenter()
-                .setChanged();
-
-        pointerNegative.setIdentityTransform()
-                .translate(getVisualPosition())
-                .center()
-                .rotateYDegrees(negAngles[0])
-                .rotateXDegrees(negAngles[1])
-                .rotateZDegrees(pointerRotation)
+                .rotateYDegrees(rotation.yDegrees())
+                .rotateXDegrees(rotation.xDegrees())
                 .uncenter()
                 .setChanged();
     }
 
-    /**
-     * 通过反射移除父类 ShaftVisual 的传动轴实例，避免竖直方向出现多余渲染。
-     */
-    private void removeParentShaft() {
-        try {
-            Field shaftField = ShaftVisual.class.getDeclaredField("shaft");
-            shaftField.setAccessible(true);
-            TransformedInstance shaft = (TransformedInstance) shaftField.get(this);
-            if (shaft != null) {
-                shaft.delete();
-                shaftField.set(this, null);
-            }
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            // 忽略
-        }
+    private void transformPointer(TransformedInstance pointer, FaceRotation rotation, float pointerRotation) {
+        pointer.setIdentityTransform()
+                .translate(getVisualPosition())
+                .center()
+                .rotateYDegrees(rotation.yDegrees())
+                .rotateXDegrees(rotation.xDegrees())
+                .rotateZDegrees(pointerRotation)
+                .uncenter()
+                .setChanged();
     }
 
     @Override
