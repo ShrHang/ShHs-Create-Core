@@ -2,9 +2,6 @@ package io.github.shrhang.shhs_create_core;
 
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.config.ModConfig;
-import net.neoforged.fml.loading.FMLEnvironment;
-import net.neoforged.neoforge.client.gui.ConfigurationScreen;
-import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -23,12 +20,12 @@ public class ShHsConfig {
         serverSpec = pair.getRight();
     }
 
-    public static void init(ModContainer modContainer) {
-        if (FMLEnvironment.dist.isClient()) {
-            modContainer.registerConfig(ModConfig.Type.CLIENT, clientSpec);
-            modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
-        }
+    public static void register(ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.SERVER, serverSpec);
+    }
+
+    public static void registerClient(ModContainer modContainer) {
+        modContainer.registerConfig(ModConfig.Type.CLIENT, clientSpec);
     }
 
     public static class Client {
