@@ -91,8 +91,8 @@ public class SprayBehaviour extends BlockEntityBehaviour {
         float ratio = (float) drained.getAmount() / MAX_CONSUMPTION;
         Direction facing = blockEntity.getBlockState().getValue(SprayerBlock.FACING);
         BlockPos pos = blockEntity.getBlockPos();
-        Vec3 center = Vec3.atCenterOf(pos);
-        Vec3 origin = center.add(Vec3.atLowerCornerOf(facing.getNormal()).scale(0.5));
+        Vec3 center = Vec3.atCenterOf(pos).add(Vec3.atLowerCornerOf(facing.getNormal()).scale(0.5));
+        Vec3 origin = center; // 或者保留原偏移，但中心已偏移，origin 可设为 center
 
         AABB aabb = SprayHelper.buildAABB(center, facing, ratio);
         SprayHelper.applyEffect(level, aabb, drained);
