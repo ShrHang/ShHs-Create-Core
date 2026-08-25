@@ -18,10 +18,6 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.function.Consumer;
 
-/**
- * 喷洒器的飞轮可视化对象，负责渲染外壳（gauge）和指针（pointer）。
- * 变换逻辑与 SprayerRenderer 的指针渲染完全一致：动态获取面朝向角度，一次 center/uncenter。
- */
 public class SprayerVisual extends ShaftVisual<SprayerBlockEntity> implements SimpleDynamicVisual {
 
     private final TransformedInstance gaugePositive;

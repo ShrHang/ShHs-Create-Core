@@ -2,6 +2,7 @@ package io.github.shrhang.shhs_create_core.content.fluid.sprayer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
+import dev.engine_room.flywheel.api.visualization.VisualizationManager;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsPartialModels;
 import io.github.shrhang.shhs_create_core.content.util.sprayer.SprayerRenderHelper;
 import io.github.shrhang.shhs_create_core.content.util.sprayer.SprayerRenderHelper.FaceRotation;
@@ -27,8 +28,9 @@ public class SprayerRenderer extends KineticBlockEntityRenderer<SprayerBlockEnti
     @Override
     protected void renderSafe(SprayerBlockEntity be, float partialTicks, PoseStack ms,
                               MultiBufferSource buffer, int light, int overlay) {
-        super.renderSafe(be, partialTicks, ms, buffer, light, overlay);
+        if (VisualizationManager.supportsVisualization(be.getLevel())) return;
 
+        super.renderSafe(be, partialTicks, ms, buffer, light, overlay);
         BlockState state = be.getBlockState();
         Direction facing = state.getValue(SprayerBlock.FACING);
         Axis shaftAxis = getRotationAxisOf(be);
@@ -63,7 +65,7 @@ public class SprayerRenderer extends KineticBlockEntityRenderer<SprayerBlockEnti
     private static void renderPointer(SprayerBlockEntity be, float partialTicks, BlockState state,
                                       Direction face, PoseStack ms, MultiBufferSource buffer, int light) {
         float pointerRotation = be.getRenderedAngle(partialTicks);
-        pointerRotation = Math.min(pointerRotation, 270);
+        pointerRotation = Math.min(pointerRotation, SprayerBlockEntity.MAX_ANGLE);
 
         FaceRotation rotation = SprayerRenderHelper.getRotationForFace(face);
         SuperByteBuffer pointer = CachedBuffers.partial(ShHsPartialModels.SPRAYER_POINTER, state);

@@ -53,8 +53,8 @@ public class ShHsLang {
         return Component.translatable(tooltipKey(key), args);
     }
 
-    public static MutableComponent tooltipComponentForGoggles(String key,  Object... args) {
-        return Component.translatable(Strings.repeat(' ', getIndents(Minecraft.getInstance().font)) + "%s", tooltipComponent(key, args));
+    public static MutableComponent tooltipComponentForGoggles(String key, Object... args) {
+        return Component.literal(Strings.repeat(' ', getIndents(Minecraft.getInstance().font))).append(tooltipComponent(key, args));
     }
 
     private static int getIndents(Font font) {
@@ -81,7 +81,7 @@ public class ShHsLang {
         REGISTRATE.addRawLang(textKey("portable_stock_ticker.no_data"), "Not Linked to a Logistics Network");
         REGISTRATE.addRawLang(textKey("portable_stock_ticker.no_network"), "Linked Logistics Network no exists.");
         REGISTRATE.addRawLang(textKey("portable_stock_ticker.unloaded"), "Linked Logistics Network is unloaded.");
-        // 喷洒器护目镜提示
+
         REGISTRATE.addRawLang(tooltipKey("sprayer.header"), "Sprayer Info");
         REGISTRATE.addRawLang(tooltipKey("sprayer.angle"), "Angle: %s / %s°");
         REGISTRATE.addRawLang(tooltipKey("sprayer.range"), "Range: %s x %s x %s");

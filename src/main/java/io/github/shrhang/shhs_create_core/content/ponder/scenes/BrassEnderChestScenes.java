@@ -129,9 +129,8 @@ public class BrassEnderChestScenes {
         scene.world().flapFunnel(funnelL, false);
         scene.world().modifyEntity(acceptedApple, Entity::discard);
         scene.idle(10);
-        popApple = scene.world().createItemEntity(util.vector().centerOf(funnelR).add(0, 0.35, 0), util.vector().of(0, 0.08, 0), apple);
+        scene.world().createItemEntity(util.vector().centerOf(funnelR).add(0, 0.35, 0), util.vector().of(0, 0.08, 0), apple);
         scene.idle(40);
-//        scene.world().modifyEntity(popApple, Entity::discard);
         scene.markAsFinished();
     }
 
