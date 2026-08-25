@@ -8,8 +8,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
@@ -52,14 +50,11 @@ public class SprayerMovementBehaviour implements MovementBehaviour {
         if (drained.isEmpty()) return;
 
         float actualRatio = SprayerHelper.getFluidRatio(drained.getAmount(), MAX_CONSUMPTION);
-
-        Vec3 center = SprayerHelper.getSprayCenter(context.position, facing);
-
-        AABB aabb = SprayerHelper.buildAABB(center, facing, actualRatio);
-        SprayerHelper.applyEffect(level, aabb, drained);
+        SprayerHelper.SprayArea area = SprayerHelper.buildArea(context.position, facing, actualRatio);
+        SprayerHelper.applyEffect(level, area.bounds(), drained);
 
         if (level instanceof ServerLevel serverLevel) {
-            SprayerHelper.spawnParticles(serverLevel, center, facing, actualRatio, drained);
+            SprayerHelper.spawnParticles(serverLevel, area.center(), facing, actualRatio, drained);
         }
     }
 

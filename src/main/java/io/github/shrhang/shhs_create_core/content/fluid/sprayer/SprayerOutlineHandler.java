@@ -19,7 +19,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.phys.Vec3;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -97,20 +96,18 @@ public class SprayerOutlineHandler {
 
         float angle = sprayer.getAngle();
         Direction facing = sprayer.getBlockState().getValue(SprayerBlock.FACING);
-        Vec3 center = SprayerHelper.getSprayCenter(pos, facing);
 
         if (angle <= EPSILON) {
             if (!FLASHED_RED.contains(pos)) {
                 FLASHED_RED.add(pos);
-                AABB aabb = SprayerHelper.buildAABB(center, facing, 1.0f);
+                AABB aabb = SprayerHelper.buildArea(pos, facing, 1.0f).bounds();
                 showSprayAABB(ACTUAL_SLOT, aabb, RED_COLOR);
             }
             return true;
         }
 
         FLASHED_RED.remove(pos);
-        float ratio = SprayerHelper.getAngleRatio(angle, SprayerBlockEntity.MAX_ANGLE);
-        AABB aabb = SprayerHelper.buildAABB(center, facing, ratio);
+        AABB aabb = SprayerHelper.buildAreaFromAngle(pos, facing, angle, SprayerBlockEntity.MAX_ANGLE).bounds();
         showSprayAABB(ACTUAL_SLOT, aabb, CYAN_COLOR);
         return true;
     }
@@ -129,8 +126,7 @@ public class SprayerOutlineHandler {
 
         BlockPos placePos = blockHit.getBlockPos().relative(blockHit.getDirection());
         Direction facing = state.getValue(SprayerBlock.FACING);
-        Vec3 center = SprayerHelper.getSprayCenter(placePos, facing);
-        AABB aabb = SprayerHelper.buildAABB(center, facing, 1.0f);
+        AABB aabb = SprayerHelper.buildArea(placePos, facing, 1.0f).bounds();
         showSprayAABB(PREVIEW_SLOT, aabb, GREY_COLOR);
         return true;
     }

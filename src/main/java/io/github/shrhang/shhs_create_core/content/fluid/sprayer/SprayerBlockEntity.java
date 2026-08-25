@@ -5,7 +5,6 @@ import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.transmission.sequencer.SequencerInstructions;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
-import io.github.shrhang.shhs_create_core.content.data.ShHsLang;
 import io.github.shrhang.shhs_create_core.content.util.sprayer.SprayerHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -17,13 +16,14 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+
+import static io.github.shrhang.shhs_create_core.content.data.ShHsLang.tooltipComponentForGoggles;
 
 /**
  * 喷洒器方块实体，管理流体储罐、角度调节（0~270°）和喷洒条件。
@@ -136,31 +136,11 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
     // ========== 护目镜工具提示 ==========
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
-        tooltip.add(ShHsLang.tooltipComponentForGoggles("sprayer.header"));
-
-        // 角度行：天蓝色（包括数值、斜杠和度符号）
-        Component angleLine = Component.literal("    ") // 4 个空格缩进
-                .append(Component.literal("角度：").withStyle(ChatFormatting.WHITE))
-                .append(Component.literal(String.format("%.1f", angle)).withStyle(ChatFormatting.AQUA))
-                .append(Component.literal(" / ").withStyle(ChatFormatting.AQUA))
-                .append(Component.literal(String.format("%.1f", MAX_ANGLE)).withStyle(ChatFormatting.AQUA))
-                .append(Component.literal("°").withStyle(ChatFormatting.AQUA));
-        tooltip.add(angleLine);
-
-        // 喷洒范围行：橙色（包括数值和乘号）
+        tooltip.add(tooltipComponentForGoggles("sprayer.header"));
+        tooltip.add(tooltipComponentForGoggles("sprayer.angle", Component.literal(String.format("%.0f", angle)).withStyle(ChatFormatting.AQUA), Component.literal(String.format("%.0f", MAX_ANGLE)).withStyle(ChatFormatting.AQUA)));
         Direction facing = getBlockState().getValue(SprayerBlock.FACING);
-        Vec3 center = SprayerHelper.getSprayCenter(worldPosition, facing);
-        float ratio = SprayerHelper.getAngleRatio(angle, MAX_ANGLE);
-        AABB aabb = SprayerHelper.buildAABB(center, facing, ratio);
-        Component rangeLine = Component.literal("    ")
-                .append(Component.literal("喷洒范围：").withStyle(ChatFormatting.WHITE))
-                .append(Component.literal(String.format("%.1f", aabb.getXsize())).withStyle(ChatFormatting.GOLD))
-                .append(Component.literal(" x ").withStyle(ChatFormatting.GOLD))
-                .append(Component.literal(String.format("%.1f", aabb.getYsize())).withStyle(ChatFormatting.GOLD))
-                .append(Component.literal(" x ").withStyle(ChatFormatting.GOLD))
-                .append(Component.literal(String.format("%.1f", aabb.getZsize())).withStyle(ChatFormatting.GOLD));
-        tooltip.add(rangeLine);
-
+        AABB aabb = SprayerHelper.buildAreaFromAngle(worldPosition, facing, angle, MAX_ANGLE).bounds();
+        tooltip.add(tooltipComponentForGoggles("sprayer.range", Component.literal(String.format("%.1f", aabb.getXsize())).withStyle(ChatFormatting.GOLD), Component.literal(String.format("%.1f", aabb.getYsize())).withStyle(ChatFormatting.GOLD), Component.literal(String.format("%.1f", aabb.getZsize())).withStyle(ChatFormatting.GOLD)));
         return true;
     }
 

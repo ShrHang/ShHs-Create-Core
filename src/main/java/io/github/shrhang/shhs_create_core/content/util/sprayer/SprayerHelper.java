@@ -47,8 +47,17 @@ public class SprayerHelper {
         );
     }
 
-    public static Vec3 getSprayCenter(BlockPos pos, Direction facing) {
-        return getSprayCenter(Vec3.atCenterOf(pos), facing);
+    public static SprayArea buildArea(BlockPos pos, Direction facing, float ratio) {
+        return buildArea(Vec3.atCenterOf(pos), facing, ratio);
+    }
+
+    public static SprayArea buildArea(Vec3 blockCenter, Direction facing, float ratio) {
+        Vec3 center = getSprayCenter(blockCenter, facing);
+        return new SprayArea(center, buildAABB(center, facing, ratio));
+    }
+
+    public static SprayArea buildAreaFromAngle(BlockPos pos, Direction facing, float angle, float maxAngle) {
+        return buildArea(pos, facing, getAngleRatio(angle, maxAngle));
     }
 
     public static Vec3 getSprayCenter(Vec3 blockCenter, Direction facing) {
@@ -109,6 +118,9 @@ public class SprayerHelper {
     }
 
     private record SprayShape(double east, double west, double up, double down, double south, double north) {
+    }
+
+    public record SprayArea(Vec3 center, AABB bounds) {
     }
 
     /**
