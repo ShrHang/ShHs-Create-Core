@@ -100,14 +100,14 @@ public class SprayerOutlineHandler {
         if (angle <= EPSILON) {
             if (!FLASHED_RED.contains(pos)) {
                 FLASHED_RED.add(pos);
-                AABB aabb = SprayerHelper.buildArea(pos, facing, 1.0f).bounds();
+                AABB aabb = SprayerHelper.buildAABB(pos, facing, 1.0f);
                 showSprayAABB(ACTUAL_SLOT, aabb, RED_COLOR);
             }
             return true;
         }
 
         FLASHED_RED.remove(pos);
-        AABB aabb = SprayerHelper.buildAreaFromAngle(pos, facing, angle, SprayerBlockEntity.MAX_ANGLE).bounds();
+        AABB aabb = SprayerHelper.buildAABBFromAngle(pos, facing, angle, SprayerBlockEntity.MAX_ANGLE);
         showSprayAABB(ACTUAL_SLOT, aabb, CYAN_COLOR);
         return true;
     }
@@ -126,7 +126,7 @@ public class SprayerOutlineHandler {
 
         BlockPos placePos = blockHit.getBlockPos().relative(blockHit.getDirection());
         Direction facing = state.getValue(SprayerBlock.FACING);
-        AABB aabb = SprayerHelper.buildArea(placePos, facing, 1.0f).bounds();
+        AABB aabb = SprayerHelper.buildAABB(placePos, facing, 1.0f);
         showSprayAABB(PREVIEW_SLOT, aabb, GREY_COLOR);
         return true;
     }

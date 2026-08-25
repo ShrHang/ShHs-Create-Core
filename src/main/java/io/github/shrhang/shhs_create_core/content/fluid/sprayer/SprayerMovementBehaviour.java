@@ -2,12 +2,15 @@ package io.github.shrhang.shhs_create_core.content.fluid.sprayer;
 
 import io.github.shrhang.shhs_create_core.content.util.sprayer.SprayerHelper;
 import com.simibubi.create.api.behaviour.movement.MovementBehaviour;
+import com.simibubi.create.api.effect.OpenPipeEffectHandler;
 import com.simibubi.create.content.contraptions.behaviour.MovementContext;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
@@ -46,15 +49,20 @@ public class SprayerMovementBehaviour implements MovementBehaviour {
         IFluidHandler fluidManager = context.contraption.getStorage().getFluids();
         if (fluidManager == null) return;
 
-        FluidStack drained = fluidManager.drain(maxAllowed, IFluidHandler.FluidAction.EXECUTE);
+        FluidStack simulated = fluidManager.drain(maxAllowed, IFluidHandler.FluidAction.SIMULATE);
+        OpenPipeEffectHandler effectHandler = SprayerHelper.getEffectHandler(simulated);
+        if (effectHandler == null) return;
+
+        FluidStack drained = fluidManager.drain(simulated, IFluidHandler.FluidAction.EXECUTE);
         if (drained.isEmpty()) return;
 
         float actualRatio = SprayerHelper.getFluidRatio(drained.getAmount(), MAX_CONSUMPTION);
-        SprayerHelper.SprayArea area = SprayerHelper.buildArea(context.position, facing, actualRatio);
-        SprayerHelper.applyEffect(level, area.bounds(), drained);
+        Vec3 center = SprayerHelper.getSprayCenter(context.position, facing);
+        AABB aabb = SprayerHelper.buildAABB(center, facing, actualRatio);
+        SprayerHelper.applyEffect(effectHandler, level, aabb, drained);
 
         if (level instanceof ServerLevel serverLevel) {
-            SprayerHelper.spawnParticles(serverLevel, area.center(), facing, actualRatio, drained);
+            SprayerHelper.spawnParticles(serverLevel, center, facing, actualRatio, drained);
         }
     }
 

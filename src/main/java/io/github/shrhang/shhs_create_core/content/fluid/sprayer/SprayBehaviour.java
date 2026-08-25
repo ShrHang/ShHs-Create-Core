@@ -9,6 +9,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
@@ -74,7 +76,7 @@ public class SprayBehaviour extends BlockEntityBehaviour {
         FluidStack fluid = tank.getFluid();
         if (fluid.isEmpty()) return;
 
-        OpenPipeEffectHandler effectHandler = OpenPipeEffectHandler.REGISTRY.get(fluid.getFluid());
+        OpenPipeEffectHandler effectHandler = SprayerHelper.getEffectHandler(fluid);
         if (effectHandler == null) return;
 
         int maxAllowed = maxConsumptionSupplier.getAsInt();
@@ -89,11 +91,12 @@ public class SprayBehaviour extends BlockEntityBehaviour {
         float ratio = SprayerHelper.getFluidRatio(drained.getAmount(), MAX_CONSUMPTION);
         Direction facing = blockEntity.getBlockState().getValue(SprayerBlock.FACING);
         BlockPos pos = blockEntity.getBlockPos();
-        SprayerHelper.SprayArea area = SprayerHelper.buildArea(pos, facing, ratio);
-        SprayerHelper.applyEffect(level, area.bounds(), drained);
+        Vec3 center = SprayerHelper.getSprayCenter(pos, facing);
+        AABB aabb = SprayerHelper.buildAABB(center, facing, ratio);
+        SprayerHelper.applyEffect(effectHandler, level, aabb, drained);
 
         if (level instanceof ServerLevel serverLevel) {
-            SprayerHelper.spawnParticles(serverLevel, area.center(), facing, ratio, drained);
+            SprayerHelper.spawnParticles(serverLevel, center, facing, ratio, drained);
         }
     }
 

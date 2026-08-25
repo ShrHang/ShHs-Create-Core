@@ -139,7 +139,7 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
         tooltip.add(tooltipComponentForGoggles("sprayer.header"));
         tooltip.add(tooltipComponentForGoggles("sprayer.angle", Component.literal(String.format("%.0f", angle)).withStyle(ChatFormatting.AQUA), Component.literal(String.format("%.0f", MAX_ANGLE)).withStyle(ChatFormatting.AQUA)));
         Direction facing = getBlockState().getValue(SprayerBlock.FACING);
-        AABB aabb = SprayerHelper.buildAreaFromAngle(worldPosition, facing, angle, MAX_ANGLE).bounds();
+        AABB aabb = SprayerHelper.buildAABBFromAngle(worldPosition, facing, angle, MAX_ANGLE);
         tooltip.add(tooltipComponentForGoggles("sprayer.range", Component.literal(String.format("%.1f", aabb.getXsize())).withStyle(ChatFormatting.GOLD), Component.literal(String.format("%.1f", aabb.getYsize())).withStyle(ChatFormatting.GOLD), Component.literal(String.format("%.1f", aabb.getZsize())).withStyle(ChatFormatting.GOLD)));
         return true;
     }

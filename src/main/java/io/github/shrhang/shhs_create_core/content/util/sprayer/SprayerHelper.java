@@ -47,17 +47,16 @@ public class SprayerHelper {
         );
     }
 
-    public static SprayArea buildArea(BlockPos pos, Direction facing, float ratio) {
-        return buildArea(Vec3.atCenterOf(pos), facing, ratio);
+    public static AABB buildAABB(BlockPos pos, Direction facing, float ratio) {
+        return buildAABB(getSprayCenter(pos, facing), facing, ratio);
     }
 
-    public static SprayArea buildArea(Vec3 blockCenter, Direction facing, float ratio) {
-        Vec3 center = getSprayCenter(blockCenter, facing);
-        return new SprayArea(center, buildAABB(center, facing, ratio));
+    public static AABB buildAABBFromAngle(BlockPos pos, Direction facing, float angle, float maxAngle) {
+        return buildAABB(pos, facing, getAngleRatio(angle, maxAngle));
     }
 
-    public static SprayArea buildAreaFromAngle(BlockPos pos, Direction facing, float angle, float maxAngle) {
-        return buildArea(pos, facing, getAngleRatio(angle, maxAngle));
+    public static Vec3 getSprayCenter(BlockPos pos, Direction facing) {
+        return getSprayCenter(Vec3.atCenterOf(pos), facing);
     }
 
     public static Vec3 getSprayCenter(Vec3 blockCenter, Direction facing) {
@@ -120,9 +119,6 @@ public class SprayerHelper {
     private record SprayShape(double east, double west, double up, double down, double south, double north) {
     }
 
-    public record SprayArea(Vec3 center, AABB bounds) {
-    }
-
     /**
      * 应用流体效果到指定 AABB 区域。
      *
@@ -130,11 +126,14 @@ public class SprayerHelper {
      * @param aabb  作用区域
      * @param fluid 要应用的流体
      */
-    public static void applyEffect(Level level, AABB aabb, FluidStack fluid) {
+    public static void applyEffect(OpenPipeEffectHandler handler, Level level, AABB aabb, FluidStack fluid) {
         if (fluid.isEmpty()) return;
-        OpenPipeEffectHandler handler = OpenPipeEffectHandler.REGISTRY.get(fluid.getFluid());
-        if (handler == null) return;
         handler.apply(level, aabb, fluid);
+    }
+
+    public static OpenPipeEffectHandler getEffectHandler(FluidStack fluid) {
+        if (fluid.isEmpty()) return null;
+        return OpenPipeEffectHandler.REGISTRY.get(fluid.getFluid());
     }
 
     /**
