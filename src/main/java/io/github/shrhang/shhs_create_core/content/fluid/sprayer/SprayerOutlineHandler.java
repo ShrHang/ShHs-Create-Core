@@ -21,7 +21,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
-import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -30,14 +29,12 @@ public class SprayerOutlineHandler {
     private static final Object PREVIEW_SLOT = new Object();
     private static final Object ACTUAL_SLOT = new Object();
     private static final int GREY_COLOR = 0xa0a0a0;
-    private static final int GREEN_COLOR = 0x56da8d;
+    private static final int CYAN_COLOR = 0x00d4a8;
     private static final int RED_COLOR = 0xa43e3e;
     private static final float EPSILON = 1e-6f;
 
     private static final Set<BlockPos> FLASHED_RED = new HashSet<>();
-    @Nullable
     private static OutlineState previewState;
-    @Nullable
     private static OutlineState actualState;
 
     public static void tick() {
@@ -114,7 +111,7 @@ public class SprayerOutlineHandler {
         FLASHED_RED.remove(pos);
         float ratio = SprayerHelper.getAngleRatio(angle, SprayerBlockEntity.MAX_ANGLE);
         AABB aabb = SprayerHelper.buildAABB(center, facing, ratio);
-        showSprayAABB(ACTUAL_SLOT, aabb, GREEN_COLOR);
+        showSprayAABB(ACTUAL_SLOT, aabb, CYAN_COLOR);
         return true;
     }
 
@@ -166,14 +163,13 @@ public class SprayerOutlineHandler {
                 .lineWidth(1 / 16f);
     }
 
-    @Nullable
     private static OutlineState getCachedState(Object slot) {
         if (slot == PREVIEW_SLOT) return previewState;
         if (slot == ACTUAL_SLOT) return actualState;
         return null;
     }
 
-    private static void setCachedState(Object slot, @Nullable OutlineState state) {
+    private static void setCachedState(Object slot, OutlineState state) {
         if (slot == PREVIEW_SLOT) {
             previewState = state;
             return;
@@ -188,7 +184,7 @@ public class SprayerOutlineHandler {
         setCachedState(slot, null);
     }
 
-    private static boolean aabbEquals(@Nullable AABB first, AABB second) {
+    private static boolean aabbEquals(AABB first, AABB second) {
         return first != null
                 && first.minX == second.minX
                 && first.minY == second.minY

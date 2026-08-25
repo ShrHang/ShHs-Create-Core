@@ -1,7 +1,6 @@
 package io.github.shrhang.shhs_create_core.content.logistics.brass_ender_chest;
 
 import com.mojang.serialization.MapCodec;
-import io.github.shrhang.shhs_create_core.content.registries.ShHsBlockEntityTypes;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.foundation.block.IBE;
 import net.minecraft.core.BlockPos;
@@ -38,12 +37,12 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
 
 import static io.github.shrhang.shhs_create_core.content.data.ShHsLang.titleComponent;
+import static io.github.shrhang.shhs_create_core.content.registries.ShHsBlockEntityTypes.BRASS_ENDER_CHEST_BE;
 
 public class BrassEnderChestBlock extends HorizontalDirectionalBlock implements SimpleWaterloggedBlock, IWrenchable, IBE<BrassEnderChestBlockEntity> {
     public static final MapCodec<? extends HorizontalDirectionalBlock> CODEC = simpleCodec(BrassEnderChestBlock::new);
@@ -80,7 +79,7 @@ public class BrassEnderChestBlock extends HorizontalDirectionalBlock implements 
 
     // Block Interaction Core
     @Override
-    protected @NotNull InteractionResult useWithoutItem(@NotNull BlockState state, Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull BlockHitResult hitResult) {
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (!(level.getBlockEntity(pos) instanceof BrassEnderChestBlockEntity brassEnderChestBE))
             return InteractionResult.sidedSuccess(level.isClientSide);
         BlockPos blockpos = pos.above();
@@ -131,7 +130,7 @@ public class BrassEnderChestBlock extends HorizontalDirectionalBlock implements 
     }
 
     @Override
-    public void setPlacedBy(@NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState state, @Nullable LivingEntity placer, @NotNull ItemStack stack) {
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
         if (!level.isClientSide && placer instanceof Player player) {
             withBlockEntityDo(level, pos, be -> be.setTargetUUID(player.getUUID()));
@@ -140,18 +139,18 @@ public class BrassEnderChestBlock extends HorizontalDirectionalBlock implements 
 
     // Horizontal Directional Block
     @Override
-    public @NotNull BlockState rotate(BlockState state, Rotation rot) {
+    public BlockState rotate(BlockState state, Rotation rot) {
         return state.setValue(FACING, rot.rotate(state.getValue(FACING)));
     }
 
     // Water loggable Block
     @Override
-    public @NotNull FluidState getFluidState(BlockState state) {
+    public FluidState getFluidState(BlockState state) {
         return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
     }
 
     @Override
-    public @NotNull BlockState updateShape(BlockState state, Direction dir, BlockState neighbor, LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+    public BlockState updateShape(BlockState state, Direction dir, BlockState neighbor, LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
         if (state.getValue(WATERLOGGED)) {
             level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
         }
@@ -166,32 +165,32 @@ public class BrassEnderChestBlock extends HorizontalDirectionalBlock implements 
 
     @Override
     public BlockEntityType<? extends BrassEnderChestBlockEntity> getBlockEntityType() {
-        return ShHsBlockEntityTypes.BRASS_ENDER_CHEST_BE.get();
+        return BRASS_ENDER_CHEST_BE.get();
     }
 
     @Override
-    public @NotNull BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return Objects.requireNonNull(IBE.super.newBlockEntity(pos, state));
     }
 
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> type) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return IBE.super.getTicker(level, state, type);
     }
 
     // Voxel Shapes
     @Override
-    public @NotNull VoxelShape getShape(@NotNull BlockState state, @NotNull BlockGetter world, @NotNull BlockPos pos, @NotNull CollisionContext ctx) {
+    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext ctx) {
         return SHAPE_HALF;
     }
 
     @Override
-    public @NotNull VoxelShape getCollisionShape(@NotNull BlockState state, @NotNull BlockGetter world, @NotNull BlockPos pos, @NotNull CollisionContext ctx) {
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext ctx) {
         return SHAPE_HALF;
     }
 
     @Override
-    public @NotNull VoxelShape getInteractionShape(@NotNull BlockState state, @NotNull BlockGetter world, @NotNull BlockPos pos) {
+    public VoxelShape getInteractionShape(BlockState state, BlockGetter world, BlockPos pos) {
         return SHAPE_HALF;
     }
 }
