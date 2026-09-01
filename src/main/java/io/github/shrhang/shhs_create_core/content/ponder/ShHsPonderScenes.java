@@ -1,5 +1,6 @@
 package io.github.shrhang.shhs_create_core.content.ponder;
 
+import io.github.shrhang.shhs_create_core.content.ponder.scenes.SprayerScenes;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsBlocks;
 import io.github.shrhang.shhs_create_core.content.ponder.scenes.BrassEnderChestScenes;
 import com.simibubi.create.infrastructure.ponder.AllCreatePonderTags;
@@ -19,8 +20,8 @@ public class ShHsPonderScenes {
                 .addStoryBoard("brass_ender_chest/feature", BrassEnderChestScenes::feature);
 
         // 喷洒器
-//        HELPER.forComponents(ShHsBlocks.SPRAYER)
-//                .addStoryBoard("sprayer/intro", SprayerScenes::intro, AllCreatePonderTags.FLUIDS);
+        HELPER.forComponents(ShHsBlocks.SPRAYER)
+                .addStoryBoard("sprayer/intro", SprayerScenes::intro, AllCreatePonderTags.FLUIDS);
 
         // 恶意吸收器
 //        HELPER.forComponents(ShHsBlocks.HOSTILITY_ABSORBER)

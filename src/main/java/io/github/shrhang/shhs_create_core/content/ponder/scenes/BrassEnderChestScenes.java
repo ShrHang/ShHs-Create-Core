@@ -21,8 +21,7 @@ public class BrassEnderChestScenes {
         CreateSceneBuilder scene = new CreateSceneBuilder(builder);
         scene.title("brass_ender_chest.transit", "Use Brass Ender Chest to transit items");
         scene.configureBasePlate(0, 0, 5);
-        scene.world().showSection(util.select().layer(0)
-                .substract(util.select().position(2, 0, 5)), Direction.DOWN);
+        scene.world().showSection(util.select().layer(0), Direction.DOWN);
         scene.idle(10);
 
         var funnelL = util.grid().at(4, 3, 2);

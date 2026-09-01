@@ -1,10 +1,7 @@
 package io.github.shrhang.shhs_create_core.content.hostility.absorber;
 
-import org.jetbrains.annotations.NotNull;
-
 import com.simibubi.create.api.behaviour.movement.MovementBehaviour;
 import com.simibubi.create.content.contraptions.behaviour.MovementContext;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
@@ -28,7 +25,7 @@ public class HostilityAbsorberMovementBehaviour implements MovementBehaviour {
      * @param context 移动上下文
      */
     @Override
-    public void startMoving(@NotNull MovementContext context) {
+    public void startMoving(MovementContext context) {
         Level level = context.world;
         if (level.isClientSide()) return;
 
@@ -55,7 +52,7 @@ public class HostilityAbsorberMovementBehaviour implements MovementBehaviour {
      * @param context 移动上下文
      */
     @Override
-    public void stopMoving(@NotNull MovementContext context) {
+    public void stopMoving(MovementContext context) {
         Level level = context.world;
         if (level.isClientSide()) return;
 
@@ -64,14 +61,5 @@ public class HostilityAbsorberMovementBehaviour implements MovementBehaviour {
         if (be instanceof HostilityAbsorberBlockEntity absorber) {
             absorber.onStopMoving();
         }
-    }
-    /**
-     * 移动过程中不执行任何特殊逻辑。
-     *
-     * @param context 移动上下文
-     */
-    @Override
-    public void tick(@NotNull MovementContext context) {
-        // 无需操作
     }
 }

@@ -46,11 +46,6 @@ public class ShHsBlocks {
             .initialProperties(SharedProperties::copperMetal)
             .item(item -> item
                     .model(AssetLookup::customItemModel)
-                    .tooltipSummary("A sprayer that _sprays fluid_ forward, with rate controlled by _rotational_ input.")
-                    .tooltipBehaviour(1, "Connect rotational power to the face",
-                            "Rotational speed controls a valve angle from _0 to 270 degrees, linearly adjusting the spray rate.")
-                    .tooltipBehaviour(2, "Place facing direction",
-                            "Sprays forward every _0.25_ seconds, consuming up to _32_ mB per spray when fully open.")
             )
             .transform(pickaxeOnly())
             .blockstate((ctx, prov) -> BlockStateGen.directionalAxisBlock(ctx, prov,

@@ -1,15 +1,9 @@
 package io.github.shrhang.shhs_create_core.content.hostility.absorber;
 
-import java.util.List;
-import java.util.Optional;
-
-import org.jetbrains.annotations.NotNull;
-
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BehaviourType;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
-
 import dev.xkmc.l2hostility.content.capability.chunk.ChunkCapHolder;
 import dev.xkmc.l2hostility.content.capability.chunk.ChunkDifficulty;
 import dev.xkmc.l2hostility.content.capability.chunk.SectionDifficulty;
@@ -20,6 +14,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+
+import java.util.List;
+import java.util.Optional;
 
 /**
  * 恶意吸收器方块实体，通过内部 AbsorptionBehaviour 处理区块清除逻辑。
@@ -34,12 +31,12 @@ public class HostilityAbsorberBlockEntity extends KineticBlockEntity {
 
     private boolean isMoving = false;
 
-    public HostilityAbsorberBlockEntity(@NotNull BlockEntityType<?> type, @NotNull BlockPos pos, @NotNull BlockState state) {
+    public HostilityAbsorberBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
 
     @Override
-    public void addBehaviours(@NotNull List<BlockEntityBehaviour> behaviours) {
+    public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
         super.addBehaviours(behaviours);
         behaviours.add(new AbsorptionBehaviour(this));
     }
@@ -77,7 +74,7 @@ public class HostilityAbsorberBlockEntity extends KineticBlockEntity {
      * <p>
      * 供移动行为调用，不依赖方块实体实例。
      */
-    public static void unclearRangeStatic(@NotNull Level level, @NotNull BlockPos center, int halfLength) {
+    public static void unclearRangeStatic(Level level, BlockPos center, int halfLength) {
         if (halfLength < 0) return;
         forEachInRingStatic(level, center, halfLength, -1, false);
     }
@@ -85,7 +82,7 @@ public class HostilityAbsorberBlockEntity extends KineticBlockEntity {
     /**
      * 静态方法：遍历环带并执行 clear/unclear。
      */
-    public static void forEachInRingStatic(@NotNull Level level, @NotNull BlockPos center, int outer, int inner, boolean clear) {
+    public static void forEachInRingStatic(Level level, BlockPos center, int outer, int inner, boolean clear) {
         if (level.isClientSide()) return;
 
         for (int dx = -outer; dx <= outer; dx++) {
@@ -117,12 +114,11 @@ public class HostilityAbsorberBlockEntity extends KineticBlockEntity {
         private static final int CLEAR_INTERVAL = 40;
         private int lastHalfLength = -1;
 
-        public AbsorptionBehaviour(@NotNull SmartBlockEntity be) {
+        public AbsorptionBehaviour(SmartBlockEntity be) {
             super(be);
         }
 
         @Override
-        @NotNull
         public BehaviourType<?> getType() {
             return ABSORPTION_BEHAVIOUR;
         }
@@ -170,13 +166,13 @@ public class HostilityAbsorberBlockEntity extends KineticBlockEntity {
         }
 
         @Override
-        public void write(@NotNull CompoundTag compound, @NotNull HolderLookup.Provider registries, boolean clientPacket) {
+        public void write(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
             super.write(compound, registries, clientPacket);
             compound.putInt("LastHalfLength", lastHalfLength);
         }
 
         @Override
-        public void read(@NotNull CompoundTag compound, @NotNull HolderLookup.Provider registries, boolean clientPacket) {
+        public void read(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
             super.read(compound, registries, clientPacket);
             lastHalfLength = compound.getInt("LastHalfLength");
         }
