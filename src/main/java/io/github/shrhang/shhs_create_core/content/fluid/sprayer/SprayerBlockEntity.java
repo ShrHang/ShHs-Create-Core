@@ -212,9 +212,6 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IHaveGoggl
         float previousAngle = angle;
         angle = Mth.clamp(compound.getFloat("Angle"), 0f, MAX_ANGLE);
         prevAngle = clientPacket ? previousAngle : angle;
-        if (compound.contains("Tank") && !compound.contains("Tanks")) {
-            tank.getPrimaryHandler().readFromNBT(registries, compound.getCompound("Tank"));
-        }
     }
 
     @Override
