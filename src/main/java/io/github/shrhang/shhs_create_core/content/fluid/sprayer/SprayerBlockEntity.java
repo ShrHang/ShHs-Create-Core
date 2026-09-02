@@ -1,10 +1,12 @@
 package io.github.shrhang.shhs_create_core.content.fluid.sprayer;
 
 import com.simibubi.create.AllTags;
+import com.simibubi.create.api.effect.OpenPipeEffectHandler;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.transmission.sequencer.SequencerInstructions;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
+import com.simibubi.create.foundation.blockEntity.behaviour.fluid.SmartFluidTankBehaviour;
 import io.github.shrhang.shhs_create_core.content.util.sprayer.SprayerHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -12,13 +14,15 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -30,14 +34,14 @@ import static io.github.shrhang.shhs_create_core.content.data.ShHsLang.tooltipCo
  * 角度直接影响消耗速率：0°关闭，270°全开。
  * 同时提供护目镜信息（当前角度、喷洒范围）。
  */
-public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHandler, IHaveGoggleInformation {
+public class SprayerBlockEntity extends KineticBlockEntity implements IHaveGoggleInformation {
 
     private static final int TANK_CAPACITY = 32;
     private static final int MAX_CONSUMPTION = 32;
     public static final float MAX_ANGLE = 270.0f;
     private static final float ANGLE_EPSILON = 1e-6f;
 
-    private FluidTank tank;
+    private SmartFluidTankBehaviour tank;
     private float angle = MAX_ANGLE;
     private float prevAngle = MAX_ANGLE;
     private boolean frontBlocked = false;
@@ -49,23 +53,11 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
 
     @Override
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
-        if (tank == null) {
-            tank = new FluidTank(TANK_CAPACITY);
-        }
-        behaviours.add(new SprayBehaviour(this, tank,
-                () -> SprayerHelper.getMaxConsumption(angle, MAX_ANGLE, MAX_CONSUMPTION),
-                this::shouldSpray));
+        behaviours.add(tank = SmartFluidTankBehaviour.single(this, TANK_CAPACITY));
     }
 
     private boolean shouldSpray() {
         return !frontBlocked && angle > ANGLE_EPSILON;
-    }
-
-    public FluidTank getTank() {
-        if (tank == null) {
-            tank = new FluidTank(TANK_CAPACITY);
-        }
-        return tank;
     }
 
     @Override
@@ -76,6 +68,9 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
             updateAngle();
         }
         super.tick();
+        if (level != null && !level.isClientSide) {
+            tickSpraying();
+        }
     }
 
     private void updatePrevAngle() {
@@ -133,6 +128,63 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
         return Mth.lerp(partialTicks, prevAngle, angle);
     }
 
+    private void tickSpraying() {
+        if (level != null && level.getGameTime() % 5 != 0) return;
+        if (!shouldSpray()) return;
+        trySpray();
+    }
+
+    /**
+     * 尝试执行喷洒：从后方抽取流体，应用效果并生成粒子。
+     */
+    private void trySpray() {
+        IFluidHandler tankHandler = tank.getPrimaryHandler();
+
+        if (tankHandler.getFluidInTank(0).isEmpty()) {
+            Direction facing = getBlockState().getValue(SprayerBlock.FACING);
+            BlockPos behind = worldPosition.relative(facing.getOpposite());
+            IFluidHandler source = null;
+            if (level != null) {
+                source = level.getCapability(Capabilities.FluidHandler.BLOCK, behind, facing);
+            }
+            if (source != null) {
+                int space = tankHandler.getTankCapacity(0) - tankHandler.getFluidInTank(0).getAmount();
+                if (space > 0) {
+                    int toExtract = Math.min(MAX_CONSUMPTION, space);
+                    FluidStack extracted = source.drain(toExtract, IFluidHandler.FluidAction.EXECUTE);
+                    if (!extracted.isEmpty()) {
+                        tankHandler.fill(extracted, IFluidHandler.FluidAction.EXECUTE);
+                    }
+                }
+            }
+        }
+
+        FluidStack fluid = tankHandler.getFluidInTank(0);
+        if (fluid.isEmpty()) return;
+
+        OpenPipeEffectHandler effectHandler = SprayerHelper.getEffectHandler(fluid);
+        if (effectHandler == null) return;
+
+        int maxAllowed = SprayerHelper.getMaxConsumption(angle, MAX_ANGLE, MAX_CONSUMPTION);
+        if (maxAllowed <= 0) return;
+
+        int toDrain = Math.min(maxAllowed, fluid.getAmount());
+        if (toDrain <= 0) return;
+
+        FluidStack drained = tankHandler.drain(toDrain, IFluidHandler.FluidAction.EXECUTE);
+        if (drained.isEmpty()) return;
+
+        float ratio = SprayerHelper.getFluidRatio(drained.getAmount(), MAX_CONSUMPTION);
+        Direction facing = getBlockState().getValue(SprayerBlock.FACING);
+        Vec3 center = SprayerHelper.getSprayCenter(worldPosition, facing);
+        AABB aabb = SprayerHelper.buildAABB(center, facing, ratio);
+        SprayerHelper.applyEffect(effectHandler, level, aabb, drained);
+
+        if (level instanceof ServerLevel serverLevel) {
+            SprayerHelper.spawnParticles(serverLevel, center, facing, ratio, drained);
+        }
+    }
+
     // ========== 护目镜工具提示 ==========
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
@@ -150,43 +202,7 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
         if (side == null) return null;
         Direction facing = getBlockState().getValue(SprayerBlock.FACING);
         if (side.getAxis() != facing.getAxis()) return null;
-        return side == facing.getOpposite() ? this : null;
-    }
-
-    // ========== IFluidHandler 实现 ==========
-    @Override
-    public int getTanks() {
-        return getTank().getTanks();
-    }
-
-    @Override
-    public FluidStack getFluidInTank(int tankIndex) {
-        return getTank().getFluidInTank(tankIndex);
-    }
-
-    @Override
-    public int getTankCapacity(int tankIndex) {
-        return getTank().getTankCapacity(tankIndex);
-    }
-
-    @Override
-    public boolean isFluidValid(int tankIndex, FluidStack stack) {
-        return getTank().isFluidValid(tankIndex, stack);
-    }
-
-    @Override
-    public int fill(FluidStack resource, FluidAction action) {
-        return getTank().fill(resource, action);
-    }
-
-    @Override
-    public FluidStack drain(FluidStack resource, FluidAction action) {
-        return getTank().drain(resource, action);
-    }
-
-    @Override
-    public FluidStack drain(int maxDrain, FluidAction action) {
-        return getTank().drain(maxDrain, action);
+        return side == facing.getOpposite() ? tank.getCapability() : null;
     }
 
     // ========== NBT 读写 ==========
@@ -196,19 +212,15 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IFluidHand
         float previousAngle = angle;
         angle = Mth.clamp(compound.getFloat("Angle"), 0f, MAX_ANGLE);
         prevAngle = clientPacket ? previousAngle : angle;
-        if (tank == null) {
-            tank = new FluidTank(TANK_CAPACITY);
+        if (compound.contains("Tank") && !compound.contains("Tanks")) {
+            tank.getPrimaryHandler().readFromNBT(registries, compound.getCompound("Tank"));
         }
-        tank.readFromNBT(registries, compound.getCompound("Tank"));
     }
 
     @Override
     protected void write(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
         super.write(compound, registries, clientPacket);
         compound.putFloat("Angle", angle);
-        if (tank != null) {
-            compound.put("Tank", tank.writeToNBT(registries, new CompoundTag()));
-        }
     }
 
     public float getAngle() {
