@@ -6,6 +6,7 @@ import com.simibubi.create.api.effect.OpenPipeEffectHandler;
 import com.simibubi.create.content.contraptions.behaviour.MovementContext;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -26,38 +27,51 @@ public class SprayerMovementBehaviour implements MovementBehaviour {
         BlockState state = context.state;
         if (!(state.getBlock() instanceof SprayerBlock)) return;
         Direction facing = state.getValue(SprayerBlock.FACING);
-        // 从 blockEntityData 读取开度（直接从 Openness 复合标签中取 value）
-        float openness = 0.0f;
-        if (context.blockEntityData != null && context.blockEntityData.contains("Openness")) {
-            CompoundTag opennessTag = context.blockEntityData.getCompound("Openness");
-            openness = opennessTag.getFloat("Target");
-        }
-        openness = Mth.clamp(openness, 0f, 1f);
+
+        float openness = getOpenness(context);
         if (openness <= 0) return;
-        int maxAllowed = (int)(openness * MAX_CONSUMPTION);
+        int maxAllowed = (int) (openness * MAX_CONSUMPTION);
         if (maxAllowed <= 0) maxAllowed = 1;
         IFluidHandler fluidManager = context.contraption.getStorage().getFluids();
         if (fluidManager == null) return;
+        var position = context.position;
+        if (position == null) return;
         // 服务端：每5 tick执行消耗和效果
         if (!level.isClientSide) {
-            if (level.getGameTime() % 5 != 0) return;
-            FluidStack simulated = fluidManager.drain(maxAllowed, IFluidHandler.FluidAction.SIMULATE);
-            OpenPipeEffectHandler effectHandler = SprayerHelper.getEffectHandler(simulated);
-            if (effectHandler == null) return;
-            FluidStack drained = fluidManager.drain(simulated, IFluidHandler.FluidAction.EXECUTE);
-            if (drained.isEmpty()) return;
-            float ratio = (float) drained.getAmount() / maxAllowed;
-            Vec3 center = SprayerHelper.getSprayCenter(context.position, facing);
-            AABB aabb = SprayerHelper.buildAABB(center, facing, ratio);
-            SprayerHelper.applyEffect(effectHandler, level, aabb, drained);
+            performServerSpray(level, position, facing, maxAllowed, fluidManager);
             return;
         }
         // 客户端：每帧生成粒子，数量固定为最小值
+        spawnClientParticles(level, position, facing, maxAllowed, fluidManager);
+    }
+
+    private static float getOpenness(MovementContext context) {
+        CompoundTag blockEntityData = context.blockEntityData;
+        if (blockEntityData == null || !blockEntityData.contains("Openness", Tag.TAG_COMPOUND)) {
+            return 0.0f;
+        }
+        CompoundTag opennessTag = blockEntityData.getCompound("Openness");
+        return Mth.clamp(opennessTag.getFloat("Value"), 0f, 1f);
+    }
+
+    private static void performServerSpray(Level level, Vec3 position, Direction facing, int maxAllowed, IFluidHandler fluidManager) {
+        if (level.getGameTime() % 5 != 0) return;
+        FluidStack simulated = fluidManager.drain(maxAllowed, IFluidHandler.FluidAction.SIMULATE);
+        OpenPipeEffectHandler effectHandler = SprayerHelper.getEffectHandler(simulated);
+        if (effectHandler == null) return;
+        FluidStack drained = fluidManager.drain(simulated, IFluidHandler.FluidAction.EXECUTE);
+        if (drained.isEmpty()) return;
+        float ratio = SprayerHelper.getFluidRatio(drained.getAmount(), MAX_CONSUMPTION);
+        var center = SprayerHelper.getSprayCenter(position, facing);
+        AABB aabb = SprayerHelper.buildAABB(center, facing, ratio);
+        SprayerHelper.applyEffect(effectHandler, level, aabb, drained);
+    }
+
+    private static void spawnClientParticles(Level level, Vec3 position, Direction facing, int maxAllowed, IFluidHandler fluidManager) {
         FluidStack simulated = fluidManager.drain(maxAllowed, IFluidHandler.FluidAction.SIMULATE);
         if (simulated.isEmpty()) return;
-
-        float ratio = (float) simulated.getAmount() / maxAllowed;
-        Vec3 center = SprayerHelper.getSprayCenter(context.position, facing);
+        float ratio = SprayerHelper.getFluidRatio(simulated.getAmount(), MAX_CONSUMPTION);
+        var center = SprayerHelper.getSprayCenter(position, facing);
         SprayerHelper.spawnParticles(level, center, facing, ratio, simulated, FIXED_COUNT_SCALE);
     }
 }

@@ -17,7 +17,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Chicken;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
@@ -28,7 +27,7 @@ public class SprayerScenes {
         scene.configureBasePlate(0, 0, 5);
 
         Selection largeCog = util.select().position(5, 0, 1);
-        Selection tank = util.select().fromTo(4, 1, 2, 4, 2, 2);
+        Selection tank = util.select().fromTo(4, 1, 2, 3, 2, 3);
         Selection kinetics = util.select().fromTo(5, 1, 0, 3, 1, 0);
         BlockPos open = util.grid().at(1, 1, 1);
         BlockPos sprayerPos = util.grid().at(2, 1, 1);
@@ -40,7 +39,7 @@ public class SprayerScenes {
         scene.world().showSection(tank, Direction.DOWN);
         scene.idle(5);
 
-        FluidStack content = new FluidStack(Fluids.LAVA, 10000);
+        FluidStack content = new FluidStack(Fluids.LAVA, 48000);
         scene.world().modifyBlockEntity(util.grid().at(4, 1, 2), FluidTankBlockEntity.class, be ->
                 be.getTankInventory().fill(content, IFluidHandler.FluidAction.EXECUTE));
         scene.idle(10);
@@ -92,11 +91,9 @@ public class SprayerScenes {
         scene.idle(15);
 
         // ----- 第一个喷洒器 -----
-        // 放置喷洒器并注入液体
         scene.world().setBlock(sprayerPos, ShHsBlocks.SPRAYER.getDefaultState()
                 .setValue(SprayerBlock.FACING, facing), false);
         scene.world().showSection(util.select().position(sprayerPos), Direction.DOWN);
-
         scene.idle(5);
         scene.world().modifyBlockEntity(sprayerPos, SprayerBlockEntity.class, be ->
                 be.getTankInventory().fill(new FluidStack(Fluids.LAVA, 1000), IFluidHandler.FluidAction.EXECUTE));
@@ -114,19 +111,18 @@ public class SprayerScenes {
                 .placeNearTarget()
                 .text("But won't create fluid sources.");
         scene.idle(60);
+        scene.world().hideSection(util.select().position(sprayerPos), Direction.DOWN);
+        scene.idle(10);
 
         // ----- 第二个喷洒器（移动演示）-----
-        BlockPos newSprayerPos = util.grid().at(3, 2, 2);
-        scene.world().hideSection(util.select().position(sprayerPos), Direction.DOWN);
-        scene.world().setBlock(newSprayerPos, ShHsBlocks.SPRAYER.getDefaultState()
-                .setValue(SprayerBlock.FACING, facing), false);
-        scene.world().showSection(util.select().position(newSprayerPos), Direction.DOWN);
+        sprayerPos = util.grid().at(2, 2, 3);
+        scene.world().showSection(util.select().position(sprayerPos), Direction.DOWN);
         scene.idle(10);
-        scene.world().modifyBlockEntity(newSprayerPos, SprayerBlockEntity.class, be ->
+        scene.world().modifyBlockEntity(sprayerPos, SprayerBlockEntity.class, be ->
                 be.getTankInventory().fill(new FluidStack(Fluids.LAVA, 1000), IFluidHandler.FluidAction.EXECUTE));
         scene.overlay()
                 .showText(60)
-                .pointAt(util.vector().centerOf(2, 2, 2))
+                .pointAt(util.vector().centerOf(sprayerPos))
                 .attachKeyFrame()
                 .placeNearTarget()
                 .text("It can also read the fluid from connected tanks directly.");

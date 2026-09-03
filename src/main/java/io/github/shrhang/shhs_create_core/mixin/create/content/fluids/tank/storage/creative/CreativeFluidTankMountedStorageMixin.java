@@ -1,4 +1,4 @@
-package io.github.shrhang.shhs_create_core.mixin.create;
+package io.github.shrhang.shhs_create_core.mixin.create.content.fluids.tank.storage.creative;
 
 import com.simibubi.create.api.contraption.storage.SyncedMountedStorage;
 import com.simibubi.create.content.contraptions.Contraption;
@@ -16,26 +16,26 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class CreativeFluidTankMountedStorageMixin implements SyncedMountedStorage {
 
     @Unique
-    private boolean shhs$needsInitialSync = false;
+    private boolean shhsc_c$needsInitialSync = false;
 
     @Unique
-    public void shhs$setNeedsInitialSync(boolean value) {
-        this.shhs$needsInitialSync = value;
+    public void shhsc_c$setNeedsInitialSync(boolean value) {
+        this.shhsc_c$needsInitialSync = value;
     }
 
     @Override
     public boolean isDirty() {
-        return shhs$needsInitialSync;
+        return shhsc_c$needsInitialSync;
     }
 
     @Override
     public void markClean() {
-        shhs$needsInitialSync = false;
+        shhsc_c$needsInitialSync = false;
     }
 
     @Override
     public void afterSync(Contraption contraption, BlockPos localPos) {
-        shhs$needsInitialSync = false;
+        shhsc_c$needsInitialSync = false;
     }
 
     @Inject(
@@ -43,12 +43,12 @@ public abstract class CreativeFluidTankMountedStorageMixin implements SyncedMoun
             at = @At("RETURN"),
             remap = false
     )
-    private static void shhs$onFromTank(CreativeFluidTankBlockEntity tank, CallbackInfoReturnable<CreativeFluidTankMountedStorage> cir) {
+    private static void shhsc_c$onFromTank(CreativeFluidTankBlockEntity tank, CallbackInfoReturnable<CreativeFluidTankMountedStorage> cir) {
         CreativeFluidTankMountedStorage storage = cir.getReturnValue();
         if (storage != null) {
             Level level = tank.getLevel();
             if (level != null && !level.isClientSide()) {
-                ((CreativeFluidTankMountedStorageMixin) (Object) storage).shhs$setNeedsInitialSync(true);
+                ((CreativeFluidTankMountedStorageMixin) (Object) storage).shhsc_c$setNeedsInitialSync(true);
             }
         }
     }

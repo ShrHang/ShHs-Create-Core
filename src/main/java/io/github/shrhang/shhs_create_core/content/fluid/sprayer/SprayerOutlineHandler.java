@@ -62,7 +62,7 @@ public class SprayerOutlineHandler {
         double reach = player.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE);
 
         HitResult hitResult = player.pick(reach, 1.0f, false);
-        if (!(hitResult instanceof BlockHitResult blockHit)) {
+        if (!(hitResult instanceof BlockHitResult blockHit) || hitResult.getType() != HitResult.Type.BLOCK) {
             removeSprayerOutline();
             removePlacementPreview();
             return;
@@ -124,7 +124,7 @@ public class SprayerOutlineHandler {
             return false;
         }
 
-        BlockPos placePos = blockHit.getBlockPos().relative(blockHit.getDirection());
+        BlockPos placePos = context.getClickedPos();
         Direction facing = state.getValue(SprayerBlock.FACING);
         AABB aabb = SprayerHelper.buildAABB(placePos, facing, 1.0f);
         showSprayAABB(PREVIEW_SLOT, aabb, GREY_COLOR);

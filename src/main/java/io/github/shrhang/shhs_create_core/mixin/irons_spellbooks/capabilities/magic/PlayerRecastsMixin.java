@@ -22,12 +22,13 @@ public abstract class PlayerRecastsMixin {
     private Map<String, RecastInstance> recastLookup;
 
     @Shadow
+    @Final
     private ServerPlayer serverPlayer;
 
     /**
      * 当非玩家施法者的重施法次数归零时，清理该法术产生的召唤物。
      */
-    @Inject(method = "decrementRecastCount", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "decrementRecastCount*", at = @At("HEAD"), cancellable = true)
     private void shhsc_c$onDecrementRecastCount(String spellId, CallbackInfo ci) {
         if (this.serverPlayer == null) {
             RecastInstance instance = this.recastLookup.get(spellId);

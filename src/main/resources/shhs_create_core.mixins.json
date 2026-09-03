@@ -9,7 +9,7 @@
     "curios.common.data.CuriosEntityManagerMixin",
     "irons_spellbooks.util.TooltipsUtilsMixin",
     "irons_spellbooks.capabilities.magic.PlayerRecastsMixin",
-    "create.CreativeFluidTankMountedStorageMixin"
+    "create.content.fluids.tank.storage.creative.CreativeFluidTankMountedStorageMixin"
   ],
   "client": [
   ],

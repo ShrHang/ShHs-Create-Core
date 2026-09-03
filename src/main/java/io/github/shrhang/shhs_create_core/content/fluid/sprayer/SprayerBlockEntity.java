@@ -7,6 +7,7 @@ import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.transmission.sequencer.SequencerInstructions;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.fluid.SmartFluidTankBehaviour;
+import com.simibubi.create.foundation.virtualWorld.VirtualRenderWorld;
 import io.github.shrhang.shhs_create_core.content.util.sprayer.SprayerHelper;
 import net.createmod.catnip.animation.LerpedFloat;
 import net.createmod.catnip.animation.LerpedFloat.Chaser;
@@ -15,6 +16,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
@@ -182,27 +184,38 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IHaveGoggl
         if (isVirtual()) {
             cachedCountScale = 0.2f;
         } else {
-            long gameTime = level.getGameTime();
+            long gameTime = 0;
+            if (level != null) {
+                gameTime = level.getGameTime();
+            }
             if (gameTime - lastPlayerCalcTick >= 10) {
                 cachedCountScale = calculateCountScale(level, worldPosition);
                 lastPlayerCalcTick = (int) gameTime;
             }
         }
-        SprayerHelper.spawnParticles(level, center, facing, ratio, fluid, cachedCountScale);
+        if (level != null) {
+            SprayerHelper.spawnParticles(level, center, facing, ratio, fluid, cachedCountScale);
+        }
     }
 
     @OnlyIn(Dist.CLIENT)
     private FluidStack trySimulateDrainFromBack(int maxAllowed) {
         Direction facing = getBlockState().getValue(SprayerBlock.FACING);
         BlockPos behind = worldPosition.relative(facing.getOpposite());
-        IFluidHandler source = level.getCapability(Capabilities.FluidHandler.BLOCK, behind, facing);
+        IFluidHandler source = null;
+        if (level != null) {
+            source = level.getCapability(Capabilities.FluidHandler.BLOCK, behind, facing);
+        }
         if (source == null) return FluidStack.EMPTY;
         return source.drain(maxAllowed, IFluidHandler.FluidAction.SIMULATE);
     }
 
     @OnlyIn(Dist.CLIENT)
     private float calculateCountScale(Level level, BlockPos pos) {
-        Player nearest = level.getNearestPlayer(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 32.0, null);
+        Player nearest = null;
+        if (level != null) {
+            nearest = level.getNearestPlayer(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 32.0, null);
+        }
         if (nearest == null) return 1.0f;
         double dx = Math.abs(nearest.getX() - (pos.getX() + 0.5));
         double dy = Math.abs(nearest.getY() - (pos.getY() + 0.5));
@@ -217,30 +230,30 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IHaveGoggl
         int maxAllowed = SprayerHelper.getMaxConsumption(effectiveAngle, MAX_ANGLE, MAX_CONSUMPTION);
         if (maxAllowed <= 0 || level == null) return;
         // 尝试从背后或自身tank抽取（实际消耗）
-        FluidStack fluid = tryDrainFromBack(IFluidHandler.FluidAction.EXECUTE, maxAllowed);
+        FluidStack fluid = tryDrainFromBack(maxAllowed);
         if (fluid.isEmpty()) {
-            fluid = tryDrainFromTank(IFluidHandler.FluidAction.EXECUTE, maxAllowed);
+            fluid = tryDrainFromTank(maxAllowed);
         }
         if (fluid.isEmpty()) return;
         applyEffect(fluid);
     }
 
-    private FluidStack tryDrainFromBack(IFluidHandler.FluidAction action, int maxAllowed) {
+    private FluidStack tryDrainFromBack(int maxAllowed) {
         Direction facing = getBlockState().getValue(SprayerBlock.FACING);
         BlockPos behind = worldPosition.relative(facing.getOpposite());
         if (level == null) return FluidStack.EMPTY;
         IFluidHandler source = level.getCapability(Capabilities.FluidHandler.BLOCK, behind, facing);
         if (source == null) return FluidStack.EMPTY;
-        return source.drain(maxAllowed, action);
+        return source.drain(maxAllowed, IFluidHandler.FluidAction.EXECUTE);
     }
 
-    private FluidStack tryDrainFromTank(IFluidHandler.FluidAction action, int maxAllowed) {
+    private FluidStack tryDrainFromTank(int maxAllowed) {
         IFluidHandler tankHandler = tank.getPrimaryHandler();
         FluidStack fluid = tankHandler.getFluidInTank(0);
         if (fluid.isEmpty()) return FluidStack.EMPTY;
         int toDrain = Math.min(maxAllowed, fluid.getAmount());
         if (toDrain <= 0) return FluidStack.EMPTY;
-        return tankHandler.drain(toDrain, action);
+        return tankHandler.drain(toDrain, IFluidHandler.FluidAction.EXECUTE);
     }
 
     private void applyEffect(FluidStack drained) {
@@ -297,18 +310,19 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IHaveGoggl
         if (clientPacket) {
             frontBlocked = compound.getBoolean("FrontBlocked");
         }
-    }
-    @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        CompoundTag tag = super.getUpdateTag(registries);
-        tag.put("Openness", openness.writeNBT());
-        return tag;
+//        else {
+//            openness.forceNextSync();
+//        }
     }
     @Override
     public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+        if (level instanceof VirtualRenderWorld) {
+            if (tag.contains("Openness", Tag.TAG_COMPOUND)) {
+                openness.readNBT(tag.getCompound("Openness"), false);
+            }
+            frontBlocked = tag.getBoolean("FrontBlocked");
+            return;
+        }
         super.handleUpdateTag(tag, registries);
-            CompoundTag opennessTag = tag.getCompound("Openness");
-            openness.readNBT(opennessTag, true);//用false时，保持在进入瞬间的开度。用true时，指向默认值
     }
 }
-
