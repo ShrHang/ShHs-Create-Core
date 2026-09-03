@@ -5,10 +5,8 @@ import com.simibubi.create.api.effect.OpenPipeEffectHandler;
 import com.simibubi.create.content.fluids.particle.FluidParticleData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -137,31 +135,21 @@ public class SprayerHelper {
     }
 
     /**
-     * 在服务端生成喷洒粒子。
+     * 在客户端生成喷洒粒子（直接本地生成，不通过网络发送）。
+     * 原本服务端调用改为客户端调用，因此参数改为 Level（客户端的 Level）。
      *
-     * @param level  服务端世界
-     * @param origin 喷洒起点（世界坐标）
-     * @param dir    喷洒方向
-     * @param ratio  强度比例
-     * @param fluid  流体
+     * @param level       客户端世界
+     * @param origin      喷洒起点（世界坐标）
+     * @param dir         喷洒方向
+     * @param ratio       强度比例
+     * @param fluid       流体
+     * @param countScale  粒子数量缩放因子（0~1），泛用性强，可用于距离衰减、性能设置等
      */
-    public static void spawnParticles(ServerLevel level, Vec3 origin, Direction dir, float ratio, FluidStack fluid) {
-        // 根据最近玩家距离调整粒子数量
-        double distanceFactor = 0.0;
-        Player nearestPlayer = level.getNearestPlayer(origin.x, origin.y, origin.z, 32.0, false);
-        if (nearestPlayer != null) {
-            double dist = Math.sqrt(nearestPlayer.distanceToSqr(origin.x, origin.y, origin.z));
-            if (dist <= 8.0) {
-                distanceFactor = 1.0;
-            } else if (dist < 32.0) {
-                distanceFactor = 1.0 - (dist - 8.0) / (32.0 - 8.0);
-            }
-        }
-        if (distanceFactor <= 0) return;
-
+    public static void spawnParticles(Level level, Vec3 origin, Direction dir, float ratio, FluidStack fluid, float countScale) {
+        // 基础粒子数，随 ratio 增大而增多
         int baseCount = Math.max(4, (int) (ratio * 20));
-        int count = (int) (baseCount * distanceFactor);
-        if (count < 2) count = 2;
+        // 应用数量缩放因子，保证至少有 2 个粒子（避免完全消失）
+        int count = Math.max(2, (int) (baseCount * countScale));
 
         Vec3 dirVec = Vec3.atLowerCornerOf(dir.getNormal());
         Vec3 up = Math.abs(dirVec.dot(new Vec3(0, 1, 0))) < 0.9 ? new Vec3(0, 1, 0) : new Vec3(1, 0, 0);
@@ -182,12 +170,10 @@ public class SprayerHelper {
             double speed = 0.1 + ratio * 0.7;
             Vec3 velocity = randomDir.scale(speed);
 
-            level.sendParticles(
+            level.addParticle(
                     particleData,
                     origin.x, origin.y, origin.z,
-                    0,
-                    velocity.x, velocity.y, velocity.z,
-                    1.0
+                    velocity.x, velocity.y, velocity.z
             );
         }
     }

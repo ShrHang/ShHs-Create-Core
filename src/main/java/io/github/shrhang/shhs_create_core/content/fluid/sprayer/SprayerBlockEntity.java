@@ -8,18 +8,23 @@ import com.simibubi.create.content.kinetics.transmission.sequencer.SequencerInst
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.fluid.SmartFluidTankBehaviour;
 import io.github.shrhang.shhs_create_core.content.util.sprayer.SprayerHelper;
+import net.createmod.catnip.animation.LerpedFloat;
+import net.createmod.catnip.animation.LerpedFloat.Chaser;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
@@ -29,23 +34,23 @@ import java.util.List;
 
 import static io.github.shrhang.shhs_create_core.content.data.ShHsLang.tooltipComponentForGoggles;
 
-/**
- * 喷洒器方块实体，管理流体储罐、角度调节（0~270°）和喷洒条件。
- * 角度直接影响消耗速率：0°关闭，270°全开。
- * 同时提供护目镜信息（当前角度、喷洒范围）。
- */
 public class SprayerBlockEntity extends KineticBlockEntity implements IHaveGoggleInformation {
 
-    private static final int TANK_CAPACITY = 32;
+    private static final int TANK_CAPACITY = 64;
     private static final int MAX_CONSUMPTION = 32;
     public static final float MAX_ANGLE = 270.0f;
     private static final float ANGLE_EPSILON = 1e-6f;
 
     private SmartFluidTankBehaviour tank;
-    private float angle = MAX_ANGLE;
-    private float prevAngle = MAX_ANGLE;
+    private final LerpedFloat openness = LerpedFloat.linear()
+            .startWithValue(1)
+            .chase(1, 0, Chaser.LINEAR);
     private boolean frontBlocked = false;
     private boolean consumedSequenceInput = false;
+
+    // 客户端缓存：玩家距离缩放因子，每10 tick更新
+    private float cachedCountScale = 1.0f;
+    private int lastPlayerCalcTick = -10;
 
     public SprayerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -57,24 +62,47 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IHaveGoggl
     }
 
     private boolean shouldSpray() {
-        return !frontBlocked && angle > ANGLE_EPSILON;
+        float effectiveAngle = getEffectiveAngle();
+        return !frontBlocked && effectiveAngle > ANGLE_EPSILON;
+    }
+
+    public float getAngle() {
+        return openness.getValue() * MAX_ANGLE;
+    }
+
+    public float getRenderedAngle(float partialTicks) {
+        return openness.getValue(partialTicks) * MAX_ANGLE;
+    }
+
+    private float getEffectiveAngle() {
+        if (level == null) return getAngle();
+        return level.isClientSide ? getRenderedAngle(1.0f) : getAngle();
     }
 
     @Override
     public void tick() {
-        updatePrevAngle();
-        if (level != null && !level.isClientSide) {
+        super.tick();
+        openness.tickChaser();
+        if (level == null) return;
+        // 服务端逻辑：更新阻塞状态和角度
+        if (!level.isClientSide) {
             updateFrontBlocked();
             updateAngle();
         }
-        super.tick();
-        if (level != null && !level.isClientSide) {
-            tickSpraying();
+        // 客户端：每帧生成粒子（无帧限制）
+        if (level.isClientSide && shouldSpray()) {
+            spawnClientParticles();
+        }
+        // 服务端逻辑：每5 tick消耗流体并应用效果
+        if (!level.isClientSide && shouldSpray() && ( level.getGameTime() % 5 == 0)) {
+            performServerSpray();
         }
     }
 
-    private void updatePrevAngle() {
-        prevAngle = angle;
+    @OnlyIn(Dist.CLIENT)
+    @Override
+    public void tickAudio() {
+        super.tickAudio();
     }
 
     private void updateFrontBlocked() {
@@ -101,102 +129,146 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IHaveGoggl
             if (!consumedSequenceInput) {
                 float speed = getTheoreticalSpeed();
                 float signedAngle = (float) sequenceContext.getEffectiveValue(speed) * Math.signum(speed);
-                setAngle(angle + signedAngle);
+                setAngle(getAngle() + signedAngle);
                 consumedSequenceInput = true;
             }
             return;
         }
-
         consumedSequenceInput = false;
-
         float speed = getTheoreticalSpeed();
         if (speed != 0) {
-            setAngle(angle + KineticBlockEntity.convertToAngular(speed));
+            setAngle(getAngle() + KineticBlockEntity.convertToAngular(speed));
         }
     }
 
-    private void setAngle(float newAngle) {
+    public void setAngle(float newAngle) {
         newAngle = Mth.clamp(newAngle, 0f, MAX_ANGLE);
-        if (newAngle != angle) {
-            angle = newAngle;
+        float newOpenness = newAngle / MAX_ANGLE;
+        if (!Mth.equal(newOpenness, openness.getValue())) {
+            openness.chase(newOpenness, getChaseSpeed(), Chaser.LINEAR);
             setChanged();
             sendData();
         }
     }
 
-    public float getRenderedAngle(float partialTicks) {
-        return Mth.lerp(partialTicks, prevAngle, angle);
+    private float getChaseSpeed() {
+        float divisor = (MAX_ANGLE / 90f) * 16f * 20f;
+        return Mth.clamp(Math.abs(getSpeed()) / divisor, 0.01f, 1f);
     }
 
-    private void tickSpraying() {
-        if (level != null && level.getGameTime() % 5 != 0) return;
-        if (!shouldSpray()) return;
-        trySpray();
-    }
-
-    /**
-     * 尝试执行喷洒：从后方抽取流体，应用效果并生成粒子。
-     */
-    private void trySpray() {
-        IFluidHandler tankHandler = tank.getPrimaryHandler();
-
-        if (tankHandler.getFluidInTank(0).isEmpty()) {
-            Direction facing = getBlockState().getValue(SprayerBlock.FACING);
-            BlockPos behind = worldPosition.relative(facing.getOpposite());
-            IFluidHandler source = null;
-            if (level != null) {
-                source = level.getCapability(Capabilities.FluidHandler.BLOCK, behind, facing);
-            }
-            if (source != null) {
-                int space = tankHandler.getTankCapacity(0) - tankHandler.getFluidInTank(0).getAmount();
-                if (space > 0) {
-                    int toExtract = Math.min(MAX_CONSUMPTION, space);
-                    FluidStack extracted = source.drain(toExtract, IFluidHandler.FluidAction.EXECUTE);
-                    if (!extracted.isEmpty()) {
-                        tankHandler.fill(extracted, IFluidHandler.FluidAction.EXECUTE);
-                    }
-                }
-            }
-        }
-
-        FluidStack fluid = tankHandler.getFluidInTank(0);
-        if (fluid.isEmpty()) return;
-
-        OpenPipeEffectHandler effectHandler = SprayerHelper.getEffectHandler(fluid);
-        if (effectHandler == null) return;
-
+    // ----- 客户端粒子生成（每帧） -----
+    @OnlyIn(Dist.CLIENT)
+    private void spawnClientParticles() {
+        // 获取当前插值角度
+        float angle = getRenderedAngle(1.0f);
         int maxAllowed = SprayerHelper.getMaxConsumption(angle, MAX_ANGLE, MAX_CONSUMPTION);
         if (maxAllowed <= 0) return;
+        // 优先从自身 tank 获取流体
+        FluidStack tankFluid = tank.getPrimaryHandler().getFluidInTank(0);
+        FluidStack fluid = FluidStack.EMPTY;
+        if (!tankFluid.isEmpty()) {
+            // 模拟抽取至多 maxAllowed，仅用于获取类型和数量比例
+            fluid = tank.getPrimaryHandler().drain(maxAllowed, IFluidHandler.FluidAction.SIMULATE);
+        }
+        // 若 tank 为空，尝试从背后容器模拟抽取
+        if (fluid.isEmpty()) {
+            fluid = trySimulateDrainFromBack(maxAllowed);
+        }
+        if (fluid.isEmpty()) return;
+        float ratio = SprayerHelper.getFluidRatio(Math.min(fluid.getAmount(), maxAllowed), MAX_CONSUMPTION);
+        Direction facing = getBlockState().getValue(SprayerBlock.FACING);
+        Vec3 center = SprayerHelper.getSprayCenter(worldPosition, facing);
+        // 玩家距离缩放：每10 tick更新一次，虚拟模式固定0.2
+        if (isVirtual()) {
+            cachedCountScale = 0.2f;
+        } else {
+            long gameTime = level.getGameTime();
+            if (gameTime - lastPlayerCalcTick >= 10) {
+                cachedCountScale = calculateCountScale(level, worldPosition);
+                lastPlayerCalcTick = (int) gameTime;
+            }
+        }
+        SprayerHelper.spawnParticles(level, center, facing, ratio, fluid, cachedCountScale);
+    }
 
+    @OnlyIn(Dist.CLIENT)
+    private FluidStack trySimulateDrainFromBack(int maxAllowed) {
+        Direction facing = getBlockState().getValue(SprayerBlock.FACING);
+        BlockPos behind = worldPosition.relative(facing.getOpposite());
+        IFluidHandler source = level.getCapability(Capabilities.FluidHandler.BLOCK, behind, facing);
+        if (source == null) return FluidStack.EMPTY;
+        return source.drain(maxAllowed, IFluidHandler.FluidAction.SIMULATE);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private float calculateCountScale(Level level, BlockPos pos) {
+        Player nearest = level.getNearestPlayer(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 32.0, null);
+        if (nearest == null) return 1.0f;
+        double dx = Math.abs(nearest.getX() - (pos.getX() + 0.5));
+        double dy = Math.abs(nearest.getY() - (pos.getY() + 0.5));
+        double dz = Math.abs(nearest.getZ() - (pos.getZ() + 0.5));
+        double manhattan = dx + dy + dz;
+        return (float) Mth.clamp(1.0 - (manhattan / 32.0) * 0.8, 0.2, 1.0);
+    }
+
+    // ----- 服务端逻辑（每5 tick） -----
+    private void performServerSpray() {
+        float effectiveAngle = getEffectiveAngle();
+        int maxAllowed = SprayerHelper.getMaxConsumption(effectiveAngle, MAX_ANGLE, MAX_CONSUMPTION);
+        if (maxAllowed <= 0 || level == null) return;
+        // 尝试从背后或自身tank抽取（实际消耗）
+        FluidStack fluid = tryDrainFromBack(IFluidHandler.FluidAction.EXECUTE, maxAllowed);
+        if (fluid.isEmpty()) {
+            fluid = tryDrainFromTank(IFluidHandler.FluidAction.EXECUTE, maxAllowed);
+        }
+        if (fluid.isEmpty()) return;
+        applyEffect(fluid);
+    }
+
+    private FluidStack tryDrainFromBack(IFluidHandler.FluidAction action, int maxAllowed) {
+        Direction facing = getBlockState().getValue(SprayerBlock.FACING);
+        BlockPos behind = worldPosition.relative(facing.getOpposite());
+        if (level == null) return FluidStack.EMPTY;
+        IFluidHandler source = level.getCapability(Capabilities.FluidHandler.BLOCK, behind, facing);
+        if (source == null) return FluidStack.EMPTY;
+        return source.drain(maxAllowed, action);
+    }
+
+    private FluidStack tryDrainFromTank(IFluidHandler.FluidAction action, int maxAllowed) {
+        IFluidHandler tankHandler = tank.getPrimaryHandler();
+        FluidStack fluid = tankHandler.getFluidInTank(0);
+        if (fluid.isEmpty()) return FluidStack.EMPTY;
         int toDrain = Math.min(maxAllowed, fluid.getAmount());
-        if (toDrain <= 0) return;
+        if (toDrain <= 0) return FluidStack.EMPTY;
+        return tankHandler.drain(toDrain, action);
+    }
 
-        FluidStack drained = tankHandler.drain(toDrain, IFluidHandler.FluidAction.EXECUTE);
-        if (drained.isEmpty()) return;
-
+    private void applyEffect(FluidStack drained) {
+        OpenPipeEffectHandler effectHandler = SprayerHelper.getEffectHandler(drained);
+        if (effectHandler == null) return;
         float ratio = SprayerHelper.getFluidRatio(drained.getAmount(), MAX_CONSUMPTION);
         Direction facing = getBlockState().getValue(SprayerBlock.FACING);
         Vec3 center = SprayerHelper.getSprayCenter(worldPosition, facing);
         AABB aabb = SprayerHelper.buildAABB(center, facing, ratio);
         SprayerHelper.applyEffect(effectHandler, level, aabb, drained);
-
-        if (level instanceof ServerLevel serverLevel) {
-            SprayerHelper.spawnParticles(serverLevel, center, facing, ratio, drained);
-        }
     }
 
-    // ========== 护目镜工具提示 ==========
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
+        float currentAngle = getAngle();
         tooltip.add(tooltipComponentForGoggles("sprayer.header"));
-        tooltip.add(tooltipComponentForGoggles("sprayer.angle", Component.literal(String.format("%.0f", angle)).withStyle(ChatFormatting.AQUA), Component.literal(String.format("%.0f", MAX_ANGLE)).withStyle(ChatFormatting.AQUA)));
+        tooltip.add(tooltipComponentForGoggles("sprayer.angle",
+                Component.literal(String.format("%.0f", currentAngle)).withStyle(ChatFormatting.AQUA),
+                Component.literal(String.format("%.0f", MAX_ANGLE)).withStyle(ChatFormatting.AQUA)));
         Direction facing = getBlockState().getValue(SprayerBlock.FACING);
-        AABB aabb = SprayerHelper.buildAABBFromAngle(worldPosition, facing, angle, MAX_ANGLE);
-        tooltip.add(tooltipComponentForGoggles("sprayer.range", Component.literal(String.format("%.1f", aabb.getXsize())).withStyle(ChatFormatting.GOLD), Component.literal(String.format("%.1f", aabb.getYsize())).withStyle(ChatFormatting.GOLD), Component.literal(String.format("%.1f", aabb.getZsize())).withStyle(ChatFormatting.GOLD)));
+        AABB aabb = SprayerHelper.buildAABBFromAngle(worldPosition, facing, currentAngle, MAX_ANGLE);
+        tooltip.add(tooltipComponentForGoggles("sprayer.range",
+                Component.literal(String.format("%.1f", aabb.getXsize())).withStyle(ChatFormatting.GOLD),
+                Component.literal(String.format("%.1f", aabb.getYsize())).withStyle(ChatFormatting.GOLD),
+                Component.literal(String.format("%.1f", aabb.getZsize())).withStyle(ChatFormatting.GOLD)));
         return true;
     }
 
-    // ========== 流体能力（仅后方可访问） ==========
     @Nullable
     public IFluidHandler getFluidHandlerForSide(@Nullable Direction side) {
         if (side == null) return null;
@@ -205,22 +277,38 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IHaveGoggl
         return side == facing.getOpposite() ? tank.getCapability() : null;
     }
 
-    // ========== NBT 读写 ==========
-    @Override
-    protected void read(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
-        super.read(compound, registries, clientPacket);
-        float previousAngle = angle;
-        angle = Mth.clamp(compound.getFloat("Angle"), 0f, MAX_ANGLE);
-        prevAngle = clientPacket ? previousAngle : angle;
+    public IFluidHandler getTankInventory() {
+        return tank.getPrimaryHandler();
     }
 
     @Override
     protected void write(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
         super.write(compound, registries, clientPacket);
-        compound.putFloat("Angle", angle);
+        compound.put("Openness", openness.writeNBT());
+        if (clientPacket) {
+            compound.putBoolean("FrontBlocked", frontBlocked);
+        }
     }
 
-    public float getAngle() {
-        return angle;
+    @Override
+    protected void read(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
+        super.read(compound, registries, clientPacket);
+        openness.readNBT(compound.getCompound("Openness"), clientPacket);
+        if (clientPacket) {
+            frontBlocked = compound.getBoolean("FrontBlocked");
+        }
+    }
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = super.getUpdateTag(registries);
+        tag.put("Openness", openness.writeNBT());
+        return tag;
+    }
+    @Override
+    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+        super.handleUpdateTag(tag, registries);
+            CompoundTag opennessTag = tag.getCompound("Openness");
+            openness.readNBT(opennessTag, true);//用false时，保持在进入瞬间的开度。用true时，指向默认值
     }
 }
+
