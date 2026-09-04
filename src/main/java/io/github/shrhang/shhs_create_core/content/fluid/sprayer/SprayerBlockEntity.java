@@ -107,7 +107,7 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IHaveGoggl
         super.tickAudio();
     }
 
-    private void updateFrontBlocked() {
+    public void updateFrontBlocked() {
         Direction facing = getBlockState().getValue(SprayerBlock.FACING);
         BlockPos frontPos = worldPosition.relative(facing);
         BlockState frontState = level != null ? level.getBlockState(frontPos) : null;

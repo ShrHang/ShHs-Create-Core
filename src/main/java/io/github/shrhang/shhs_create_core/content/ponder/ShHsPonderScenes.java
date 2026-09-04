@@ -21,7 +21,8 @@ public class ShHsPonderScenes {
 
         // 喷洒器
         HELPER.forComponents(ShHsBlocks.SPRAYER)
-                .addStoryBoard("sprayer/intro", SprayerScenes::intro, AllCreatePonderTags.FLUIDS);
+                .addStoryBoard("sprayer/intro", SprayerScenes::intro, AllCreatePonderTags.FLUIDS)
+                .addStoryBoard("sprayer/range", SprayerScenes::range);
 
         // 恶意吸收器
 //        HELPER.forComponents(ShHsBlocks.HOSTILITY_ABSORBER)
