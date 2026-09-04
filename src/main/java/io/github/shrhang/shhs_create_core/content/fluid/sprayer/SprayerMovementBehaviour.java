@@ -43,7 +43,7 @@ public class SprayerMovementBehaviour implements MovementBehaviour {
         Direction facing = state.getValue(SprayerBlock.FACING);
         float openness = getOpenness(context);
         if (openness <= 0) return;
-        int maxAllowed = calculateMaxAllowed(openness);
+        int maxAllowed = SprayerHelper.getMaxConsumption(openness, 1f, MAX_CONSUMPTION);
         if (maxAllowed <= 0) maxAllowed = 1;
         IFluidHandler fluidManager = context.contraption.getStorage().getFluids();
         if (fluidManager == null) return;
@@ -79,16 +79,6 @@ public class SprayerMovementBehaviour implements MovementBehaviour {
         }
         CompoundTag opennessTag = blockEntityData.getCompound("Openness");
         return Mth.clamp(opennessTag.getFloat("Value"), 0f, 1f);
-    }
-
-    /**
-     * 根据开启度计算最大可消耗流体量（线性映射）。
-     *
-     * @param openness 开启度 [0,1]
-     * @return 最大消耗量（mb）
-     */
-    private static int calculateMaxAllowed(float openness) {
-        return (int) (openness * MAX_CONSUMPTION);
     }
 
     /**

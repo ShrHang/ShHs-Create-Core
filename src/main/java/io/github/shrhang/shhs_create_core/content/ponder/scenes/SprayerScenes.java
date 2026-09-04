@@ -40,7 +40,7 @@ public class SprayerScenes {
         scene.idle(5);
 
         FluidStack content = new FluidStack(Fluids.LAVA, 48000);
-        scene.world().modifyBlockEntity(util.grid().at(4, 1, 2), FluidTankBlockEntity.class, be ->
+        scene.world().modifyBlockEntity(util.grid().at(3, 1, 2), FluidTankBlockEntity.class, be ->
                 be.getTankInventory().fill(content, IFluidHandler.FluidAction.EXECUTE));
         scene.idle(10);
 
