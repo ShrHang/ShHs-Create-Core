@@ -21,7 +21,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Chicken;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
@@ -63,7 +62,7 @@ public class SprayerScenes {
                 .pointAt(util.vector().centerOf(openPos))
                 .attachKeyFrame()
                 .placeNearTarget()
-                .text("The fluid's effect is applied to the block in front of the open pipe...");
+                .text("The fluid's effect is applied to the front of the open pipe...");
         scene.idle(20);
 
         ElementLink<EntityElement> chicken = scene.world().createEntity(level -> {
@@ -73,9 +72,10 @@ public class SprayerScenes {
             entity.xo = pos.x;
             entity.yo = pos.y;
             entity.zo = pos.z;
-            entity.yRotO = 0;
-            entity.setYRot(0);
-            entity.yHeadRotO = entity.yHeadRot = 0;
+            entity.yRotO = 180;
+            entity.setYRot(180);
+            entity.yHeadRotO = entity.yHeadRot = 180;
+            entity.yBodyRotO = entity.yBodyRot = 180;
             entity.setRemainingFireTicks(60);
             entity.setSharedFlagOnFire(true);
             return entity;
@@ -139,14 +139,14 @@ public class SprayerScenes {
                 .attachKeyFrame()
                 .placeNearTarget()
                 .text("Sprayers can also read the fluid from connected tanks directly.");
-        scene.idle(70);
+        scene.idle(60);
 
         scene.markAsFinished();
     }
 
     public static void range(SceneBuilder builder, SceneBuildingUtil util) {
         CreateSceneBuilder scene = new CreateSceneBuilder(builder);
-        scene.title("sprayer.range", "Controlling Sprayers' Range");
+        scene.title("sprayer.range", "Controlling spray Range by adjusting the angle");
         scene.configureBasePlate(0, 0, 5);
 
         Direction facing = Direction.WEST;
@@ -156,7 +156,7 @@ public class SprayerScenes {
         Selection largeCog = util.select().position(5, 0, 2);
         Selection tank = util.select().fromTo(4, 1, 2, 4, 2, 2);
         Selection kinetics = util.select().fromTo(5, 1, 1, 3, 1, 1).add(largeCog);
-        Selection sprayerKinetics = util.select().fromTo(2, 1, 2, 2, 2, 2);
+        Selection sprayerKinetics = util.select().fromTo(sprayerPos, valvePos);
 
         scene.world().showSection(util.select().layer(0).substract(largeCog), Direction.UP);
         scene.idle(5);
@@ -178,16 +178,16 @@ public class SprayerScenes {
             }
             scene.idle(2 * (i + 2));
         }
+
+        var sprayerRange = SprayerHelper.buildAABBFromAngle(sprayerPos, facing, 180, SprayerBlockEntity.MAX_ANGLE);
+        scene.overlay().chaseBoundingBoxOutline(PonderPalette.GREEN, new Object(), sprayerRange, 70);
+        scene.idle(10);
         scene.overlay()
                 .showText(60)
                 .pointAt(util.vector().blockSurface(sprayerPos, facing))
                 .attachKeyFrame()
                 .placeNearTarget()
-                .text("Sprayers' range depends on their angle.");
-        scene.idle(20);
-
-        AABB sprayerRange = SprayerHelper.buildAABBFromAngle(sprayerPos, facing, 180, SprayerBlockEntity.MAX_ANGLE);
-        scene.overlay().chaseBoundingBoxOutline(PonderPalette.GREEN, new Object(), sprayerRange, 40);
+                .text("Spray range depends on their angle.");
         scene.idle(60);
 
         ElementLink<WorldSectionElement> valve =
@@ -199,7 +199,7 @@ public class SprayerScenes {
                 .attachKeyFrame()
                 .placeNearTarget()
                 .text("Their shaft input controls their angle.");
-        scene.idle(40);
+        scene.idle(60);
 
         scene.world().setKineticSpeed(sprayerKinetics, -32);
         scene.world().rotateSection(valve, 0, -90, 0, 10);
@@ -217,7 +217,7 @@ public class SprayerScenes {
                 .attachKeyFrame()
                 .placeNearTarget()
                 .text("When the angle is zero, sprayers will stop operating.");
-        scene.idle(40);
+        scene.idle(60);
 
         scene.world().setKineticSpeed(sprayerKinetics, -32);
         scene.world().rotateSection(valve, 0, -90, 0, 10);
@@ -226,7 +226,56 @@ public class SprayerScenes {
         scene.idle(10);
         scene.world().setKineticSpeed(sprayerKinetics, 0);
         sprayerRange = SprayerHelper.buildAABBFromAngle(sprayerPos, facing, 90, SprayerBlockEntity.MAX_ANGLE);
-        scene.overlay().chaseBoundingBoxOutline(PonderPalette.RED, new Object(), sprayerRange, 40);
+        scene.overlay().chaseBoundingBoxOutline(PonderPalette.RED, new Object(), sprayerRange, 20);
+        scene.idle(20);
+
+        scene.markAsFinished();
+    }
+
+    public static void facing(SceneBuilder builder, SceneBuildingUtil util) {
+        CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+        scene.title("sprayer.facing", "Impact of Sprayers' facing on their range");
+        scene.configureBasePlate(0, 0, 5);
+
+        BlockPos sprayerPos = util.grid().at(2, 4, 2);
+        Object slot = new Object();
+
+        scene.showBasePlate();
+        scene.idle(5);
+
+        ElementLink<WorldSectionElement> sprayer =
+                scene.world().showIndependentSection(util.select().position(sprayerPos), Direction.UP);
+        scene.idle(5);
+        scene.overlay()
+                .showText(60)
+                .pointAt(util.vector().centerOf(sprayerPos))
+                .attachKeyFrame()
+                .placeNearTarget()
+                .text("Sprayers facing different directions have different spray ranges.");
+        scene.idle(70);
+
+        var sprayerRange = SprayerHelper.buildAABBFromAngle(sprayerPos, Direction.WEST, 60, SprayerBlockEntity.MAX_ANGLE);
+        scene.overlay().chaseBoundingBoxOutline(PonderPalette.GREEN, slot, sprayerRange, 40);
+        scene.idle(40);
+
+        scene.world().rotateSection(sprayer, 0, 0, -90, 5);
+        sprayerRange = SprayerHelper.buildAABBFromAngle(sprayerPos, Direction.UP, 60, SprayerBlockEntity.MAX_ANGLE);
+        scene.overlay().chaseBoundingBoxOutline(PonderPalette.GREEN, slot, sprayerRange, 40);
+        scene.idle(40);
+
+        scene.world().rotateSection(sprayer, -90, 0, 0, 5);
+        sprayerRange = SprayerHelper.buildAABBFromAngle(sprayerPos, Direction.NORTH, 60, SprayerBlockEntity.MAX_ANGLE);
+        scene.overlay().chaseBoundingBoxOutline(PonderPalette.GREEN, slot, sprayerRange, 40);
+        scene.idle(40);
+
+        scene.world().rotateSection(sprayer, -90, 0, 0, 5);
+        sprayerRange = SprayerHelper.buildAABBFromAngle(sprayerPos, Direction.DOWN, 60, SprayerBlockEntity.MAX_ANGLE);
+        scene.overlay().chaseBoundingBoxOutline(PonderPalette.GREEN, slot, sprayerRange, 40);
+        scene.idle(40);
+
+        scene.world().rotateSection(sprayer, 0, 0, 90, 5);
+        sprayerRange = SprayerHelper.buildAABBFromAngle(sprayerPos, Direction.WEST, 60, SprayerBlockEntity.MAX_ANGLE);
+        scene.overlay().chaseBoundingBoxOutline(PonderPalette.GREEN, slot, sprayerRange, 40);
         scene.idle(40);
 
         scene.markAsFinished();
