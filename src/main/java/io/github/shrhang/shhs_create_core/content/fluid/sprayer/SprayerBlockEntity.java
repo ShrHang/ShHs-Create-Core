@@ -310,9 +310,6 @@ public class SprayerBlockEntity extends KineticBlockEntity implements IHaveGoggl
         if (clientPacket) {
             frontBlocked = compound.getBoolean("FrontBlocked");
         }
-//        else {
-//            openness.forceNextSync();
-//        }
     }
     @Override
     public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
