@@ -4,32 +4,34 @@ import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BehaviourType;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
-import dev.xkmc.l2hostility.content.capability.chunk.ChunkCapHolder;
-import dev.xkmc.l2hostility.content.capability.chunk.ChunkDifficulty;
-import dev.xkmc.l2hostility.content.capability.chunk.SectionDifficulty;
 import dev.xkmc.l2hostility.init.data.LHConfig;
+import io.github.shrhang.shhs_create_core.content.util.hostility_absorber.HostilityAbsorberHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
+import java.util.Set;
+
+import static io.github.shrhang.shhs_create_core.content.util.hostility_absorber.HostilityAbsorberHelper.RangeBoundary;
+import static io.github.shrhang.shhs_create_core.content.util.hostility_absorber.HostilityAbsorberHelper.SectionPos;
 
 /**
- * 恶意吸收器方块实体，通过内部 AbsorptionBehaviour 处理区块清除逻辑。
+ * 恶意吸收器方块实体。
  * <p>
- * 行为根据动力学转速动态调整清除范围，并在转速变化时对环带施加 clear/unclear 脉冲。
- * 支持动态结构移动：移动时立即恢复区块，并暂停所有清除操作。
- * 移动行为由外部类 {@link HostilityAbsorberMovementBehaviour} 实现。
+ * 使用轴向边界（RangeBoundary）存储理想范围，并维护两个异常集合
+ * （failedClear / failedUnclear）处理未能当场操作的区段。
+ * 范围变化时通过环带增量更新，避免重建完整集合。
  */
 public class HostilityAbsorberBlockEntity extends KineticBlockEntity {
 
     public static final BehaviourType<AbsorptionBehaviour> ABSORPTION_BEHAVIOUR = new BehaviourType<>();
-
-    private boolean isMoving = false;
 
     public HostilityAbsorberBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -41,78 +43,13 @@ public class HostilityAbsorberBlockEntity extends KineticBlockEntity {
         behaviours.add(new AbsorptionBehaviour(this));
     }
 
-    /**
-     * 当方块开始移动时调用。
-     * <p>
-     * 立即恢复当前清除范围的所有区块，并标记为移动状态，防止后续清除操作。
-     */
-    public void onStartMoving() {
-        if (level == null || level.isClientSide()) return;
-
-        AbsorptionBehaviour behaviour = getBehaviour(ABSORPTION_BEHAVIOUR);
-        if (behaviour != null) {
-            int halfLength = behaviour.lastHalfLength;
-            if (halfLength >= 0) {
-                unclearRangeStatic(level, worldPosition, halfLength);
-            }
-            isMoving = true;
-        }
-    }
-
-    /**
-     * 当方块停止移动时调用。
-     * <p>
-     * 清除移动标记，恢复正常的区块清除逻辑。
-     */
-    public void onStopMoving() {
-        if (level == null || level.isClientSide()) return;
-        isMoving = false;
-    }
-
-    /**
-     * 静态方法：恢复指定半径内的所有区块。
-     * <p>
-     * 供移动行为调用，不依赖方块实体实例。
-     */
-    public static void unclearRangeStatic(Level level, BlockPos center, int halfLength) {
-        if (halfLength < 0) return;
-        forEachInRingStatic(level, center, halfLength, -1, false);
-    }
-
-    /**
-     * 静态方法：遍历环带并执行 clear/unclear。
-     */
-    public static void forEachInRingStatic(Level level, BlockPos center, int outer, int inner, boolean clear) {
-        if (level.isClientSide()) return;
-
-        for (int dx = -outer; dx <= outer; dx++) {
-            for (int dy = -outer; dy <= outer; dy++) {
-                for (int dz = -outer; dz <= outer; dz++) {
-                    int dist = Math.max(Math.abs(dx), Math.max(Math.abs(dy), Math.abs(dz)));
-                    if (dist > outer || (inner >= 0 && dist <= inner)) continue;
-
-                    BlockPos pos = center.offset(dx * 16, dy * 16, dz * 16);
-                    if (level.isOutsideBuildHeight(pos)) continue;
-
-                    Optional<ChunkCapHolder> opt = ChunkDifficulty.at(level, pos);
-                    if (opt.isEmpty()) continue;
-
-                    ChunkCapHolder chunkCap = opt.get();
-                    SectionDifficulty section = chunkCap.getSection(pos.getY());
-
-                    if (clear) {
-                        section.setClear(chunkCap, pos);
-                    } else {
-                        section.setUnclear(chunkCap, pos);
-                    }
-                }
-            }
-        }
-    }
-
     public class AbsorptionBehaviour extends BlockEntityBehaviour {
+
         private static final int CLEAR_INTERVAL = 40;
-        private int lastHalfLength = -1;
+
+        private RangeBoundary boundary;
+        private final Set<SectionPos> failedClear = new HashSet<>();
+        private final Set<SectionPos> failedUnclear = new HashSet<>();
 
         public AbsorptionBehaviour(SmartBlockEntity be) {
             super(be);
@@ -126,89 +63,226 @@ public class HostilityAbsorberBlockEntity extends KineticBlockEntity {
         @Override
         public void tick() {
             super.tick();
-            Level level = getWorld();
-            if (level == null || level.isClientSide()) return;
 
-            if (isMoving) return;
+            Level level = getWorld();
+            if (level == null || level.isClientSide()) {
+                return;
+            }
 
             float speed = getSpeed();
             int currentHalfLength = calculateHalfLength(speed);
-            if (currentHalfLength != lastHalfLength) {
-                if (currentHalfLength > lastHalfLength) {
-                    if (lastHalfLength < 0 && currentHalfLength >= 0) {
-                        clearRange(currentHalfLength);
-                    } else {
-                        clearRing(currentHalfLength, lastHalfLength);
+            RangeBoundary target = HostilityAbsorberHelper.computeBoundary(getPos(), currentHalfLength, level);
+
+            if (target != null) {
+                if (boundary == null) {
+                    initializeBoundary(level, target);
+                } else if (!boundary.equals(target)) {
+                    updateBoundary(level, boundary, target);
+                }
+
+                if (level.getGameTime() % CLEAR_INTERVAL == 0) {
+                    refreshBoundary(level, boundary);
+                }
+            } else {
+                if (boundary != null) {
+                    releaseAll(level);
+                }
+            }
+
+            processFailedClear(level);
+            processFailedUnclear(level);
+        }
+
+        /**
+         * 首次初始化边界，清理整个范围，并将失败的区段加入 failedClear。
+         */
+        private void initializeBoundary(Level level, RangeBoundary target) {
+            boundary = target;
+            HostilityAbsorberHelper.forEachInRange(target, level, (l, pos) -> {
+                Set<SectionPos> result = HostilityAbsorberHelper.clearSections(l, Set.of(pos));
+                if (result.isEmpty()) {
+                    failedClear.add(pos);
+                }
+            });
+        }
+
+        /**
+         * 边界变化时，分别处理新增环带和缩减环带。
+         */
+        private void updateBoundary(Level level, RangeBoundary oldBound, RangeBoundary newBound) {
+            HostilityAbsorberHelper.forEachAddedRing(oldBound, newBound, level, (l, pos) -> {
+                Set<SectionPos> result = HostilityAbsorberHelper.clearSections(l, Set.of(pos));
+                if (result.isEmpty()) {
+                    failedClear.add(pos);
+                }
+            });
+
+            HostilityAbsorberHelper.forEachRemovedRing(oldBound, newBound, level, (l, pos) -> {
+                Set<SectionPos> result = HostilityAbsorberHelper.unclearSections(l, Set.of(pos));
+                if (result.isEmpty()) {
+                    failedUnclear.add(pos);
+                }
+            });
+
+            boundary = newBound;
+            failedUnclear.removeIf(pos -> boundary.contains(pos));
+        }
+
+        /**
+         * 释放全部持有：对整个旧边界执行 unclear，并清空异常集合。
+         */
+        private void releaseAll(Level level) {
+            if (boundary != null) {
+                HostilityAbsorberHelper.forEachInRange(boundary, level, (l, pos) ->
+                        HostilityAbsorberHelper.unclearSections(l, Set.of(pos))
+                );
+            }
+            boundary = null;
+            failedClear.clear();
+            failedUnclear.clear();
+        }
+
+        /**
+         * 周期刷新：对边界内所有区段重新执行 clear，并处理异常集合。
+         */
+        private void refreshBoundary(Level level, RangeBoundary currentBound) {
+            HostilityAbsorberHelper.forEachInRange(currentBound, level, (l, pos) -> {
+                Set<SectionPos> result = HostilityAbsorberHelper.clearSections(l, Set.of(pos));
+                if (result.isEmpty()) {
+                    failedClear.add(pos);
+                }
+            });
+        }
+
+        /**
+         * 处理 failedClear 集合：重新尝试清理，成功则移除。
+         */
+        private void processFailedClear(Level level) {
+            if (failedClear.isEmpty()) {
+                return;
+            }
+            Set<SectionPos> toRemove = new HashSet<>();
+            for (SectionPos pos : failedClear) {
+                if (boundary != null && boundary.contains(pos)) {
+                    Set<SectionPos> result = HostilityAbsorberHelper.clearSections(level, Set.of(pos));
+                    if (!result.isEmpty()) {
+                        toRemove.add(pos);
                     }
                 } else {
-                    if (currentHalfLength < 0 && lastHalfLength >= 0) {
-                        unclearRange(lastHalfLength);
-                    } else {
-                        unclearRing(lastHalfLength, currentHalfLength);
+                    toRemove.add(pos);
+                }
+            }
+            failedClear.removeAll(toRemove);
+        }
+
+        /**
+         * 处理 failedUnclear 集合：重新尝试恢复，成功则移除；若区段重新落入边界内，则移除。
+         */
+        private void processFailedUnclear(Level level) {
+            if (failedUnclear.isEmpty()) {
+                return;
+            }
+            Set<SectionPos> toRemove = new HashSet<>();
+            for (SectionPos pos : failedUnclear) {
+                if (boundary != null && boundary.contains(pos)) {
+                    toRemove.add(pos);
+                } else {
+                    Set<SectionPos> result = HostilityAbsorberHelper.unclearSections(level, Set.of(pos));
+                    if (!result.isEmpty()) {
+                        toRemove.add(pos);
                     }
                 }
-                lastHalfLength = currentHalfLength;
             }
-            if (currentHalfLength >= 0) {
-                long gameTime = level.getGameTime();
-                if (gameTime % CLEAR_INTERVAL == 0) {
-                    clearRange(currentHalfLength);
-                }
-            }
+            failedUnclear.removeAll(toRemove);
         }
 
         @Override
         public void destroy() {
-            if (getWorld() != null && !getWorld().isClientSide() && lastHalfLength >= 0) {
-                unclearRange(lastHalfLength);
+            Level level = getWorld();
+            if (level != null && !level.isClientSide() && boundary != null) {
+                releaseAll(level);
             }
             super.destroy();
         }
 
+        // ========== 序列化 ==========
+
         @Override
         public void write(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
             super.write(compound, registries, clientPacket);
-            compound.putInt("LastHalfLength", lastHalfLength);
+
+            if (boundary != null) {
+                compound.putInt("MinX", boundary.minX());
+                compound.putInt("MaxX", boundary.maxX());
+                compound.putInt("MinY", boundary.minY());
+                compound.putInt("MaxY", boundary.maxY());
+                compound.putInt("MinZ", boundary.minZ());
+                compound.putInt("MaxZ", boundary.maxZ());
+            }
+
+            writeSectionSet(compound, "FailedClear", failedClear);
+            writeSectionSet(compound, "FailedUnclear", failedUnclear);
         }
 
         @Override
         public void read(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
             super.read(compound, registries, clientPacket);
-            lastHalfLength = compound.getInt("LastHalfLength");
+
+            if (compound.contains("MinX")) {
+                boundary = new RangeBoundary(
+                        compound.getInt("MinX"),
+                        compound.getInt("MaxX"),
+                        compound.getInt("MinY"),
+                        compound.getInt("MaxY"),
+                        compound.getInt("MinZ"),
+                        compound.getInt("MaxZ")
+                );
+            } else {
+                boundary = null;
+            }
+
+            readSectionSet(compound, "FailedClear", failedClear);
+            readSectionSet(compound, "FailedUnclear", failedUnclear);
         }
 
-        private void clearRing(int outer, int inner) {
-            if (outer <= inner) return;
-            if (inner < 0) inner = -1;
-            forEachInRing(outer, inner, true);
+        private void writeSectionSet(CompoundTag compound, String key, Set<SectionPos> set) {
+            ListTag list = new ListTag();
+            for (SectionPos pos : set) {
+                CompoundTag entry = new CompoundTag();
+                entry.putInt("X", pos.x());
+                entry.putInt("Y", pos.y());
+                entry.putInt("Z", pos.z());
+                list.add(entry);
+            }
+            compound.put(key, list);
         }
 
-        private void unclearRing(int outer, int inner) {
-            if (outer <= inner) return;
-            if (inner < 0) inner = -1;
-            forEachInRing(outer, inner, false);
+        private void readSectionSet(CompoundTag compound, String key, Set<SectionPos> set) {
+            set.clear();
+            ListTag list = compound.getList(key, Tag.TAG_COMPOUND);
+            for (int i = 0; i < list.size(); i++) {
+                CompoundTag entry = list.getCompound(i);
+                set.add(new SectionPos(
+                        entry.getInt("X"),
+                        entry.getInt("Y"),
+                        entry.getInt("Z")
+                ));
+            }
         }
 
-        private void clearRange(int halfLength) {
-            if (halfLength < 0) return;
-            forEachInRing(halfLength, -1, true);
-        }
+        // ========== 辅助方法 ==========
 
-        private void unclearRange(int halfLength) {
-            if (halfLength < 0) return;
-            forEachInRing(halfLength, -1, false);
-        }
-
-        private void forEachInRing(int outer, int inner, boolean clear) {
-            Level level = getWorld();
-            if (level == null || level.isClientSide()) return;
-            forEachInRingStatic(level, getPos(), outer, inner, clear);
-        }
-
+        /**
+         * 根据转速计算有效半径（区块数）。
+         */
         private int calculateHalfLength(float speed) {
-            if (speed == 0) return -1;
+            if (speed == 0) {
+                return -1;
+            }
             float absSpeed = Math.abs(speed);
-            if (absSpeed < 64) return -1;
+            if (absSpeed < 64) {
+                return -1;
+            }
 
             int maxHalfLength = LHConfig.SERVER.orbRadius.get();
             float clamped = Math.min(absSpeed, 256f);
