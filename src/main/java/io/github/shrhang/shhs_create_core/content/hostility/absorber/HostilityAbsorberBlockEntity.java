@@ -25,8 +25,10 @@ import static io.github.shrhang.shhs_create_core.content.util.hostility_absorber
  * <p>
  * 使用轴向边界（RangeBoundary）存储理想范围，并维护两个异常集合
  * （failedClear / failedUnclear）处理未能当场操作的区段。
- * 范围变化时通过环带增量更新，避免重建完整集合。
- * 异常集合采用封装迭代器平摊处理，每个 tick 处理集合大小的 1/40。
+ * 边界更新时直接执行 clear / unclear，失败的区段进入异常集合。
+ * 清除修复扫描只针对 failedClear 中的区段进行尝试，成功则移除。
+ * 恢复操作忽略 failedClear 中的区段（这些区段不属于该吸收器）。
+ * 边界收缩时，移出范围的 failedClear 区段会被清除。
  */
 public class HostilityAbsorberBlockEntity extends KineticBlockEntity {
 
@@ -44,16 +46,15 @@ public class HostilityAbsorberBlockEntity extends KineticBlockEntity {
 
     public class AbsorptionBehaviour extends BlockEntityBehaviour {
 
-        private static final int CLEAR_INTERVAL = 40;
-
         private RangeBoundary boundary;
-
+        // 清除异常集合：边界更新时清理失败的区段
         private final Set<SectionPos> failedClear = new LinkedHashSet<>();
+        // 恢复异常集合：边界缩减时恢复失败的区段
         private final Set<SectionPos> failedUnclear = new LinkedHashSet<>();
-
-        // 运行时游标迭代器，不序列化
-        private Iterator<SectionPos> failedClearIterator;
-        private Iterator<SectionPos> failedUnclearIterator;
+        // 清除扫描迭代器（运行时游标）
+        private Iterator<SectionPos> clearIterator;
+        // 恢复扫描迭代器（运行时游标）
+        private Iterator<SectionPos> unclearIterator;
 
         public AbsorptionBehaviour(SmartBlockEntity be) {
             super(be);
@@ -62,6 +63,22 @@ public class HostilityAbsorberBlockEntity extends KineticBlockEntity {
         @Override
         public BehaviourType<?> getType() {
             return ABSORPTION_BEHAVIOUR;
+        }
+
+        @Override
+        public void initialize() {
+            super.initialize();
+            if (getWorld() == null || getWorld().isClientSide()) {
+                return;
+            }
+            if (boundary == null) {
+                float speed = getSpeed();
+                int halfLength = calculateHalfLength(speed);
+                RangeBoundary target = HostilityAbsorberHelper.computeBoundary(getPos(), halfLength, getWorld());
+                if (target != null) {
+                    updateBoundary(getWorld(), null, target);
+                }
+            }
         }
 
         @Override
@@ -78,197 +95,212 @@ public class HostilityAbsorberBlockEntity extends KineticBlockEntity {
             RangeBoundary target = HostilityAbsorberHelper.computeBoundary(getPos(), currentHalfLength, level);
 
             if (target != null) {
-                if (boundary == null) {
-                    initializeBoundary(level, target);
-                } else if (!boundary.equals(target)) {
+                if (!target.equals(boundary)) {
                     updateBoundary(level, boundary, target);
                 }
-
-                if (level.getGameTime() % CLEAR_INTERVAL == 0) {
-                    refreshBoundary(level, boundary);
-                }
+                processClearRepair(level);
             } else {
                 if (boundary != null) {
                     releaseAll(level);
                 }
             }
 
-            processFailedClear(level);
-            processFailedUnclear(level);
+            processUnclearRepair(level);
+        }
+
+        // ==================== 迭代器管理 ====================
+
+        /**
+         * 重置清除修复迭代器。
+         */
+        private void resetClearIterator() {
+            clearIterator = null;
         }
 
         /**
-         * 重置两个异常集合的迭代器。
+         * 重置恢复修复迭代器。
+         */
+        private void resetUnclearIterator() {
+            unclearIterator = null;
+        }
+
+        /**
+         * 重置所有迭代器。
+         */
+        private void resetAllIterators() {
+            clearIterator = null;
+            unclearIterator = null;
+        }
+
+        /**
+         * 获取清除修复迭代器，若为空或无下一个则重新创建。
+         *
+         * @return 迭代器
+         */
+        private Iterator<SectionPos> getClearIterator() {
+            if (clearIterator == null || !clearIterator.hasNext()) {
+                clearIterator = failedClear.iterator();
+            }
+            return clearIterator;
+        }
+
+        /**
+         * 获取恢复修复迭代器，若为空或无下一个则重新创建。
+         *
+         * @return 迭代器
+         */
+        private Iterator<SectionPos> getUnclearIterator() {
+            if (unclearIterator == null || !unclearIterator.hasNext()) {
+                unclearIterator = failedUnclear.iterator();
+            }
+            return unclearIterator;
+        }
+
+        // ==================== 边界管理 ====================
+
+        /**
+         * 更新边界。
          * <p>
-         * 当集合内容发生结构性变化时调用，确保迭代器不会处于失效状态。
-         */
-        private void resetIterators() {
-            failedClearIterator = null;
-            failedUnclearIterator = null;
-        }
-
-        /**
-         * 获取 failedClear 集合的迭代器（懒初始化）。
-         */
-        private Iterator<SectionPos> getFailedClearIterator() {
-            if (failedClearIterator == null || !failedClearIterator.hasNext()) {
-                failedClearIterator = failedClear.iterator();
-            }
-            return failedClearIterator;
-        }
-
-        /**
-         * 获取 failedUnclear 集合的迭代器（懒初始化）。
-         */
-        private Iterator<SectionPos> getFailedUnclearIterator() {
-            if (failedUnclearIterator == null || !failedUnclearIterator.hasNext()) {
-                failedUnclearIterator = failedUnclear.iterator();
-            }
-            return failedUnclearIterator;
-        }
-
-        /**
-         * 首次初始化边界，清理整个范围，并将失败的区段加入 failedClear。
-         */
-        private void initializeBoundary(Level level, RangeBoundary target) {
-            boundary = target;
-            HostilityAbsorberHelper.forEachInRange(target, level, (l, pos) -> {
-                Set<SectionPos> result = HostilityAbsorberHelper.clearSections(l, Set.of(pos));
-                if (result.isEmpty()) {
-                    failedClear.add(pos);
-                }
-            });
-            resetIterators();
-        }
-
-        /**
-         * 边界变化时，分别处理新增环带和缩减环带。
+         * - 若 oldBound 为 null（即从 0 边界扩增）：对整个 newBound 执行 clear，失败的加入 failedClear。
+         * - 若 oldBound 非 null：扩增环带 clear，缩减环带 unclear。
          */
         private void updateBoundary(Level level, RangeBoundary oldBound, RangeBoundary newBound) {
+            if (oldBound == null) {
+                // 从 0 边界扩增到 newBound
+                HostilityAbsorberHelper.forEachInRange(newBound, level, (l, pos) -> {
+                    Set<SectionPos> result = HostilityAbsorberHelper.clearSections(l, Set.of(pos));
+                    if (result.isEmpty()) {
+                        failedClear.add(pos);
+                        resetClearIterator();
+                    }
+                });
+                boundary = newBound;
+                resetAllIterators();
+                return;
+            }
+            // 扩增环带：直接 clear，失败的加入 failedClear
             HostilityAbsorberHelper.forEachAddedRing(oldBound, newBound, level, (l, pos) -> {
                 Set<SectionPos> result = HostilityAbsorberHelper.clearSections(l, Set.of(pos));
                 if (result.isEmpty()) {
                     failedClear.add(pos);
+                    resetClearIterator();
                 }
             });
-
+            // 缩减环带：移出作用范围的区段
             HostilityAbsorberHelper.forEachRemovedRing(oldBound, newBound, level, (l, pos) -> {
+                if (failedClear.contains(pos)) {
+                    failedClear.remove(pos);
+                    resetClearIterator();
+                    return;
+                }
                 Set<SectionPos> result = HostilityAbsorberHelper.unclearSections(l, Set.of(pos));
                 if (result.isEmpty()) {
                     failedUnclear.add(pos);
+                    resetUnclearIterator();
                 }
             });
-
             boundary = newBound;
             failedUnclear.removeIf(pos -> boundary.contains(pos));
-            resetIterators();
+            resetAllIterators();
         }
 
         /**
-         * 释放全部持有：对整个旧边界执行 unclear，并清空异常集合。
+         * 停转时释放全部持有。
+         * <p>
+         * - failedClear：清空（这些区段从未被此吸收器成功持有，停转后无需追踪）
+         * - failedUnclear：保留（这些区段需要继续尝试恢复）
          */
         private void releaseAll(Level level) {
             if (boundary != null) {
-                HostilityAbsorberHelper.forEachInRange(boundary, level, (l, pos) ->
-                        HostilityAbsorberHelper.unclearSections(l, Set.of(pos))
-                );
+                HostilityAbsorberHelper.forEachInRange(boundary, level, (l, pos) -> {
+                    if (failedClear.contains(pos)) {
+                        return;
+                    }
+                    Set<SectionPos> result = HostilityAbsorberHelper.unclearSections(l, Set.of(pos));
+                    if (result.isEmpty()) {
+                        failedUnclear.add(pos);
+                        resetUnclearIterator();
+                    }
+                });
             }
             boundary = null;
             failedClear.clear();
-            failedUnclear.clear();
-            resetIterators();
+            resetClearIterator();
         }
 
-        /**
-         * 周期刷新：对边界内所有区段重新执行 clear。
-         * <p>
-         * 失败的区段加入 failedClear，由平摊机制处理。
-         */
-        private void refreshBoundary(Level level, RangeBoundary currentBound) {
-            HostilityAbsorberHelper.forEachInRange(currentBound, level, (l, pos) -> {
-                Set<SectionPos> result = HostilityAbsorberHelper.clearSections(l, Set.of(pos));
-                if (result.isEmpty()) {
-                    failedClear.add(pos);
-                }
-            });
-            // 有新元素加入，重置迭代器
-            resetIterators();
-        }
+        // ==================== 清除修复扫描 ====================
 
         /**
-         * 平摊处理 failedClear 集合。
+         * 清除修复扫描：只针对 failedClear 集合中的区段进行清除尝试。
          * <p>
-         * 每 tick 处理集合大小的 1/40（至少 1 个），使用封装的迭代器游标。
-         * 成功的区段从集合中移除；失败的保留，迭代器自动移动到下一个。
+         * 每次处理集合大小的 1/40（至少 1 个），成功清除的区段从集合中移除。
          */
-        private void processFailedClear(Level level) {
+        private void processClearRepair(Level level) {
             if (failedClear.isEmpty()) {
-                failedClearIterator = null;
+                clearIterator = null;
                 return;
             }
 
             int size = failedClear.size();
-            int toProcess = Math.max(1, size / CLEAR_INTERVAL);
-            Iterator<SectionPos> iterator = getFailedClearIterator();
+            int toProcess = Math.max(1, size / 40);
+            Iterator<SectionPos> iterator = getClearIterator();
             int processed = 0;
 
             while (processed < toProcess && iterator.hasNext()) {
                 SectionPos pos = iterator.next();
-                boolean shouldRemove;
-
-                if (boundary != null && boundary.contains(pos)) {
-                    Set<SectionPos> result = HostilityAbsorberHelper.clearSections(level, Set.of(pos));
-                    shouldRemove = !result.isEmpty();
-                } else {
-                    shouldRemove = true;
-                }
-
-                if (shouldRemove) {
+                Set<SectionPos> result = HostilityAbsorberHelper.clearSections(level, Set.of(pos));
+                if (!result.isEmpty()) {
                     iterator.remove();
                 }
                 processed++;
             }
 
-            // 如果遍历完成，标记迭代器失效，下次重新初始化
             if (!iterator.hasNext()) {
-                failedClearIterator = null;
+                clearIterator = null;
             }
         }
 
+        // ==================== 恢复修复扫描 ====================
+
         /**
-         * 平摊处理 failedUnclear 集合。
+         * 恢复修复扫描：平摊处理 failedUnclear 集合。
+         * <p>
+         * 每次处理集合大小的 1/40（至少 1 个）。
          */
-        private void processFailedUnclear(Level level) {
+        private void processUnclearRepair(Level level) {
             if (failedUnclear.isEmpty()) {
-                failedUnclearIterator = null;
+                unclearIterator = null;
+                return;
+            }
+
+            failedUnclear.removeIf(failedClear::contains);
+
+            if (failedUnclear.isEmpty()) {
+                unclearIterator = null;
                 return;
             }
 
             int size = failedUnclear.size();
-            int toProcess = Math.max(1, size / CLEAR_INTERVAL);
-            Iterator<SectionPos> iterator = getFailedUnclearIterator();
+            int toProcess = Math.max(1, size / 40);
+            Iterator<SectionPos> iterator = getUnclearIterator();
             int processed = 0;
 
             while (processed < toProcess && iterator.hasNext()) {
                 SectionPos pos = iterator.next();
-                boolean shouldRemove;
 
                 if (boundary != null && boundary.contains(pos)) {
-                    // 重新落入边界，不再需要恢复
-                    shouldRemove = true;
+                    iterator.remove();
                 } else {
                     Set<SectionPos> result = HostilityAbsorberHelper.unclearSections(level, Set.of(pos));
-                    shouldRemove = !result.isEmpty();
-                }
-
-                if (shouldRemove) {
-                    iterator.remove();
+                    if (!result.isEmpty()) {
+                        iterator.remove();
+                    }
                 }
                 processed++;
             }
 
             if (!iterator.hasNext()) {
-                failedUnclearIterator = null;
+                unclearIterator = null;
             }
         }
 
@@ -320,10 +352,12 @@ public class HostilityAbsorberBlockEntity extends KineticBlockEntity {
             readSectionSet(compound, "FailedClear", failedClear);
             readSectionSet(compound, "FailedUnclear", failedUnclear);
 
-            // 加载后重置迭代器
-            resetIterators();
+            resetAllIterators();
         }
 
+        /**
+         * 将区段集合写入 NBT。
+         */
         private void writeSectionSet(CompoundTag compound, String key, Set<SectionPos> set) {
             ListTag list = new ListTag();
             for (SectionPos pos : set) {
@@ -336,6 +370,9 @@ public class HostilityAbsorberBlockEntity extends KineticBlockEntity {
             compound.put(key, list);
         }
 
+        /**
+         * 从 NBT 读取区段集合。
+         */
         private void readSectionSet(CompoundTag compound, String key, Set<SectionPos> set) {
             set.clear();
             ListTag list = compound.getList(key, Tag.TAG_COMPOUND);
@@ -351,6 +388,12 @@ public class HostilityAbsorberBlockEntity extends KineticBlockEntity {
 
         // ========== 辅助方法 ==========
 
+        /**
+         * 根据转速计算半边长。
+         *
+         * @param speed 转速
+         * @return 半边长，若无效则返回 -1
+         */
         private int calculateHalfLength(float speed) {
             if (speed == 0) {
                 return -1;
@@ -367,14 +410,29 @@ public class HostilityAbsorberBlockEntity extends KineticBlockEntity {
             return Math.min(halfLength, maxHalfLength);
         }
 
+        /**
+         * 获取方块实体的转速。
+         *
+         * @return 转速
+         */
         private float getSpeed() {
             return HostilityAbsorberBlockEntity.this.getSpeed();
         }
 
+        /**
+         * 获取世界。
+         *
+         * @return 世界实例
+         */
         public Level getWorld() {
             return HostilityAbsorberBlockEntity.this.level;
         }
 
+        /**
+         * 获取方块位置。
+         *
+         * @return 方块位置
+         */
         public BlockPos getPos() {
             return HostilityAbsorberBlockEntity.this.worldPosition;
         }
