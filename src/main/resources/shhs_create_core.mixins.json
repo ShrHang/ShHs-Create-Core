@@ -6,12 +6,14 @@
   "compatibilityLevel": "JAVA_21",
   "plugin": "io.github.shrhang.shhs_create_core.mixin.MixinPlugin",
   "mixins": [
+    "create.content.fluids.tank.storage.creative.CreativeFluidTankMountedStorageMixin",
     "curios.common.data.CuriosEntityManagerMixin",
-    "irons_spellbooks.util.TooltipsUtilsMixin",
     "irons_spellbooks.capabilities.magic.PlayerRecastsMixin",
-    "create.content.fluids.tank.storage.creative.CreativeFluidTankMountedStorageMixin"
+    "irons_spellbooks.util.TooltipsUtilsMixin"
   ],
   "client": [
+    "irons_spellbooks.gui.overlays.InscriptionTableScreenMixin",
+    "irons_spellbooks.gui.overlays.SpellWheelOverlayMixin"
   ],
   "injectors": {
     "defaultRequire": 1

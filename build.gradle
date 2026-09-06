@@ -130,10 +130,8 @@ repositories {
             includeGroup "dev.latvian.apps"
         }
     } // KubeJS
-
     maven { url "https://maven.dragons.plus/releases" } // DragonsPlusMinecraft Maven
     maven { url "https://maven.fallenbreath.me/releases" } // Conditional Mixin
-
 }
 
 dependencies {
@@ -149,7 +147,9 @@ dependencies {
     implementation("plus.dragons.createdragonsplus:create-dragons-plus-${minecraft_version}:${create_dragons_plus_version}")
     implementation("plus.dragons.createenchantmentindustry:create-enchantment-industry-${minecraft_version}:${create_enchantment_industry_version}")
 
-    implementation "maven.modrinth:create-wizardry:YoUVUmtF"
+    implementation "maven.modrinth:create-diesel-generators:${minecraft_version}-${create_diesel_generators_version}"
+
+    implementation "maven.modrinth:create-wizardry:${minecraft_version}-${create_wizardry_version}"
 
     implementation("mezz.jei:jei-$minecraft_version-neoforge:$jei_version") // JEI
     runtimeOnly "vazkii.patchouli:Patchouli:$minecraft_version-$patchouli_version-NEOFORGE-SNAPSHOT" // Patchouli

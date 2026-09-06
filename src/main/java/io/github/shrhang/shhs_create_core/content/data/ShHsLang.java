@@ -67,6 +67,7 @@ public class ShHsLang {
 
     public static void init() {
         REGISTRATE.addRawLang(textKey("no_enough_spell_tolerance"), "At least %s Spell Tolerance is required to cast this spell.");
+        REGISTRATE.addRawLang(textKey("need_tolerance"), "Need Spell Tolerance: %s");
         REGISTRATE.addRawLang(textKey("empty_trait_no_target"), "No valid target in sight.");
         REGISTRATE.addRawLang(textKey("empty_trait_no_traits"), "No traits can be extracted from this target.");
 

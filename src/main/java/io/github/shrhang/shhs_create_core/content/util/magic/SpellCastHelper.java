@@ -1,4 +1,4 @@
-package io.github.shrhang.shhs_create_core.content.util;
+package io.github.shrhang.shhs_create_core.content.util.magic;
 
 import io.github.shrhang.shhs_create_core.api.events.SpellOnEntityCastEvent;
 import io.github.shrhang.shhs_create_core.api.events.SpellPreEntityCastEvent;

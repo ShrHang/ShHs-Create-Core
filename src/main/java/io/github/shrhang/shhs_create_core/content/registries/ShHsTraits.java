@@ -2,7 +2,7 @@ package io.github.shrhang.shhs_create_core.content.registries;
 
 import io.github.shrhang.shhs_create_core.ShHsConfig;
 import io.github.shrhang.shhs_create_core.api.registrate.ShHsTraitBuilder;
-import io.github.shrhang.shhs_create_core.content.traits.WizardTrait;
+import io.github.shrhang.shhs_create_core.content.hostility.traits.WizardTrait;
 import dev.xkmc.curseofpandora.init.registrate.CoPAttrs;
 import dev.xkmc.l2hostility.content.config.TraitConfig;
 import dev.xkmc.l2hostility.content.traits.base.AttributeTrait;
@@ -20,12 +20,12 @@ public class ShHsTraits {
                         (() -> 0xC9974C),
                         new AttributeTrait.AttributeEntry("augmented_reality_index", CoPAttrs.REALITY,
                                 ShHsConfig.SERVER.realityTraitScale::get, AttributeModifier.Operation.ADD_VALUE)
-                ), new TraitConfig(1000, 1, 7, 50))
+                ), new TraitConfig(1000, 1, 10, 50))
                 .lang("Augmented Reality").register();
 
         WIZARD = REGISTRATE.trait("wizard", ()-> new WizardTrait(
                         (() -> 0x5e5d82)
-                ), new TraitConfig(50, 1, 10, 50))
+                ), new TraitConfig(100, 1, 10, 200))
                 .addWhitelist(entry -> entry.add(
                         EntityType.ENDERMAN, EntityType.SPIDER, EntityType.CAVE_SPIDER,
                         EntityType.ZOMBIE, EntityType.HUSK, EntityType.DROWNED,

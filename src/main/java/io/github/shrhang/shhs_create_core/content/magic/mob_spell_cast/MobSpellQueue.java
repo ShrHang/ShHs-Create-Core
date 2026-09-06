@@ -1,6 +1,6 @@
 package io.github.shrhang.shhs_create_core.content.magic.mob_spell_cast;
 
-import io.github.shrhang.shhs_create_core.content.util.SpellCastHelper.SpellSource;
+import io.github.shrhang.shhs_create_core.content.util.magic.SpellCastHelper.SpellSource;
 import io.redspace.ironsspellbooks.api.magic.MagicData;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -10,7 +10,7 @@ import net.minecraft.world.item.ItemStack;
 import java.util.List;
 import java.util.WeakHashMap;
 
-import static io.github.shrhang.shhs_create_core.content.util.SpellCastHelper.attemptInitiateEntityCast;
+import static io.github.shrhang.shhs_create_core.content.util.magic.SpellCastHelper.attemptInitiateEntityCast;
 
 /** 管理生物的连招队列调度，仅在非施法状态下推进下一发法术。 */
 public class MobSpellQueue {

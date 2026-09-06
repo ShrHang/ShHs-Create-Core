@@ -1,5 +1,6 @@
 package io.github.shrhang.shhs_create_core.content.event;
 
+import dev.xkmc.l2hostility.init.registrate.LHItems;
 import io.github.shrhang.shhs_create_core.ShHsCreateCore;
 import dev.xkmc.l2damagetracker.contents.attack.AttackEventHandler;
 import dev.xkmc.l2damagetracker.contents.attack.AttackListener;
@@ -11,9 +12,10 @@ import dev.xkmc.l2hostility.init.data.LHTagGen;
 import dev.xkmc.l2hostility.init.registrate.LHMiscs;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
+import top.theillusivec4.curios.api.CuriosApi;
 
-import static io.github.shrhang.shhs_create_core.content.util.RealityIndexHelper.getDamageReduce;
-import static io.github.shrhang.shhs_create_core.content.util.RealityIndexHelper.getRealityIndex;
+import static io.github.shrhang.shhs_create_core.content.util.hostility.RealityIndexHelper.getDamageReduce;
+import static io.github.shrhang.shhs_create_core.content.util.hostility.RealityIndexHelper.getRealityIndex;
 
 public class ShHsAttackListener implements AttackListener {
     private static final ResourceLocation REALITY_SCALING = ShHsCreateCore.rl("reality_scaling");
@@ -25,15 +27,19 @@ public class ShHsAttackListener implements AttackListener {
 
     private static void applyRealityScaling(DamageData.Defence data) {
         var source = data.getSource();
-        LivingEntity target = data.getTarget();
         if (source.is(L2DamageTypes.NO_SCALE)) return;
+
+        var target = data.getTarget();
+        if (hasCurseOfPride(target)) return;
 
         var attacker = data.getAttacker();
         if (attacker == null || attacker == target) return;
 
-        var attOpt = LHMiscs.MOB.type().getExisting(attacker);
         double reduce = getDamageReduce(getRealityIndex(target), getRealityIndex(attacker));
-        if (attOpt.isPresent() && !attacker.getType().is(LHTagGen.NO_SCALING) && reduce != 1) {
+        if (reduce == 1) return;
+
+        var attOpt = LHMiscs.MOB.type().getExisting(attacker);
+        if (attOpt.isPresent() && !attacker.getType().is(LHTagGen.NO_SCALING)) {
             var cap = attOpt.get();
             int lv = cap.getLevel();
             double factor;
@@ -54,6 +60,12 @@ public class ShHsAttackListener implements AttackListener {
             float compensation = Math.round((targetMultiplier / originalMultiplier) * 100.0f) / 100.0f;
             data.addDealtModifier(DamageModifier.multTotal(compensation, REALITY_SCALING));
         }
+    }
+
+    private static boolean hasCurseOfPride(LivingEntity target) {
+        return CuriosApi.getCuriosInventory(target)
+                .map(handler -> handler.isEquipped(LHItems.CURSE_PRIDE.get()))
+                .orElse(false);
     }
 
     public static void init() {

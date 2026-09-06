@@ -1,4 +1,4 @@
-package io.github.shrhang.shhs_create_core.content.util;
+package io.github.shrhang.shhs_create_core.content.util.magic;
 
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.CastSource;
@@ -12,8 +12,15 @@ import static dev.xkmc.curseofpandora.init.registrate.CoPAttrs.SPELL;
 
 public class SpellToleranceHelper {
 
+    public static double getManaCostReduction(double overallTolerance) {
+        return Math.clamp(1.2 - Math.log(overallTolerance + 1) / Math.log(21), 0, 1);
+    }
+
     /**
-     * 计算施法需要的魔力耐性
+     * 计算施法需要的魔力耐性，至少为 1。
+     * 计算公式为：
+     * 需求魔力耐性 = 相对等级 + (稀有度系数 * 稀有度值)
+     * 若施法来源消耗魔力，则再减去消耗魔力系数。
      */
     public static double getRequiredTolerance(int spellLevel, AbstractSpell spell, CastSource source) {
         SpellRarity rarity = spell.getRarity(spellLevel);
