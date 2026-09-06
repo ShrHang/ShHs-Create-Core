@@ -1,17 +1,26 @@
 package io.github.shrhang.shhs_create_core.content.registries;
 
+import com.simibubi.create.AllBlocks;
 import com.simibubi.create.foundation.data.AssetLookup;
 import com.simibubi.create.foundation.data.BlockStateGen;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.simibubi.create.foundation.data.SharedProperties;
+import com.tterrag.registrate.providers.RegistrateRecipeProvider;
 import com.tterrag.registrate.util.entry.BlockEntry;
+import io.github.shrhang.shhs_create_core.ShHsCreateCore;
 import io.github.shrhang.shhs_create_core.content.fluid.sprayer.SprayerBlock;
 import io.github.shrhang.shhs_create_core.content.fluid.sprayer.SprayerModel;
 import io.github.shrhang.shhs_create_core.content.fluid.sprayer.SprayerMovementBehaviour;
 import io.github.shrhang.shhs_create_core.content.hostility.absorber.HostilityAbsorberBlock;
 import io.github.shrhang.shhs_create_core.content.hostility.absorber.HostilityAbsorberMovementBehaviour;
 import io.github.shrhang.shhs_create_core.content.logistics.brass_ender_chest.BrassEnderChestBlock;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.data.recipes.RecipeCategory;
+import net.minecraft.data.recipes.ShapedRecipeBuilder;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.MapColor;
 
 import static com.simibubi.create.api.behaviour.movement.MovementBehaviour.movementBehaviour;
@@ -37,6 +46,15 @@ public class ShHsBlocks {
                     .tooltipSummary("An Ender Chest that can interact with _funnels_, _chutes_, _packagers_, and other _logistics components_. It can only access the Ender Chest _Inventory_ of its _owner_. If the owner is _offline_, the Brass Ender Chest _cannot be interacted with_.")
                     .tooltipBehaviour(1, "When R-Clicked while Sneaking", "Toggle the _lock state_.")
                     .tooltipBehaviour(2, "When interacting with a clipboard", "_Copy_/_Paste_ the _owner_ and _lock state_ of the Brass Ender Chest.")
+                    .recipe((ctx, prov) -> ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ctx.get())
+                            .define('A', TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", "plates/brass")))
+                            .define('B', TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", "plates/obsidian")))
+                            .define('C', Items.ENDER_EYE)
+                            .pattern("ABA")
+                            .pattern("BCB")
+                            .pattern("ABA")
+                            .unlockedBy("has_ender_eye", RegistrateRecipeProvider.has(Items.ENDER_EYE))
+                            .save(prov, ShHsCreateCore.rl("crafting/brass_ender_chest")))
             )
             .register();
 
@@ -46,6 +64,12 @@ public class ShHsBlocks {
             .initialProperties(SharedProperties::copperMetal)
             .item(item -> item
                     .model(AssetLookup::customItemModel)
+                    .recipe((ctx, prov) -> ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ctx.get())
+                            .define('A', AllBlocks.MECHANICAL_PUMP)
+                            .define('B', AllBlocks.NOZZLE)
+                            .pattern("AB")
+                            .unlockedBy("has_mechanical_pump", RegistrateRecipeProvider.has(AllBlocks.MECHANICAL_PUMP.asItem()))
+                            .save(prov, ShHsCreateCore.rl("crafting/sprayer")))
             )
             .transform(pickaxeOnly())
             .blockstate((ctx, prov) -> BlockStateGen.directionalAxisBlock(ctx, prov,
