@@ -268,8 +268,10 @@ public final class HostilityAbsorberHelper {
         return applyToSections(level, sections, false);
     }
 
+
     /**
      * 对区段集合执行批量 apply 操作的核心方法。
+     * 对于 unclear 操作：若区段已是 INIT，视为成功；若为 CLEARED，调用 setUnclear 并返回结果。
      */
     private static Set<SectionPos> applyToSections(Level level, Collection<SectionPos> sections, boolean clear) {
         Set<SectionPos> succeeded = new HashSet<>();
@@ -300,7 +302,13 @@ public final class HostilityAbsorberHelper {
                 if (clear) {
                     success = section.setClear(chunkCap, pos);
                 } else {
-                    success = section.setUnclear(chunkCap, pos);
+                    // 若已是 INIT（即 !isCleared()），无需操作，视为成功；
+                    // 若为 CLEARED，调用 setUnclear 使其变为 INIT。
+                    if (section.isCleared()) {
+                        success = section.setUnclear(chunkCap, pos);
+                    } else {
+                        success = true; // 已是 INIT，直接成功
+                    }
                 }
                 if (success) {
                     succeeded.add(sp);
