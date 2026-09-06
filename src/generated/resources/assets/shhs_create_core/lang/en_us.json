@@ -54,6 +54,7 @@
   "shhs_create_core.ponder.sprayer.range.text_3": "When the angle is zero, sprayers will stop operating.",
   "text.shhs_create_core.empty_trait_no_target": "No valid target in sight.",
   "text.shhs_create_core.empty_trait_no_traits": "No traits can be extracted from this target.",
+  "text.shhs_create_core.need_tolerance": "Need Spell Tolerance: %s",
   "text.shhs_create_core.no_enough_spell_tolerance": "At least %s Spell Tolerance is required to cast this spell.",
   "text.shhs_create_core.portable_stock_ticker.no_data": "Not Linked to a Logistics Network",
   "text.shhs_create_core.portable_stock_ticker.no_network": "Linked Logistics Network no exists.",

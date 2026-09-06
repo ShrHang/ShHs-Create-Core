@@ -1,6 +1,7 @@
 package io.github.shrhang.shhs_create_core.content.magic.mob_spell_cast;
 
 import io.github.shrhang.shhs_create_core.ShHsConfig;
+import io.github.shrhang.shhs_create_core.content.util.magic.SpellCastHelper;
 import io.redspace.ironsspellbooks.api.magic.MagicData;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
@@ -16,7 +17,7 @@ import net.minecraft.world.level.Level;
 
 import java.util.Objects;
 
-import static io.github.shrhang.shhs_create_core.content.util.SpellCastHelper.entityCastSpell;
+import static io.github.shrhang.shhs_create_core.content.util.magic.SpellCastHelper.entityCastSpell;
 import static io.redspace.ironsspellbooks.api.registry.AttributeRegistry.*;
 
 /** 管理生物当前施法的状态机推进，包括冷却计时、法术读条、持续施法触发与法力恢复。 */
@@ -83,7 +84,7 @@ public class MobMagicManager {
 
     /**
      * 消耗生物正在使用的卷轴。castingItemStack 会在
-     * <p>{@link io.github.shrhang.shhs_create_core.content.util.SpellCastHelper#attemptInitiateEntityCast(ItemStack, LivingEntity, AbstractSpell, int, CastSource, boolean, String)} </p>
+     * <p>{@link SpellCastHelper#attemptInitiateEntityCast(ItemStack, LivingEntity, AbstractSpell, int, CastSource, boolean, String)} </p>
      * 中被设置为施法物品。
      */
     public static void removeMobsScroll(LivingEntity entity) {

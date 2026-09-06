@@ -24,7 +24,7 @@ import java.util.List;
 import static io.github.shrhang.shhs_create_core.ShHsConfig.SERVER;
 import static io.github.shrhang.shhs_create_core.ShHsCreateCore.rl;
 import static io.github.shrhang.shhs_create_core.content.fluid.InkType.getFluid;
-import static io.github.shrhang.shhs_create_core.content.util.SpellToleranceHelper.getRelativeLevel;
+import static io.github.shrhang.shhs_create_core.content.util.magic.SpellToleranceHelper.getRelativeLevel;
 import static io.redspace.ironsspellbooks.registries.ItemRegistry.SCROLL;
 
 public class ScollPrintingRecipeJEI implements PrintingRecipeJEI {

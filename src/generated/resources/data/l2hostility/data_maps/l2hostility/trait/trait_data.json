@@ -2,14 +2,14 @@
   "values": {
     "shhs_create_core:augmented_reality": {
       "cost": 1000,
-      "max_rank": 7,
+      "max_rank": 10,
       "min_level": 50,
       "weight": 1
     },
     "shhs_create_core:wizard": {
-      "cost": 50,
+      "cost": 100,
       "max_rank": 10,
-      "min_level": 50,
+      "min_level": 200,
       "weight": 1
     }
   }

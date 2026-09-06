@@ -25,7 +25,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import static io.github.shrhang.shhs_create_core.ShHsConfig.SERVER;
-import static io.github.shrhang.shhs_create_core.content.util.SpellToleranceHelper.getRelativeLevel;
+import static io.github.shrhang.shhs_create_core.content.util.magic.SpellToleranceHelper.getRelativeLevel;
 import static io.redspace.ironsspellbooks.registries.ComponentRegistry.SPELL_CONTAINER;
 
 public record ScollPrintingBehaviour(SmartFluidTankBehaviour tank, ItemStack template, SpellRarity rarity, int cost) implements PrintingBehaviour {

@@ -1,10 +1,10 @@
-package io.github.shrhang.shhs_create_core.content.traits;
+package io.github.shrhang.shhs_create_core.content.hostility.traits;
 
 import io.github.shrhang.shhs_create_core.content.magic.mob_spell_cast.MobMagicManager;
 import io.github.shrhang.shhs_create_core.content.magic.mob_spell_cast.MobSpellQueue;
 import io.github.shrhang.shhs_create_core.content.magic.mob_spell_cast.MobSpellTactics;
 import io.github.shrhang.shhs_create_core.content.magic.mob_spell_cast.MobSummonManager;
-import io.github.shrhang.shhs_create_core.content.util.SpellCastHelper;
+import io.github.shrhang.shhs_create_core.content.util.magic.SpellCastHelper;
 import dev.xkmc.l2hostility.content.logic.TraitManager;
 import dev.xkmc.l2hostility.content.traits.legendary.LegendaryTrait;
 import dev.xkmc.l2hostility.init.registrate.LHEnchantments;

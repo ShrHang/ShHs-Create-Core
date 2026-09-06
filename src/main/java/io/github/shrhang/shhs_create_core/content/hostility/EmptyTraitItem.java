@@ -19,7 +19,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 
 import static io.github.shrhang.shhs_create_core.content.data.ShHsLang.textComponent;
-import static io.github.shrhang.shhs_create_core.content.util.TraitHelper.WeightedTrait.selectTraitByWeight;
+import static io.github.shrhang.shhs_create_core.content.util.hostility.TraitHelper.WeightedTrait.selectTraitByWeight;
 
 public class EmptyTraitItem extends Item {
     private static final int SHORT_CHARGE_TICKS = 40;

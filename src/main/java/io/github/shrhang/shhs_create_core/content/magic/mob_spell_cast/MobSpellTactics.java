@@ -1,6 +1,6 @@
 package io.github.shrhang.shhs_create_core.content.magic.mob_spell_cast;
 
-import io.github.shrhang.shhs_create_core.content.util.SpellCastHelper;
+import io.github.shrhang.shhs_create_core.content.util.magic.SpellCastHelper;
 import io.redspace.ironsspellbooks.api.magic.MagicData;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.CastType;
@@ -15,8 +15,8 @@ import net.minecraft.world.item.ItemStack;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static io.github.shrhang.shhs_create_core.content.util.SpellCastHelper.SpellSource;
-import static io.github.shrhang.shhs_create_core.content.util.SpellCastHelper.attemptInitiateEntityCast;
+import static io.github.shrhang.shhs_create_core.content.util.magic.SpellCastHelper.SpellSource;
+import static io.github.shrhang.shhs_create_core.content.util.magic.SpellCastHelper.attemptInitiateEntityCast;
 import static io.redspace.ironsspellbooks.api.registry.AttributeRegistry.MAX_MANA;
 
 /**

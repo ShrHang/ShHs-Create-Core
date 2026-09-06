@@ -1,4 +1,4 @@
-package io.github.shrhang.shhs_create_core.content.util;
+package io.github.shrhang.shhs_create_core.content.util.hostility;
 
 import dev.xkmc.l2hostility.content.capability.mob.MobTraitCap;
 import dev.xkmc.l2hostility.content.traits.base.MobTrait;
