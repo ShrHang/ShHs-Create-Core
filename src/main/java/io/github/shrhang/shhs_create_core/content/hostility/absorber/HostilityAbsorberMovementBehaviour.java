@@ -2,64 +2,132 @@ package io.github.shrhang.shhs_create_core.content.hostility.absorber;
 
 import com.simibubi.create.api.behaviour.movement.MovementBehaviour;
 import com.simibubi.create.content.contraptions.behaviour.MovementContext;
-import net.minecraft.core.BlockPos;
+import io.github.shrhang.shhs_create_core.content.util.hostility.HostilityAbsorberHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import static io.github.shrhang.shhs_create_core.content.util.hostility.HostilityAbsorberHelper.RangeBoundary;
+import static io.github.shrhang.shhs_create_core.content.util.hostility.HostilityAbsorberHelper.SectionPos;
 
 /**
  * 恶意吸收器在动态结构中的移动行为。
  * <p>
- * 当方块被装配到移动结构时，立即恢复其当前作用范围内的所有区块，
- * 并阻止移动过程中的区块清除操作，避免将清除状态“携带”到新位置。
+ * 移动开始时，直接修改方块实体 NBT 数据：
+ * - 清空 failedClear（移除键）。
+ * - 遍历边界内所有区段，尝试释放（unclear），
+ *   成功则从 failedUnclear 中移除，失败则加入 failedUnclear。
+ * - 移除所有边界键，使实体加载后重新初始化。
+ * 完全避免临时键或特殊标记，实体加载时自然处于重启状态。
  */
 public class HostilityAbsorberMovementBehaviour implements MovementBehaviour {
 
-    /**
-     * 在方块开始移动时调用。
-     * <p>
-     * 尝试从世界获取方块实体，若存在则调用 {@link HostilityAbsorberBlockEntity#onStartMoving()}；
-     * 否则从 {@link MovementContext#blockEntityData} 读取 "LastHalfLength" 并恢复区块。
-     * 世界坐标使用 {@code contraption.anchor + localPos}。
-     *
-     * @param context 移动上下文
-     */
     @Override
     public void startMoving(MovementContext context) {
         Level level = context.world;
-        if (level.isClientSide()) return;
-
-        BlockPos worldPos = context.contraption.anchor.offset(context.localPos);
-
-        BlockEntity be = level.getBlockEntity(worldPos);
-        if (be instanceof HostilityAbsorberBlockEntity absorber) {
-            absorber.onStartMoving();
+        if (level.isClientSide()) {
             return;
         }
 
         CompoundTag data = context.blockEntityData;
-        if (data == null) return;
-        int halfLength = data.getInt("LastHalfLength");
-        if (halfLength >= 0) {
-            HostilityAbsorberBlockEntity.unclearRangeStatic(level, worldPos, halfLength);
+        if (data == null) {
+            return;
         }
-    }
-    /**
-     * 在方块停止移动时调用。
-     * <p>
-     * 清除移动标志，恢复正常的区块清除逻辑。
-     *
-     * @param context 移动上下文
-     */
-    @Override
-    public void stopMoving(MovementContext context) {
-        Level level = context.world;
-        if (level.isClientSide()) return;
 
-        BlockPos worldPos = context.contraption.anchor.offset(context.localPos);
-        BlockEntity be = level.getBlockEntity(worldPos);
-        if (be instanceof HostilityAbsorberBlockEntity absorber) {
-            absorber.onStopMoving();
+        RangeBoundary boundary = readBoundaryFromNbt(data);
+        if (boundary == null) {
+            return;
         }
+
+        // 读取原有的 failedClear（用于跳过从未持有的区段），然后移除该键（清空）
+        Set<SectionPos> failedClear = readSectionSet(data, "FailedClear");
+        data.remove("FailedClear");
+
+        // 读取现有的 failedUnclear（保留原有失败区段，将在此过程中更新）
+        Set<SectionPos> failedUnclear = readSectionSet(data, "FailedUnclear");
+
+        // 遍历边界内所有区段，尝试释放
+        HostilityAbsorberHelper.forEachInRange(boundary, level, (l, pos) -> {
+            if (failedClear.contains(pos)) {
+                return; // 跳过从未持有的区段
+            }
+            // 尝试释放该区段
+            Set<SectionPos> result = HostilityAbsorberHelper.unclearSections(l, Set.of(pos));
+            if (!result.isEmpty()) {
+                // 释放失败：确保该区段存在于 failedUnclear 中
+                failedUnclear.add(pos);
+            } else {
+                // 释放成功：从 failedUnclear 中移除（如果存在）
+                failedUnclear.remove(pos);
+            }
+        });
+
+        // 将更新后的 failedUnclear 写回 NBT
+        if (!failedUnclear.isEmpty()) {
+            writeSectionSet(data, "FailedUnclear", failedUnclear);
+        } else {
+            data.remove("FailedUnclear");
+        }
+
+        // 移除所有边界键，使实体加载后边界为 null，触发重新初始化
+        data.remove("MinX");
+        data.remove("MaxX");
+        data.remove("MinY");
+        data.remove("MaxY");
+        data.remove("MinZ");
+        data.remove("MaxZ");
+    }
+
+    /**
+     * 从 NBT 数据中读取边界。
+     */
+    private RangeBoundary readBoundaryFromNbt(CompoundTag data) {
+        if (!data.contains("MinX")) {
+            return null;
+        }
+        return new RangeBoundary(
+                data.getInt("MinX"),
+                data.getInt("MaxX"),
+                data.getInt("MinY"),
+                data.getInt("MaxY"),
+                data.getInt("MinZ"),
+                data.getInt("MaxZ")
+        );
+    }
+
+    /**
+     * 从 NBT 读取 SectionPos 集合（与静态实体序列化格式一致）。
+     */
+    private Set<SectionPos> readSectionSet(CompoundTag compound, String key) {
+        Set<SectionPos> set = new HashSet<>();
+        ListTag list = compound.getList(key, Tag.TAG_COMPOUND);
+        for (int i = 0; i < list.size(); i++) {
+            CompoundTag entry = list.getCompound(i);
+            set.add(new SectionPos(
+                    entry.getInt("X"),
+                    entry.getInt("Y"),
+                    entry.getInt("Z")
+            ));
+        }
+        return set;
+    }
+
+    /**
+     * 将 SectionPos 集合写入 NBT（格式与静态实体一致）。
+     */
+    private void writeSectionSet(CompoundTag compound, String key, Set<SectionPos> set) {
+        ListTag list = new ListTag();
+        for (SectionPos pos : set) {
+            CompoundTag entry = new CompoundTag();
+            entry.putInt("X", pos.x());
+            entry.putInt("Y", pos.y());
+            entry.putInt("Z", pos.z());
+            list.add(entry);
+        }
+        compound.put(key, list);
     }
 }
