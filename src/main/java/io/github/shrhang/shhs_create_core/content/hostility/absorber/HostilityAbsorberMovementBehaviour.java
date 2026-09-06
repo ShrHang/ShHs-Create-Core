@@ -2,7 +2,7 @@ package io.github.shrhang.shhs_create_core.content.hostility.absorber;
 
 import com.simibubi.create.api.behaviour.movement.MovementBehaviour;
 import com.simibubi.create.content.contraptions.behaviour.MovementContext;
-import io.github.shrhang.shhs_create_core.content.util.hostility_absorber.HostilityAbsorberHelper;
+import io.github.shrhang.shhs_create_core.content.util.hostility.HostilityAbsorberHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -11,8 +11,8 @@ import net.minecraft.world.level.Level;
 import java.util.HashSet;
 import java.util.Set;
 
-import static io.github.shrhang.shhs_create_core.content.util.hostility_absorber.HostilityAbsorberHelper.RangeBoundary;
-import static io.github.shrhang.shhs_create_core.content.util.hostility_absorber.HostilityAbsorberHelper.SectionPos;
+import static io.github.shrhang.shhs_create_core.content.util.hostility.HostilityAbsorberHelper.RangeBoundary;
+import static io.github.shrhang.shhs_create_core.content.util.hostility.HostilityAbsorberHelper.SectionPos;
 
 /**
  * 恶意吸收器在动态结构中的移动行为。

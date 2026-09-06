@@ -1,4 +1,4 @@
-package io.github.shrhang.shhs_create_core.content.util.hostility_absorber;
+package io.github.shrhang.shhs_create_core.content.util.hostility;
 
 import dev.xkmc.l2hostility.content.capability.chunk.ChunkCapHolder;
 import dev.xkmc.l2hostility.content.capability.chunk.ChunkDifficulty;
@@ -65,26 +65,6 @@ public final class HostilityAbsorberHelper {
         forEachInAABB(bound.minX, bound.maxX, bound.minY, bound.maxY, bound.minZ, bound.maxZ, level, action);
     }
 
-    /**
-     * 遍历 traverseBound 内的所有区段，但跳过那些在 excludeBound 内的区段。
-     * 用于处理多轴变化的真环情况。
-     */
-    private static void forEachExcluding(RangeBoundary traverseBound, RangeBoundary excludeBound,
-                                         Level level, BiConsumer<Level, SectionPos> action) {
-        for (int x = traverseBound.minX; x <= traverseBound.maxX; x++) {
-            for (int y = traverseBound.minY; y <= traverseBound.maxY; y++) {
-                for (int z = traverseBound.minZ; z <= traverseBound.maxZ; z++) {
-                    // 仅当区段不在 excludeBound 内时执行
-                    if (x < excludeBound.minX || x > excludeBound.maxX ||
-                            y < excludeBound.minY || y > excludeBound.maxY ||
-                            z < excludeBound.minZ || z > excludeBound.maxZ) {
-                        action.accept(level, new SectionPos(x, y, z));
-                    }
-                }
-            }
-        }
-    }
-
     // ==================== 边界计算 ====================
 
     /**
@@ -115,11 +95,11 @@ public final class HostilityAbsorberHelper {
         );
     }
 
-    // ==================== 环带遍历 ====================
+    // ==================== 环带遍历（顺序单轴增量） ====================
 
     /**
      * 遍历新增环带（外扩部分），对每个区段执行给定操作。
-     * 单轴变化时直接遍历AABB，多轴变化时用 forEachExcluding 处理真环。
+     * 采用顺序单轴增量，依次处理 X、Y、Z 轴的扩增条带，避免全量遍历。
      */
     public static void forEachAddedRing(RangeBoundary oldBound, RangeBoundary newBound,
                                         Level level, BiConsumer<Level, SectionPos> action) {
@@ -128,63 +108,62 @@ public final class HostilityAbsorberHelper {
             return;
         }
 
-        boolean xChanged = oldBound.minX != newBound.minX || oldBound.maxX != newBound.maxX;
-        boolean yChanged = oldBound.minY != newBound.minY || oldBound.maxY != newBound.maxY;
-        boolean zChanged = oldBound.minZ != newBound.minZ || oldBound.maxZ != newBound.maxZ;
+        // 当前边界初始为旧边界，逐步更新
+        int curMinX = oldBound.minX, curMaxX = oldBound.maxX;
+        int curMinY = oldBound.minY, curMaxY = oldBound.maxY;
+        int curMinZ = oldBound.minZ, curMaxZ = oldBound.maxZ;
 
-        int changeCount = (xChanged ? 1 : 0) + (yChanged ? 1 : 0) + (zChanged ? 1 : 0);
+        // ---- X轴扩增 ----
+        if (newBound.minX < curMinX) {
+            forEachInAABB(newBound.minX, curMinX - 1,
+                    curMinY, curMaxY,
+                    curMinZ, curMaxZ,
+                    level, action);
+            curMinX = newBound.minX;
+        }
+        if (newBound.maxX > curMaxX) {
+            forEachInAABB(curMaxX + 1, newBound.maxX,
+                    curMinY, curMaxY,
+                    curMinZ, curMaxZ,
+                    level, action);
+            curMaxX = newBound.maxX;
+        }
 
-        if (changeCount == 1) {
-            // 单轴变化：增量是AABB
-            if (xChanged) {
-                if (newBound.minX < oldBound.minX) {
-                    forEachInAABB(newBound.minX, oldBound.minX - 1,
-                            newBound.minY, newBound.maxY,
-                            newBound.minZ, newBound.maxZ,
-                            level, action);
-                }
-                if (newBound.maxX > oldBound.maxX) {
-                    forEachInAABB(oldBound.maxX + 1, newBound.maxX,
-                            newBound.minY, newBound.maxY,
-                            newBound.minZ, newBound.maxZ,
-                            level, action);
-                }
-            } else if (yChanged) {
-                if (newBound.minY < oldBound.minY) {
-                    forEachInAABB(newBound.minX, newBound.maxX,
-                            newBound.minY, oldBound.minY - 1,
-                            newBound.minZ, newBound.maxZ,
-                            level, action);
-                }
-                if (newBound.maxY > oldBound.maxY) {
-                    forEachInAABB(newBound.minX, newBound.maxX,
-                            oldBound.maxY + 1, newBound.maxY,
-                            newBound.minZ, newBound.maxZ,
-                            level, action);
-                }
-            } else { //三个轴变化有且只有一个为真，到这里时前面两个已经为假
-                if (newBound.minZ < oldBound.minZ) {
-                    forEachInAABB(newBound.minX, newBound.maxX,
-                            newBound.minY, newBound.maxY,
-                            newBound.minZ, oldBound.minZ - 1,
-                            level, action);
-                }
-                if (newBound.maxZ > oldBound.maxZ) {
-                    forEachInAABB(newBound.minX, newBound.maxX,
-                            newBound.minY, newBound.maxY,
-                            oldBound.maxZ + 1, newBound.maxZ,
-                            level, action);
-                }
-            }
-        } else {
-            // 多轴变化：真环，遍历新边界并排除旧边界内的区段
-            forEachExcluding(newBound, oldBound, level, action);
+        // ---- Y轴扩增 ----
+        if (newBound.minY < curMinY) {
+            forEachInAABB(curMinX, curMaxX,
+                    newBound.minY, curMinY - 1,
+                    curMinZ, curMaxZ,
+                    level, action);
+            curMinY = newBound.minY;
+        }
+        if (newBound.maxY > curMaxY) {
+            forEachInAABB(curMinX, curMaxX,
+                    curMaxY + 1, newBound.maxY,
+                    curMinZ, curMaxZ,
+                    level, action);
+            curMaxY = newBound.maxY;
+        }
+
+        // ---- Z轴扩增 ----
+        if (newBound.minZ < curMinZ) {
+            forEachInAABB(curMinX, curMaxX,
+                    curMinY, curMaxY,
+                    newBound.minZ, curMinZ - 1,
+                    level, action);
+            // 无需更新后续，因为Z是最后一轴
+        }
+        if (newBound.maxZ > curMaxZ) {
+            forEachInAABB(curMinX, curMaxX,
+                    curMinY, curMaxY,
+                    curMaxZ + 1, newBound.maxZ,
+                    level, action);
         }
     }
 
     /**
      * 遍历缩减环带（内缩部分），对每个区段执行给定操作。
-     * 单轴变化时直接遍历AABB，多轴变化时用 forEachExcluding 处理真环。
+     * 采用顺序单轴增量，依次处理 X、Y、Z 轴的收缩条带，避免全量遍历。
      */
     public static void forEachRemovedRing(RangeBoundary oldBound, RangeBoundary newBound,
                                           Level level, BiConsumer<Level, SectionPos> action) {
@@ -192,57 +171,55 @@ public final class HostilityAbsorberHelper {
             return;
         }
 
-        boolean xChanged = oldBound.minX != newBound.minX || oldBound.maxX != newBound.maxX;
-        boolean yChanged = oldBound.minY != newBound.minY || oldBound.maxY != newBound.maxY;
-        boolean zChanged = oldBound.minZ != newBound.minZ || oldBound.maxZ != newBound.maxZ;
+        int curMinX = oldBound.minX, curMaxX = oldBound.maxX;
+        int curMinY = oldBound.minY, curMaxY = oldBound.maxY;
+        int curMinZ = oldBound.minZ, curMaxZ = oldBound.maxZ;
 
-        int changeCount = (xChanged ? 1 : 0) + (yChanged ? 1 : 0) + (zChanged ? 1 : 0);
+        // ---- X轴收缩 ----
+        if (newBound.minX > curMinX) {
+            forEachInAABB(curMinX, newBound.minX - 1,
+                    curMinY, curMaxY,
+                    curMinZ, curMaxZ,
+                    level, action);
+            curMinX = newBound.minX;
+        }
+        if (newBound.maxX < curMaxX) {
+            forEachInAABB(newBound.maxX + 1, curMaxX,
+                    curMinY, curMaxY,
+                    curMinZ, curMaxZ,
+                    level, action);
+            curMaxX = newBound.maxX;
+        }
 
-        if (changeCount == 1) {
-            // 单轴变化：缩小的部分也是AABB
-            if (xChanged) {
-                if (newBound.minX > oldBound.minX) {
-                    forEachInAABB(oldBound.minX, newBound.minX - 1,
-                            oldBound.minY, oldBound.maxY,
-                            oldBound.minZ, oldBound.maxZ,
-                            level, action);
-                }
-                if (newBound.maxX < oldBound.maxX) {
-                    forEachInAABB(newBound.maxX + 1, oldBound.maxX,
-                            oldBound.minY, oldBound.maxY,
-                            oldBound.minZ, oldBound.maxZ,
-                            level, action);
-                }
-            } else if (yChanged) {
-                if (newBound.minY > oldBound.minY) {
-                    forEachInAABB(oldBound.minX, oldBound.maxX,
-                            oldBound.minY, newBound.minY - 1,
-                            oldBound.minZ, oldBound.maxZ,
-                            level, action);
-                }
-                if (newBound.maxY < oldBound.maxY) {
-                    forEachInAABB(oldBound.minX, oldBound.maxX,
-                            newBound.maxY + 1, oldBound.maxY,
-                            oldBound.minZ, oldBound.maxZ,
-                            level, action);
-                }
-            } else {
-                if (newBound.minZ > oldBound.minZ) {
-                    forEachInAABB(oldBound.minX, oldBound.maxX,
-                            oldBound.minY, oldBound.maxY,
-                            oldBound.minZ, newBound.minZ - 1,
-                            level, action);
-                }
-                if (newBound.maxZ < oldBound.maxZ) {
-                    forEachInAABB(oldBound.minX, oldBound.maxX,
-                            oldBound.minY, oldBound.maxY,
-                            newBound.maxZ + 1, oldBound.maxZ,
-                            level, action);
-                }
-            }
-        } else {
-            // 多轴变化：真环，遍历旧边界并排除新边界内的区段
-            forEachExcluding(oldBound, newBound, level, action);
+        // ---- Y轴收缩 ----
+        if (newBound.minY > curMinY) {
+            forEachInAABB(curMinX, curMaxX,
+                    curMinY, newBound.minY - 1,
+                    curMinZ, curMaxZ,
+                    level, action);
+            curMinY = newBound.minY;
+        }
+        if (newBound.maxY < curMaxY) {
+            forEachInAABB(curMinX, curMaxX,
+                    newBound.maxY + 1, curMaxY,
+                    curMinZ, curMaxZ,
+                    level, action);
+            curMaxY = newBound.maxY;
+        }
+
+        // ---- Z轴收缩 ----
+        if (newBound.minZ > curMinZ) {
+            forEachInAABB(curMinX, curMaxX,
+                    curMinY, curMaxY,
+                    curMinZ, newBound.minZ - 1,
+                    level, action);
+            // 无需更新，最后一轴
+        }
+        if (newBound.maxZ < curMaxZ) {
+            forEachInAABB(curMinX, curMaxX,
+                    curMinY, curMaxY,
+                    newBound.maxZ + 1, curMaxZ,
+                    level, action);
         }
     }
 
@@ -267,7 +244,6 @@ public final class HostilityAbsorberHelper {
         }
         return applyToSections(level, sections, false);
     }
-
 
     /**
      * 对区段集合执行批量 apply 操作的核心方法。

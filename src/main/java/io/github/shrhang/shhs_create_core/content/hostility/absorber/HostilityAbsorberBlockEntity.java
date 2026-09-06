@@ -5,7 +5,7 @@ import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BehaviourType;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import dev.xkmc.l2hostility.init.data.LHConfig;
-import io.github.shrhang.shhs_create_core.content.util.hostility_absorber.HostilityAbsorberHelper;
+import io.github.shrhang.shhs_create_core.content.util.hostility.HostilityAbsorberHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -17,8 +17,8 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.*;
 
-import static io.github.shrhang.shhs_create_core.content.util.hostility_absorber.HostilityAbsorberHelper.RangeBoundary;
-import static io.github.shrhang.shhs_create_core.content.util.hostility_absorber.HostilityAbsorberHelper.SectionPos;
+import static io.github.shrhang.shhs_create_core.content.util.hostility.HostilityAbsorberHelper.RangeBoundary;
+import static io.github.shrhang.shhs_create_core.content.util.hostility.HostilityAbsorberHelper.SectionPos;
 
 /**
  * 恶意吸收器方块实体。
@@ -84,12 +84,23 @@ public class HostilityAbsorberBlockEntity extends KineticBlockEntity {
         @Override
         public void tick() {
             super.tick();
-
             Level level = getWorld();
             if (level == null || level.isClientSide()) {
                 return;
             }
 
+            // 委托子方法处理边界更新和修复
+            updateBoundaryIfNeeded(level);
+            processClearRepair(level);
+            processUnclearRepair(level);
+        }
+
+        // ==================== 边界更新委托 ====================
+
+        /**
+         * 根据当前转速计算目标边界，若变化则更新。
+         */
+        private void updateBoundaryIfNeeded(Level level) {
             float speed = getSpeed();
             int currentHalfLength = calculateHalfLength(speed);
             RangeBoundary target = HostilityAbsorberHelper.computeBoundary(getPos(), currentHalfLength, level);
@@ -98,14 +109,11 @@ public class HostilityAbsorberBlockEntity extends KineticBlockEntity {
                 if (!target.equals(boundary)) {
                     updateBoundary(level, boundary, target);
                 }
-                processClearRepair(level);
             } else {
                 if (boundary != null) {
                     releaseAll(level);
                 }
             }
-
-            processUnclearRepair(level);
         }
 
         // ==================== 迭代器管理 ====================
