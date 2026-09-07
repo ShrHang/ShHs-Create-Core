@@ -1,0 +1,14 @@
+{
+  "type": "shhs_create_core:miracle",
+  "ingredients": [
+    {
+      "item": "create:powdered_obsidian"
+    }
+  ],
+  "results": [
+    {
+      "chance": 0.0823,
+      "id": "l2hostility:miracle_powder"
+    }
+  ]
+}

@@ -87,6 +87,9 @@ public class ShHsLang {
         REGISTRATE.addRawLang(tooltipKey("sprayer.angle"), "Angle: %s / %s°");
         REGISTRATE.addRawLang(tooltipKey("sprayer.range"), "Range: %s x %s x %s");
 
+        REGISTRATE.addRawLang("shhs_create_core.recipe.fan_miracle", "Fan Miracle");
+        REGISTRATE.addRawLang("shhs_create_core.recipe.fan_miracle.fan", "Encased Fan with Miracle");
+
         REGISTRATE.addRawLang(CATEGORY_KEY, "ShH's Create Core");
         REGISTRATE.addDataGenerator(ProviderType.LANG, provider -> {
             ShHsKeys.provideLang(provider::add);

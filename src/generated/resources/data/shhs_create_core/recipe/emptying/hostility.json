@@ -1,15 +1,17 @@
 {
   "type": "create:emptying",
   "ingredients": [
-    {"item":"l2hostility:bottle_of_curse"}
+    {
+      "item": "l2hostility:bottle_of_curse"
+    }
   ],
   "results": [
     {
       "id": "minecraft:glass_bottle"
     },
     {
-      "id": "shhs_create_core:hostility",
-      "amount": 100
+      "amount": 100,
+      "id": "shhs_create_core:hostility"
     }
   ]
 }

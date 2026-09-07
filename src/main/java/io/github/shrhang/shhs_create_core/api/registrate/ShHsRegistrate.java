@@ -99,7 +99,7 @@ public class ShHsRegistrate extends CreateRegistrate {
 
     @Override
     public FluidBuilder<VirtualFluid, CreateRegistrate> virtualFluid(String name) {
-        ShHsAtlases.addVirtualFluid(name);
+        ShHsAtlases.addFluid(name);
         return super.virtualFluid(name);
     }
 
@@ -108,8 +108,21 @@ public class ShHsRegistrate extends CreateRegistrate {
                                                                                        FluidBuilder.FluidTypeFactory typeFactory,
                                                                                        NonNullFunction<BaseFlowingFluid.Properties, T> sourceFactory,
                                                                                        NonNullFunction<BaseFlowingFluid.Properties, T> flowingFactory) {
-        ShHsAtlases.addVirtualFluid(name);
+        ShHsAtlases.addFluid(name);
         return super.virtualFluid(name, typeFactory, sourceFactory, flowingFactory);
+    }
+
+    @Override
+    public FluidBuilder<BaseFlowingFluid.Flowing, CreateRegistrate> standardFluid(String name) {
+        ShHsAtlases.addFluid(name);
+        return super.standardFluid(name);
+    }
+
+    @Override
+    public FluidBuilder<BaseFlowingFluid.Flowing, CreateRegistrate> standardFluid(String name,
+                                                                                  FluidBuilder.FluidTypeFactory typeFactory) {
+        ShHsAtlases.addFluid(name);
+        return super.standardFluid(name, typeFactory);
     }
 
     public <T extends MobEffect> ShHsMobEffectBuilder<T, ShHsRegistrate> effect(String name, NonNullSupplier<T> sup) {

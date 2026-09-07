@@ -12,6 +12,7 @@
     "irons_spellbooks.util.TooltipsUtilsMixin"
   ],
   "client": [
+    "create.compat.jei.category.CreateRecipeCategoryMixin",
     "irons_spellbooks.gui.overlays.InscriptionTableScreenMixin",
     "irons_spellbooks.gui.overlays.SpellWheelOverlayMixin"
   ],

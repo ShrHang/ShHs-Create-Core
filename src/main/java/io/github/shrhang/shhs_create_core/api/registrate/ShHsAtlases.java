@@ -18,20 +18,29 @@ import static io.github.shrhang.shhs_create_core.ShHsCreateCore.REGISTRATE;
 
 public class ShHsAtlases {
     /**
-     * 需要加入 {@code minecraft:blocks} 图集的虚拟流体名称。
+     * 需要加入 {@code minecraft:blocks} 图集的流体名称。
      * <p>
      * 使用 {@link TreeSet} 是为了让 datagen 输出顺序稳定，避免每次生成文件顺序随机变化。
      */
-    private static final Set<String> VIRTUAL_FLUIDS = new TreeSet<>();
+    private static final Set<String> FLUIDS = new TreeSet<>();
 
     /**
-     * 记录一个使用默认贴图路径的虚拟流体。
+     * 记录一个使用默认贴图路径的流体。
      * <p>
-     * 该方法由 {@link ShHsRegistrate#virtualFluid(String)} 自动调用。这里只接收流体名，
+     * 该方法由 {@link ShHsRegistrate#virtualFluid(String)} 和 {@link ShHsRegistrate#standardFluid(String)}
+     * 自动调用。这里只接收流体名，
      * 因此约定对应贴图一定是 {@code fluid/<name>_still} 和 {@code fluid/<name>_flow}。
      */
+    public static void addFluid(String name) {
+        FLUIDS.add(name);
+    }
+
+    /**
+     * @deprecated 改用 {@link #addFluid(String)}，保留该方法以兼容已有调用。
+     */
+    @Deprecated
     public static void addVirtualFluid(String name) {
-        VIRTUAL_FLUIDS.add(name);
+        addFluid(name);
     }
 
     /**
@@ -59,7 +68,7 @@ public class ShHsAtlases {
         @Override
         protected void gather() {
             SourceList blocks = atlas(BLOCKS_ATLAS);
-            VIRTUAL_FLUIDS.forEach(name -> {
+            FLUIDS.forEach(name -> {
                 addFluidSprite(blocks, name, "flow");
                 addFluidSprite(blocks, name, "still");
             });

@@ -9,9 +9,11 @@ import io.github.shrhang.shhs_create_core.api.registrate.ShHsRegistrate;
 import io.github.shrhang.shhs_create_core.compat.Mods;
 import io.github.shrhang.shhs_create_core.compat.create_enchantment_industry.CreateEnchantmentIndustry;
 import io.github.shrhang.shhs_create_core.content.data.ShHsLang;
+import io.github.shrhang.shhs_create_core.content.data.ShHsRecipes;
 import io.github.shrhang.shhs_create_core.content.data.ShHsTagKey;
 import io.github.shrhang.shhs_create_core.content.event.MagicEventHandler;
 import io.github.shrhang.shhs_create_core.content.event.ShHsAttackListener;
+import io.github.shrhang.shhs_create_core.content.kinetics.fan.processing.ShHsFanProcessingTypes;
 import io.github.shrhang.shhs_create_core.content.registries.*;
 import net.createmod.catnip.lang.FontHelper;
 import net.minecraft.resources.ResourceLocation;
@@ -20,6 +22,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
+import net.neoforged.neoforge.registries.RegisterEvent;
 
 @Mod(ShHsCreateCore.MODID)
 public class ShHsCreateCore {
@@ -43,9 +46,11 @@ public class ShHsCreateCore {
         ShHsComponentTypes.register(modEventBus);
         ShHsCreativeTabs.register(modEventBus);
         ShHsMenuTypes.register(modEventBus);
+        ShHsRecipeTypes.register(modEventBus);
         Mods.CREATE_ENCHANTMENT_INDUSTRY.executeIfInstalled(() -> () -> CreateEnchantmentIndustry.register(modEventBus));
 
         modEventBus.addListener(ShHsCreateCore::init);
+        modEventBus.addListener(ShHsCreateCore::onRegister);
         modEventBus.addListener(ShHsPackets::register);
         modEventBus.addListener(ShHsCreateCore::modifyEntityAttributes);
     }
@@ -57,6 +62,10 @@ public class ShHsCreateCore {
         ShHsAttackListener.init();
     }
 
+    public static void onRegister(final RegisterEvent event) {
+        ShHsFanProcessingTypes.init();
+    }
+
     public static void modifyEntityAttributes(final EntityAttributeModificationEvent event) {
         event.getTypes().forEach(entityType -> event.add(entityType, CoPAttrs.REALITY));
     }
@@ -64,6 +73,7 @@ public class ShHsCreateCore {
     private static void gatherData() {
         ShHsAtlases.init();
         ShHsLang.init();
+        ShHsRecipes.init();
         ShHsTagKey.init();
     }
 

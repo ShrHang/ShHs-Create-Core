@@ -10,11 +10,11 @@
     },
     {
       "type": "minecraft:single",
-      "resource": "shhs_create_core:fluid/wonder_flow"
+      "resource": "shhs_create_core:fluid/miracle_flow"
     },
     {
       "type": "minecraft:single",
-      "resource": "shhs_create_core:fluid/wonder_still"
+      "resource": "shhs_create_core:fluid/miracle_still"
     }
   ]
 }
