@@ -25,32 +25,26 @@ import static net.createmod.catnip.lang.LangBuilder.DEFAULT_SPACE_WIDTH;
 public class ShHsLang {
 
     public static final String CATEGORY_KEY = "key.categories." + MODID;
-    public static String keyKey(String key) {
-        return "key." + MODID + "." + key;
-    }
 
-    public static String textKey(String key) {
-        return "text." + MODID + "." + key;
+    public static String key(String type, String key) {
+        return type + "." + MODID + "." + key;
+    }
+    
+    public static MutableComponent component(String type, String key, Object... args) {
+        return Component.translatable(key(type, key), args);
     }
 
     public static MutableComponent textComponent(String key, Object... args) {
-        return Component.translatable(textKey(key), args);
-    }
-
-    public static String titleKey(String key) {
-        return "title." + MODID + "." + key;
+        return component("text", key, args);
     }
 
     public static MutableComponent titleComponent(String key, Object... args) {
-        return Component.translatable(titleKey(key), args);
+        return component("title", key, args);
     }
 
-    public static String tooltipKey(String key) {
-        return "tooltip." + MODID + "." + key;
-    }
 
     public static MutableComponent tooltipComponent(String key, Object... args) {
-        return Component.translatable(tooltipKey(key), args);
+        return component("tooltip", key, args);
     }
 
     public static MutableComponent tooltipComponentForGoggles(String key, Object... args) {
@@ -66,29 +60,29 @@ public class ShHsLang {
     }
 
     public static void init() {
-        REGISTRATE.addRawLang(textKey("no_enough_spell_tolerance"), "At least %s Spell Tolerance is required to cast this spell.");
-        REGISTRATE.addRawLang(textKey("need_tolerance"), "Need Spell Tolerance: %s");
-        REGISTRATE.addRawLang(textKey("empty_trait_no_target"), "No valid target in sight.");
-        REGISTRATE.addRawLang(textKey("empty_trait_no_traits"), "No traits can be extracted from this target.");
+        REGISTRATE.addRawLang(key("text","no_enough_spell_tolerance"), "At least %s Spell Tolerance is required to cast this spell.");
+        REGISTRATE.addRawLang(key("text","need_tolerance"), "Need Spell Tolerance: %s");
+        REGISTRATE.addRawLang(key("text","empty_trait_no_target"), "No valid target in sight.");
+        REGISTRATE.addRawLang(key("text","empty_trait_no_traits"), "No traits can be extracted from this target.");
 
-        REGISTRATE.addRawLang(titleKey("container.endchest"), "%s's %s");
-        REGISTRATE.addRawLang(tooltipKey("brass_ender_chest.header"), "Ender Chest Info");
-        REGISTRATE.addRawLang(tooltipKey("brass_ender_chest.owner"), "Owner: %s");
-        REGISTRATE.addRawLang(tooltipKey("brass_ender_chest.owner_unknown"), "Cannot find owner %s");
-        REGISTRATE.addRawLang(tooltipKey("brass_ender_chest.locked"), "Locked: Only the owner can open.");
-        REGISTRATE.addRawLang(tooltipKey("brass_ender_chest.unlocked"), "Unlocked: Anyone can open.");
+        REGISTRATE.addRawLang(key("title", "container.endchest"), "%s's %s");
+        REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.header"), "Ender Chest Info");
+        REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.owner"), "Owner: %s");
+        REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.owner_unknown"), "Cannot find owner %s");
+        REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.locked"), "Locked: Only the owner can open.");
+        REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.unlocked"), "Unlocked: Anyone can open.");
 
-        REGISTRATE.addRawLang(textKey("portable_stock_ticker.tooltip.linked"), "Linked.");
-        REGISTRATE.addRawLang(textKey("portable_stock_ticker.no_data"), "Not Linked to a Logistics Network");
-        REGISTRATE.addRawLang(textKey("portable_stock_ticker.no_network"), "Linked Logistics Network no exists.");
-        REGISTRATE.addRawLang(textKey("portable_stock_ticker.unloaded"), "Linked Logistics Network is unloaded.");
+        REGISTRATE.addRawLang(key("text","portable_stock_ticker.tooltip.linked"), "Linked.");
+        REGISTRATE.addRawLang(key("text","portable_stock_ticker.no_data"), "Not Linked to a Logistics Network");
+        REGISTRATE.addRawLang(key("text","portable_stock_ticker.no_network"), "Linked Logistics Network no exists.");
+        REGISTRATE.addRawLang(key("text","portable_stock_ticker.unloaded"), "Linked Logistics Network is unloaded.");
 
-        REGISTRATE.addRawLang(tooltipKey("sprayer.header"), "Sprayer Info");
-        REGISTRATE.addRawLang(tooltipKey("sprayer.angle"), "Angle: %s / %s°");
-        REGISTRATE.addRawLang(tooltipKey("sprayer.range"), "Range: %s x %s x %s");
+        REGISTRATE.addRawLang(key("tooltip","sprayer.header"), "Sprayer Info");
+        REGISTRATE.addRawLang(key("tooltip","sprayer.angle"), "Angle: %s / %s°");
+        REGISTRATE.addRawLang(key("tooltip","sprayer.range"), "Range: %s x %s x %s");
 
-        REGISTRATE.addRawLang("shhs_create_core.recipe.fan_miracle", "Fan Miracle");
-        REGISTRATE.addRawLang("shhs_create_core.recipe.fan_miracle.fan", "Encased Fan with Miracle");
+        REGISTRATE.addRawLang(key("title", "fan_miracle"), "Fan Miracle");
+        REGISTRATE.addRawLang(key("text", "fan_miracle.fan"), "Encased Fan with Miracle");
 
         REGISTRATE.addRawLang(CATEGORY_KEY, "ShH's Create Core");
         REGISTRATE.addDataGenerator(ProviderType.LANG, provider -> {

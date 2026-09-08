@@ -10,7 +10,6 @@ import io.github.shrhang.shhs_create_core.content.registries.ShHsRecipeTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
@@ -79,18 +78,12 @@ public class ShHsFanProcessingTypes {
                     0,
                     1 / 8f,
                     0);
-            if (level.random.nextInt(3) == 0) {
-                level.addParticle(ParticleTypes.HAPPY_VILLAGER, pos.x, pos.y + .35f, pos.z, 0, 1 / 16f, 0);
-            }
         }
 
         @Override
         public void morphAirFlow(AirFlowParticleAccess particleAccess, RandomSource random) {
             particleAccess.setColor(random.nextBoolean() ? 0x9BFF74 : 0xD7FF9C);
             particleAccess.setAlpha(1.0f);
-            if (random.nextFloat() < 1 / 48f) {
-                particleAccess.spawnExtraParticle(ParticleTypes.HAPPY_VILLAGER, .125f);
-            }
         }
 
         @Override

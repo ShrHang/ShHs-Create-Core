@@ -149,6 +149,10 @@ dependencies {
 
     implementation "maven.modrinth:create-diesel-generators:${minecraft_version}-${create_diesel_generators_version}"
 
+    implementation "maven.modrinth:create-food-filling:${minecraft_version}-${create_food_filling_version}-neoforge" // Create Food Filling
+
+    implementation "maven.modrinth:createfluidlogistic:QcUiaW4c" // Create Fluid Logistic
+
     implementation "maven.modrinth:create-wizardry:${minecraft_version}-${create_wizardry_version}"
 
     implementation("mezz.jei:jei-$minecraft_version-neoforge:$jei_version") // JEI

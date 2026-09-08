@@ -5,7 +5,6 @@ import com.simibubi.create.api.data.recipe.MixingRecipeGen;
 import com.simibubi.create.api.data.recipe.StandardProcessingRecipeGen;
 import com.simibubi.create.content.processing.recipe.StandardProcessingRecipe;
 import com.simibubi.create.foundation.recipe.IRecipeTypeInfo;
-import com.simibubi.create.AllItems;
 import com.tterrag.registrate.providers.ProviderType;
 import dev.xkmc.l2hostility.init.registrate.LHItems;
 import io.github.shrhang.shhs_create_core.content.kinetics.fan.processing.MiracleFanProcessingRecipe;
@@ -17,6 +16,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import net.neoforged.neoforge.common.Tags;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.UnaryOperator;
@@ -61,8 +61,8 @@ public class ShHsRecipes {
 
     public static class Miracle extends StandardProcessingRecipeGen<MiracleFanProcessingRecipe> {
         GeneratedRecipe
-                MIRACLE_POWDER_FROM_POWDERED_OBSIDIAN = create("miracle_powder_from_powdered_obsidian", b -> b
-                        .require(AllItems.POWDERED_OBSIDIAN.get())
+                MIRACLE_POWDER_FROM_POWDERED_OBSIDIAN = create("miracle_powder_from_dusts", b -> b
+                        .require(Tags.Items.DUSTS)
                         .output(.0823f, LHItems.MIRACLE_POWDER));
 
         public Miracle(PackOutput output, CompletableFuture<HolderLookup.Provider> registries) {

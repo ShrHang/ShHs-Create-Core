@@ -30,6 +30,8 @@ public class ShHsFluids {
 
         MIRACLE = REGISTRATE.standardFluid("miracle")
                 .lang("Miracle")
+                .properties(p -> p.lightLevel(15).density(823))
+                .fluidProperties(p -> p.tickRate(2))
                 .source(BaseFlowingFluid.Source::new)
                 .block()
                 .properties(p -> p.mapColor(MapColor.COLOR_LIGHT_GREEN))

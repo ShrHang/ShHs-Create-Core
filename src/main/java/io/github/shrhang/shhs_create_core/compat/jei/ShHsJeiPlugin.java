@@ -8,6 +8,7 @@ import io.github.shrhang.shhs_create_core.compat.create_enchantment_industry.Cre
 import io.github.shrhang.shhs_create_core.compat.jei.category.FanMiracleCategory;
 import io.github.shrhang.shhs_create_core.compat.jei.portable_stock_ticker.PortableStockTickerGuiContainerHandler;
 import io.github.shrhang.shhs_create_core.compat.jei.portable_stock_ticker.PortableStockTickerTransferHandler;
+import io.github.shrhang.shhs_create_core.content.data.ShHsLang;
 import io.github.shrhang.shhs_create_core.content.kinetics.fan.processing.MiracleFanProcessingRecipe;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerScreen;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsFluids;
@@ -21,7 +22,6 @@ import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.registration.IRecipeTransferRegistration;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -43,7 +43,13 @@ public class ShHsJeiPlugin implements IModPlugin {
 
         allCategories.add(new CreateRecipeCategory.Builder<>(MiracleFanProcessingRecipe.class)
                 .addTypedRecipes(ShHsRecipeTypes.MIRACLE)
-                .catalystStack(ShHsJeiPlugin::fanMiracleCatalyst)
+                .catalystStack(() -> {
+                    ItemStack stack = AllBlocks.ENCASED_FAN.asStack();
+                    stack.set(DataComponents.CUSTOM_NAME, ShHsLang.component("text", "fan_miracle.fan")
+                            .withStyle(style -> style.withItalic(false)));
+                    return stack;
+                })
+                .catalyst(() -> ShHsFluids.MIRACLE.getBucket().orElse(Items.BUCKET))
                 .doubleItemIcon(AllItems.PROPELLER.get(), ShHsFluids.MIRACLE.getBucket().orElse(Items.BUCKET))
                 .emptyBackground(178, 72)
                 .build(rl("fan_miracle"), FanMiracleCategory::new));
@@ -82,12 +88,5 @@ public class ShHsJeiPlugin implements IModPlugin {
     @Override
     public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
         registration.addUniversalRecipeTransferHandler(new PortableStockTickerTransferHandler(registration.getJeiHelpers()));
-    }
-
-    private static ItemStack fanMiracleCatalyst() {
-        ItemStack stack = AllBlocks.ENCASED_FAN.asStack();
-        stack.set(DataComponents.CUSTOM_NAME, Component.translatable("shhs_create_core.recipe.fan_miracle.fan")
-                .withStyle(style -> style.withItalic(false)));
-        return stack;
     }
 }

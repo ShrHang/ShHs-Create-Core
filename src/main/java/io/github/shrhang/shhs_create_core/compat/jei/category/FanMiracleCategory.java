@@ -6,6 +6,9 @@ import io.github.shrhang.shhs_create_core.content.kinetics.fan.processing.Miracl
 import io.github.shrhang.shhs_create_core.content.registries.ShHsFluids;
 import net.createmod.catnip.gui.element.GuiGameElement;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
+
+import static io.github.shrhang.shhs_create_core.content.data.ShHsLang.component;
 
 public class FanMiracleCategory extends ProcessingViaFanCategory.MultiOutput<MiracleFanProcessingRecipe> {
 
@@ -20,5 +23,10 @@ public class FanMiracleCategory extends ProcessingViaFanCategory.MultiOutput<Mir
                 .atLocal(0, 0, 2)
                 .lighting(AnimatedKinetics.DEFAULT_LIGHTING)
                 .render(graphics);
+    }
+
+    @Override
+    public Component getTitle() {
+        return component("title", "fan_miracle");
     }
 }

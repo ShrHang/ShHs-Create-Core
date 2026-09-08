@@ -8,11 +8,13 @@
   "mixins": [
     "create.content.fluids.tank.storage.creative.CreativeFluidTankMountedStorageMixin",
     "curios.common.data.CuriosEntityManagerMixin",
+    "fluidlogistics.content.processing.cooling.BulkCoolingFanProcessingTypeMixin",
     "irons_spellbooks.capabilities.magic.PlayerRecastsMixin",
     "irons_spellbooks.util.TooltipsUtilsMixin"
   ],
   "client": [
     "create.compat.jei.category.CreateRecipeCategoryMixin",
+    "fluidlogistics.compat.jei.FluidLogisticsJEIMixin",
     "irons_spellbooks.gui.overlays.InscriptionTableScreenMixin",
     "irons_spellbooks.gui.overlays.SpellWheelOverlayMixin"
   ],

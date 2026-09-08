@@ -7,8 +7,7 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.function.BiConsumer;
 
-import static io.github.shrhang.shhs_create_core.content.data.ShHsLang.CATEGORY_KEY;
-import static io.github.shrhang.shhs_create_core.content.data.ShHsLang.keyKey;
+import static io.github.shrhang.shhs_create_core.content.data.ShHsLang.*;
 
 public enum ShHsKeys {
     OPEN_PORTABLE_STOCK_TICKER("open_portable_stock_ticker", "Open Portable Stock Ticker", GLFW.GLFW_KEY_B);
@@ -18,7 +17,7 @@ public enum ShHsKeys {
     private final String translation;
 
     ShHsKeys(String description, String translation, int key) {
-        this.langKey = keyKey(description);
+        this.langKey = key("key", description);
         this.translation = translation;
         this.keybind = new KeyMapping(langKey, key, CATEGORY_KEY);
     }

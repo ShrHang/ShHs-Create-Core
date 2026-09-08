@@ -10,9 +10,9 @@ public class SpellOnEntityCastEvent extends LivingEvent {
     private final SchoolType schoolType;
     private final CastSource castSource;
     private final int spellLevel;
-    private final int newSpellLevel;
+    private int newSpellLevel;
     private final int manaCost;
-    private final int newManaCost;
+    private int newManaCost;
 
     public SpellOnEntityCastEvent(LivingEntity entity, String spellId, int spellLevel, int manaCost, SchoolType schoolType, CastSource castSource) {
         super(entity);
@@ -37,19 +37,27 @@ public class SpellOnEntityCastEvent extends LivingEvent {
         return castSource;
     }
 
-    public int getSpellLevel() {
+    public int getOriginalSpellLevel() {
         return spellLevel;
     }
 
-    public int getNewSpellLevel() {
+    public int getSpellLevel() {
         return newSpellLevel;
     }
 
-    public int getManaCost() {
+    public void setSpellLevel(int spellLevel) {
+        this.newSpellLevel = spellLevel;
+    }
+
+    public int getOriginalManaCost() {
         return manaCost;
     }
 
-    public int getNewManaCost() {
+    public int getManaCost() {
         return newManaCost;
+    }
+
+    public void setManaCost(int mana) {
+        this.newManaCost = mana;
     }
 }

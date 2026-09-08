@@ -1,6 +1,7 @@
 package io.github.shrhang.shhs_create_core.mixin;
 
 import org.objectweb.asm.tree.ClassNode;
+import net.neoforged.fml.loading.LoadingModList;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
@@ -20,7 +21,17 @@ public class MixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        if (mixinClassName.endsWith("BulkCoolingFanProcessingTypeMixin")) {
+            return isLoaded("fluidlogistics") && isLoaded("create_dragons_plus");
+        }
+        if (mixinClassName.endsWith("FluidLogisticsJEIMixin")) {
+            return isLoaded("fluidlogistics") && isLoaded("create_dragons_plus") && isLoaded("jei");
+        }
         return true;
+    }
+
+    private static boolean isLoaded(String modId) {
+        return LoadingModList.get().getModFileById(modId) != null;
     }
 
     @Override
