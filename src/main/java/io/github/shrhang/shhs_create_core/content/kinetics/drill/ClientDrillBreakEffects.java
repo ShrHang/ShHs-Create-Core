@@ -12,7 +12,7 @@ public final class ClientDrillBreakEffects {
         if (minecraft.level == null) {
             return;
         }
-        DrillBreakEffectContext.run(minecraft.level, packet.pos(),
+        ClientDrillEffectContext.run(minecraft.level, packet.pos(),
                 ShHsConfig.CLIENT.disableContraptionDrillBreakParticles.get(),
                 () -> minecraft.level.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK,
                         packet.pos(), packet.blockStateId()));

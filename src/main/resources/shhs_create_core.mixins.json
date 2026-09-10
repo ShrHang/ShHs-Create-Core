@@ -6,6 +6,7 @@
   "compatibilityLevel": "JAVA_21",
   "plugin": "io.github.shrhang.shhs_create_core.mixin.MixinPlugin",
   "mixins": [
+    "minecraft.server.level.ServerLevelMixin",
     "create.content.kinetics.base.BlockBreakingMovementBehaviourMixin",
     "create.foundation.utility.BlockHelperMixin",
     "create.content.fluids.tank.storage.creative.CreativeFluidTankMountedStorageMixin",

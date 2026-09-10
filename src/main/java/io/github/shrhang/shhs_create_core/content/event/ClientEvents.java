@@ -3,6 +3,7 @@ package io.github.shrhang.shhs_create_core.content.event;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.OpenPortableStockTickerPacket;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerClientData;
 import io.github.shrhang.shhs_create_core.content.fluid.sprayer.SprayerOutlineHandler;
+import io.github.shrhang.shhs_create_core.content.kinetics.drill.ClientDrillSoundLimiter;
 import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
@@ -23,11 +24,13 @@ public class ClientEvents {
     }
 
     public static void onClientLoggingOut(final ClientPlayerNetworkEvent.LoggingOut event) {
+        ClientDrillSoundLimiter.reset();
         PortableStockTickerClientData.clear();
     }
 
     public static void onClientTickPost(final ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
+        ClientDrillSoundLimiter.tick(minecraft.level, minecraft.isPaused());
         if (minecraft.level == null) {
             return;
         }
