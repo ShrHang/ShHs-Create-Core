@@ -1,0 +1,1 @@
+The core mod for [**ShH's Create**](https://github.com/ShrHang/ShH-s-Create) modpack.
