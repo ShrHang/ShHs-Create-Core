@@ -165,8 +165,8 @@ dependencies {
     implementation "maven.modrinth:kaleidoscope-cookery:1.2.1-neoforge+mc1.21.1" // 森罗厨房
     implementation "maven.modrinth:kaleidoscope-compat:2.4.4-neoforge+mc1.21.1" // 森罗物语：兼容
 
-    implementation "io.redspace:irons_lib:${irons_lib_version}"
-    implementation "io.redspace:irons_spellbooks:${irons_spells_version}"
+    implementation "io.redspace:irons_lib:${minecraft_version}-${irons_lib_version}"
+    implementation "io.redspace:irons_spellbooks:${minecraft_version}-${irons_spells_version}"
 
     runtimeOnly "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
     runtimeOnly "dev.kosmx.player-anim:player-animation-lib-forge:${player_animator_version}+${minecraft_version}"

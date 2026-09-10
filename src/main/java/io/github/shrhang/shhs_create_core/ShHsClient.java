@@ -11,7 +11,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
@@ -35,7 +35,7 @@ public class ShHsClient {
         modEventBus.addListener(ShHsClient::registerScreens);
     }
 
-    public static void init(final FMLCommonSetupEvent event) {
+    public static void init(final FMLClientSetupEvent event) {
         event.enqueueWork(() -> PonderIndex.addPlugin(new ShHsPonderPlugin()));
     }
 

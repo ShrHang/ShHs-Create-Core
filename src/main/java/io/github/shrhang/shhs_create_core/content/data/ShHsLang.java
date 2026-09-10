@@ -5,14 +5,15 @@ import io.github.shrhang.shhs_create_core.content.ponder.ShHsPonderPlugin;
 import com.tterrag.registrate.providers.ProviderType;
 import joptsimple.internal.Strings;
 import net.createmod.ponder.foundation.registration.DefaultPonderSceneRegistrationHelper;
+import net.createmod.ponder.foundation.registration.DefaultPonderTagRegistrationHelper;
 import net.createmod.ponder.foundation.registration.DefaultSharedTextRegistrationHelper;
 import net.createmod.ponder.foundation.registration.PonderLocalization;
 import net.createmod.ponder.foundation.registration.PonderSceneRegistry;
+import net.createmod.ponder.foundation.registration.PonderTagRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
 import java.util.Map;
@@ -93,33 +94,48 @@ public class ShHsLang {
 
     private static void providePonderLang(BiConsumer<String, String> consumer) {
         ShHsPonderPlugin plugin = new ShHsPonderPlugin();
-        PonderLocalization localization = new PonderLocalization();
+        IsolatedPonderLocalization localization = new IsolatedPonderLocalization();
         PonderSceneRegistry scenes = new PonderSceneRegistry(localization);
+        PonderTagRegistry tags = new PonderTagRegistry(localization);
 
-        plugin.registerSharedText(new DefaultSharedTextRegistrationHelper(MODID, localization));
+        // Keep datagen isolated from Ponder plugins belonging to other loaded mods.
         plugin.registerScenes(new DefaultPonderSceneRegistrationHelper(MODID, scenes));
+        plugin.registerTags(new DefaultPonderTagRegistrationHelper(MODID, tags, localization));
+        plugin.registerSharedText(new DefaultSharedTextRegistrationHelper(MODID, localization));
 
         scenes.getRegisteredEntries()
                 .forEach(entry -> PonderSceneRegistry.compileScene(localization, entry.getValue(), null));
-
-        localization.shared.forEach((key, value) ->
-                consumer.accept(ponderSharedLangKey(key), value));
-        localization.specific.entrySet()
-                .stream()
-                .filter(entry -> MODID.equals(entry.getKey().getNamespace()))
-                .sorted(Map.Entry.comparingByKey())
-                .forEach(entry -> entry.getValue()
-                        .entrySet()
-                        .stream()
-                        .sorted(Map.Entry.comparingByKey())
-                        .forEach(text -> consumer.accept(ponderSpecificLangKey(entry.getKey(), text.getKey()), text.getValue())));
+        localization.provideIsolatedLang(consumer);
     }
 
-    private static String ponderSharedLangKey(ResourceLocation key) {
-        return key.getNamespace() + ".ponder.shared." + key.getPath();
-    }
+    private static final class IsolatedPonderLocalization extends PonderLocalization {
 
-    private static String ponderSpecificLangKey(ResourceLocation sceneId, String key) {
-        return sceneId.getNamespace() + ".ponder." + sceneId.getPath() + "." + key;
+        private void provideIsolatedLang(BiConsumer<String, String> consumer) {
+            shared.entrySet()
+                    .stream()
+                    .filter(entry -> MODID.equals(entry.getKey().getNamespace()))
+                    .sorted(Map.Entry.comparingByKey())
+                    .forEach(entry -> consumer.accept(langKeyForShared(entry.getKey()), entry.getValue()));
+
+            tag.entrySet()
+                    .stream()
+                    .filter(entry -> MODID.equals(entry.getKey().getNamespace()))
+                    .sorted(Map.Entry.comparingByKey())
+                    .forEach(entry -> {
+                        consumer.accept(langKeyForTag(entry.getKey()), entry.getValue().getFirst());
+                        consumer.accept(langKeyForTagDescription(entry.getKey()), entry.getValue().getSecond());
+                    });
+
+            specific.entrySet()
+                    .stream()
+                    .filter(entry -> MODID.equals(entry.getKey().getNamespace()))
+                    .sorted(Map.Entry.comparingByKey())
+                    .forEach(entry -> entry.getValue()
+                            .entrySet()
+                            .stream()
+                            .sorted(Map.Entry.comparingByKey())
+                            .forEach(text -> consumer.accept(
+                                    langKeyForSpecific(entry.getKey(), text.getKey()), text.getValue())));
+        }
     }
 }
