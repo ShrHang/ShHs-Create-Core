@@ -30,11 +30,17 @@ public class ShHsConfig {
 
     public static class Client {
         public final ModConfigSpec.BooleanValue isToleranceTooltip;
+        public final ModConfigSpec.BooleanValue disableContraptionDrillBreakParticles;
         Client(ModConfigSpec.Builder builder) {
             builder.push("magic");
             isToleranceTooltip = builder
                     .comment("Whether to show spell tolerance requirement in spell tooltips.")
                     .define("enableToleranceTooltip", true);
+            builder.pop();
+            builder.push("performance");
+            disableContraptionDrillBreakParticles = builder
+                    .comment("Whether to suppress block-breaking particles from moving contraption drills. Sounds and drops are unaffected.")
+                    .define("disableContraptionDrillBreakParticles", true);
             builder.pop();
         }
     }
