@@ -6,6 +6,8 @@ import net.minecraft.world.level.Level;
 public final class DrillBreakEffectContext {
     private static final ThreadLocal<Scope> CURRENT = new ThreadLocal<>();
 
+    private DrillBreakEffectContext() {}
+
     public static void run(Level level, BlockPos pos, boolean active, Runnable action) {
         Scope previous = CURRENT.get();
         CURRENT.set(active ? new Scope(level, pos.immutable()) : null);
