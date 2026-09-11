@@ -6,8 +6,6 @@ import net.minecraft.world.level.Level;
 public final class DrillHitSoundContext {
     private static final ThreadLocal<Scope> CURRENT = new ThreadLocal<>();
 
-    private DrillHitSoundContext() {}
-
     public static void run(Level level, BlockPos pos, boolean active, Runnable action) {
         Scope previous = CURRENT.get();
         CURRENT.set(active ? new Scope(level, pos.immutable()) : null);

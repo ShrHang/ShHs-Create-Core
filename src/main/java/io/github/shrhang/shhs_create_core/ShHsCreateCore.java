@@ -11,8 +11,7 @@ import io.github.shrhang.shhs_create_core.compat.create_enchantment_industry.Cre
 import io.github.shrhang.shhs_create_core.content.data.ShHsLang;
 import io.github.shrhang.shhs_create_core.content.data.ShHsRecipes;
 import io.github.shrhang.shhs_create_core.content.data.ShHsTagKey;
-import io.github.shrhang.shhs_create_core.content.event.MagicEventHandler;
-import io.github.shrhang.shhs_create_core.content.event.ShHsAttackListener;
+import io.github.shrhang.shhs_create_core.content.event.ServerEvents;
 import io.github.shrhang.shhs_create_core.content.kinetics.fan.processing.ShHsFanProcessingTypes;
 import io.github.shrhang.shhs_create_core.content.registries.*;
 import net.createmod.catnip.lang.FontHelper;
@@ -58,8 +57,7 @@ public class ShHsCreateCore {
     public static void init(final FMLCommonSetupEvent event) {
         event.enqueueWork(ShHsInventoryIdentifiers::register);
         event.enqueueWork(ShHsOpenPipeEffects::register);
-        MagicEventHandler.init();
-        ShHsAttackListener.init();
+        ServerEvents.init();
     }
 
     public static void onRegister(final RegisterEvent event) {

@@ -28,7 +28,6 @@ public class ShHsClient {
         modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
 
         ShHsPartialModels.register();
-        ClientEvents.init();
 
         modEventBus.addListener(ShHsClient::init);
         modEventBus.addListener(ShHsKeys::register);
@@ -37,6 +36,7 @@ public class ShHsClient {
 
     public static void init(final FMLClientSetupEvent event) {
         event.enqueueWork(() -> PonderIndex.addPlugin(new ShHsPonderPlugin()));
+        ClientEvents.init();
     }
 
     public static void registerScreens(RegisterMenuScreensEvent event) {

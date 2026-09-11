@@ -4,7 +4,7 @@ import com.simibubi.create.AllBlocks;
 import com.simibubi.create.AllItems;
 import com.tterrag.registrate.providers.RegistrateRecipeProvider;
 import io.github.shrhang.shhs_create_core.ShHsCreateCore;
-import io.github.shrhang.shhs_create_core.content.hostility.EmptyTraitItem;
+import io.github.shrhang.shhs_create_core.content.hostility.items.EmptyTraitItem;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerItem;
 import com.tterrag.registrate.util.entry.ItemEntry;
 import net.minecraft.data.recipes.RecipeCategory;

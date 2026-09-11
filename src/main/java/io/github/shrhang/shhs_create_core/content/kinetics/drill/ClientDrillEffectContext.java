@@ -6,8 +6,6 @@ import net.minecraft.core.BlockPos;
 public final class ClientDrillEffectContext {
     private static final ThreadLocal<Scope> CURRENT = new ThreadLocal<>();
 
-    private ClientDrillEffectContext() {}
-
     public static void run(ClientLevel level, BlockPos pos, boolean suppressParticles, boolean playSound, Runnable action) {
         Scope previous = CURRENT.get();
         CURRENT.set(new Scope(level, pos.immutable(), suppressParticles, playSound));

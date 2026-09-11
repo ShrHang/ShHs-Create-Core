@@ -1,4 +1,4 @@
-package io.github.shrhang.shhs_create_core.content.event;
+package io.github.shrhang.shhs_create_core.content.magic;
 
 import io.redspace.ironsspellbooks.api.events.SpellOnCastEvent;
 import io.redspace.ironsspellbooks.api.events.SpellPreCastEvent;
