@@ -6,6 +6,9 @@
   "compatibilityLevel": "JAVA_21",
   "plugin": "io.github.shrhang.shhs_create_core.mixin.MixinPlugin",
   "mixins": [
+    "minecraft.server.level.ServerLevelMixin",
+    "create.content.kinetics.base.BlockBreakingMovementBehaviourMixin",
+    "create.foundation.utility.BlockHelperMixin",
     "create.content.fluids.tank.storage.creative.CreativeFluidTankMountedStorageMixin",
     "curios.common.data.CuriosEntityManagerMixin",
     "fluidlogistics.content.processing.cooling.BulkCoolingFanProcessingTypeMixin",
@@ -13,6 +16,7 @@
     "irons_spellbooks.util.TooltipsUtilsMixin"
   ],
   "client": [
+    "minecraft.client.renderer.LevelRendererMixin",
     "create.compat.jei.category.CreateRecipeCategoryMixin",
     "fluidlogistics.compat.jei.FluidLogisticsJEIMixin",
     "irons_spellbooks.gui.overlays.InscriptionTableScreenMixin",

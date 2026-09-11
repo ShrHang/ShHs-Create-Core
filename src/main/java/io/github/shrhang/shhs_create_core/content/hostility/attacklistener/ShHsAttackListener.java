@@ -1,4 +1,4 @@
-package io.github.shrhang.shhs_create_core.content.event;
+package io.github.shrhang.shhs_create_core.content.hostility.attacklistener;
 
 import dev.xkmc.l2hostility.init.registrate.LHItems;
 import io.github.shrhang.shhs_create_core.ShHsCreateCore;

@@ -1,4 +1,4 @@
-package io.github.shrhang.shhs_create_core.content.hostility;
+package io.github.shrhang.shhs_create_core.content.hostility.items;
 
 import io.github.shrhang.shhs_create_core.ShHsConfig;
 
