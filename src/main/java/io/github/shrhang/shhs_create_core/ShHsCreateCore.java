@@ -42,6 +42,7 @@ public class ShHsCreateCore {
         ShHsFluids.register();
         ShHsTraits.register();
 
+        ShHsSkullTypes.init(modEventBus);
         ShHsComponentTypes.register(modEventBus);
         ShHsCreativeTabs.register(modEventBus);
         ShHsMenuTypes.register(modEventBus);
@@ -77,5 +78,9 @@ public class ShHsCreateCore {
 
     public static ResourceLocation rl(String id) {
         return ResourceLocation.fromNamespaceAndPath(MODID, id);
+    }
+
+    public static ResourceLocation ml(String id) {
+        return ResourceLocation.withDefaultNamespace(id);
     }
 }

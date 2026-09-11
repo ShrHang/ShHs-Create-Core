@@ -1,4 +1,6 @@
 {
+  "block.shhs_create_core.drowned_head": "溺尸头颅",
+  "block.shhs_create_core.husk_head": "尸壳头颅",
   "block.shhs_create_core.brass_ender_chest": "黄铜末影箱",
   "block.shhs_create_core.brass_ender_chest.tooltip.behaviour1": "切换_锁定状态_。",
   "block.shhs_create_core.brass_ender_chest.tooltip.behaviour2": "_复制_/_粘贴_黄铜末影箱的_所有者_和_锁定状态_。",

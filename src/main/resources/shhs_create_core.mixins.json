@@ -17,6 +17,7 @@
   ],
   "client": [
     "minecraft.client.renderer.LevelRendererMixin",
+    "minecraft.client.renderer.SkullBlockRendererMixin",
     "create.compat.jei.category.CreateRecipeCategoryMixin",
     "fluidlogistics.compat.jei.FluidLogisticsJEIMixin",
     "irons_spellbooks.gui.overlays.InscriptionTableScreenMixin",

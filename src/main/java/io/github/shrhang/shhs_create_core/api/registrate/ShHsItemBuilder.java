@@ -151,6 +151,11 @@ public class ShHsItemBuilder<T extends Item, P> extends ItemBuilder<T, P> {
         return this;
     }
 
+    public ShHsItemBuilder<T, P> noLang() {
+        setData(ProviderType.LANG, NonNullBiConsumer.noop());
+        return this;
+    }
+
     @Override
     public ShHsItemBuilder<T, P> recipe(NonNullBiConsumer<DataGenContext<Item, T>, RegistrateRecipeProvider> cons) {
         super.recipe(cons);

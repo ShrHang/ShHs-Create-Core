@@ -6,6 +6,7 @@ import io.github.shrhang.shhs_create_core.content.ponder.ShHsPonderPlugin;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsKeys;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsMenuTypes;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsPartialModels;
+import io.github.shrhang.shhs_create_core.content.registries.ShHsSkullTypes;
 import net.createmod.ponder.foundation.PonderIndex;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -32,6 +33,7 @@ public class ShHsClient {
         modEventBus.addListener(ShHsClient::init);
         modEventBus.addListener(ShHsKeys::register);
         modEventBus.addListener(ShHsClient::registerScreens);
+        ShHsSkullTypes.clientInit(modEventBus);
     }
 
     public static void init(final FMLClientSetupEvent event) {

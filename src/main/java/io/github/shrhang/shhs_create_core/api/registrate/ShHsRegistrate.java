@@ -7,21 +7,33 @@ import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.tterrag.registrate.builders.BlockBuilder;
 import com.tterrag.registrate.builders.FluidBuilder;
 import com.tterrag.registrate.builders.ItemBuilder;
+import com.tterrag.registrate.util.entry.BlockEntry;
 import com.tterrag.registrate.util.nullness.NonNullFunction;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
 import dev.xkmc.l2hostility.content.config.TraitConfig;
 import dev.xkmc.l2hostility.content.traits.base.MobTrait;
 import dev.xkmc.l2hostility.init.registrate.LHTraits;
 import dev.xkmc.l2serial.util.ModContainerHack;
+import io.github.shrhang.shhs_create_core.content.registries.ShHsSkullTypes;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.StandingAndWallBlockItem;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.SkullBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ShHsRegistrate extends CreateRegistrate {
     private ResourceKey<CreativeModeTab> defaultTab;
@@ -132,6 +144,41 @@ public class ShHsRegistrate extends CreateRegistrate {
     public ShHsPotionBuilder<ShHsRegistrate> potion(String name) {
         return entry(name, cb -> new ShHsPotionBuilder<>(this, this, name, cb));
     }
+
+    public ShHsSkullTypes.ShHsSkullEntry skull(String name, SkullBlock.Type type) {
+        AtomicReference<BlockEntry<ShHsSkullTypes.ShHsSkullBlock>> headRef = new AtomicReference<>();
+
+        var wallHead = block(name + "_wall_head", properties -> new ShHsSkullTypes.ShHsWallSkullBlock(type, properties))
+                .initialProperties(() -> Blocks.ZOMBIE_WALL_HEAD)
+                .noLang()
+                .blockTags(Tags.Blocks.SKULLS)
+                .blockstate((ctx, prov) -> prov.simpleBlock(
+                        ctx.getEntry(),
+                        prov.models().getExistingFile(ResourceLocation.withDefaultNamespace("block/skull"))
+                ))
+                .loot((prov, block) -> prov.dropOther(block, headRef.get().get()))
+                .register();
+
+        var head = block(name + "_head", properties -> new ShHsSkullTypes.ShHsSkullBlock(type, properties))
+                .initialProperties(() -> Blocks.ZOMBIE_HEAD)
+                .blockTags(Tags.Blocks.SKULLS)
+                .blockstate((ctx, prov) -> prov.simpleBlock(
+                        ctx.getEntry(),
+                        prov.models().getExistingFile(ResourceLocation.withDefaultNamespace("block/skull"))
+                ))
+                .item(
+                        (block, properties) -> new StandingAndWallBlockItem(block, wallHead.get(), properties, Direction.DOWN),
+                        item -> item.model((ctx, prov) -> prov.withExistingParent(
+                                ctx.getName(),
+                                ResourceLocation.withDefaultNamespace("item/template_skull")
+                        )).properties(p -> p.rarity(Rarity.UNCOMMON)).noLang().tag(ItemTags.SKULLS)
+                )
+                .register();
+
+        headRef.set(head);
+        return new ShHsSkullTypes.ShHsSkullEntry(head, wallHead);
+    }
+
     /**
      * 复刻了l2hostility的trait注册方法，注册时会自动生成对应的tag和物品。
      */

@@ -136,6 +136,11 @@ public class ShHsBlockBuilder<T extends Block, P> extends BlockBuilder<T, P> {
         return this;
     }
 
+    public ShHsBlockBuilder<T, P> noLang() {
+        setData(ProviderType.LANG, NonNullBiConsumer.noop());
+        return this;
+    }
+
     @Override
     public ShHsBlockBuilder<T, P> defaultLoot() {
         super.defaultLoot();
