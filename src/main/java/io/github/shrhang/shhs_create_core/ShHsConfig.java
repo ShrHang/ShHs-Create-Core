@@ -31,10 +31,6 @@ public class ShHsConfig {
     public static class Client {
         public final ModConfigSpec.BooleanValue isToleranceTooltip;
         public final ModConfigSpec.BooleanValue disableContraptionDrillBreakParticles;
-        public final ModConfigSpec.BooleanValue limitContraptionDrillBreakSounds;
-        public final ModConfigSpec.IntValue contraptionDrillBreakSoundIntervalTicks;
-        public final ModConfigSpec.BooleanValue limitContraptionDrillHitSounds;
-        public final ModConfigSpec.IntValue contraptionDrillHitSoundIntervalTicks;
         Client(ModConfigSpec.Builder builder) {
             builder.push("magic");
             isToleranceTooltip = builder
@@ -45,23 +41,15 @@ public class ShHsConfig {
             disableContraptionDrillBreakParticles = builder
                     .comment("Whether to suppress block-breaking particles from moving contraption drills. Sounds and drops are unaffected.")
                     .define("disableContraptionDrillBreakParticles", true);
-            limitContraptionDrillBreakSounds = builder
-                    .comment("Limit default moving contraption drill break sounds per sound and 4x4x4 block cell. Custom block break sound hooks are unaffected.")
-                    .define("limitContraptionDrillBreakSounds", true);
-            contraptionDrillBreakSoundIntervalTicks = builder
-                    .comment("Minimum client ticks between matching drill break sounds. 4 ticks is about 200 ms at 20 TPS.")
-                    .defineInRange("contraptionDrillBreakSoundIntervalTicks", 4, 1, 100);
-            limitContraptionDrillHitSounds = builder
-                    .comment("Limit moving contraption drill hit sounds per sound and 4x4x4 block cell, independently of break sounds.")
-                    .define("limitContraptionDrillHitSounds", true);
-            contraptionDrillHitSoundIntervalTicks = builder
-                    .comment("Minimum client ticks between matching drill hit sounds. Pitch and playback duration are unchanged.")
-                    .defineInRange("contraptionDrillHitSoundIntervalTicks", 4, 1, 100);
             builder.pop();
         }
     }
 
     public static class Server {
+        public final ModConfigSpec.BooleanValue limitContraptionDrillBreakSounds;
+        public final ModConfigSpec.IntValue contraptionDrillBreakSoundIntervalTicks;
+        public final ModConfigSpec.BooleanValue limitContraptionDrillHitSounds;
+        public final ModConfigSpec.IntValue contraptionDrillHitSoundIntervalTicks;
         public final ModConfigSpec.IntValue scrollPrintingCost;
 
         public final ModConfigSpec.BooleanValue isToleranceRequired;
@@ -75,6 +63,20 @@ public class ShHsConfig {
         public final ModConfigSpec.DoubleValue wizardManaRegenPerLev;
 
         Server(ModConfigSpec.Builder builder) {
+            builder.push("performance");
+            limitContraptionDrillBreakSounds = builder
+                    .comment("Limit default moving contraption drill break sounds per sound and 4x4x4 block cell. Custom block break sound hooks are unaffected.")
+                    .define("limitContraptionDrillBreakSounds", true);
+            contraptionDrillBreakSoundIntervalTicks = builder
+                    .comment("Minimum server ticks between matching drill break sounds. 4 ticks is about 200 ms at 20 TPS.")
+                    .defineInRange("contraptionDrillBreakSoundIntervalTicks", 4, 1, 100);
+            limitContraptionDrillHitSounds = builder
+                    .comment("Limit moving contraption drill hit sounds per sound and 4x4x4 block cell, independently of break sounds.")
+                    .define("limitContraptionDrillHitSounds", true);
+            contraptionDrillHitSoundIntervalTicks = builder
+                    .comment("Minimum server ticks between matching drill hit sounds. Pitch and playback duration are unchanged.")
+                    .defineInRange("contraptionDrillHitSoundIntervalTicks", 4, 1, 100);
+            builder.pop();
             builder.push("compat");
             builder.push("enchantment_industry");
             scrollPrintingCost = builder

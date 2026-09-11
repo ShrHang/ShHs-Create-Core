@@ -2,9 +2,7 @@ package io.github.shrhang.shhs_create_core.mixin.minecraft.client.renderer;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import io.github.shrhang.shhs_create_core.ShHsConfig;
 import io.github.shrhang.shhs_create_core.content.kinetics.drill.ClientDrillEffectContext;
-import io.github.shrhang.shhs_create_core.content.kinetics.drill.ClientDrillSoundLimiter;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.core.BlockPos;
@@ -24,11 +22,8 @@ public abstract class LevelRendererMixin {
                                          SoundSource source, float volume, float pitch, boolean distanceDelay,
                                          Operation<Void> original, int event, BlockPos eventPos, int data) {
         if (event == LevelEvent.PARTICLES_DESTROY_BLOCK
-                && ClientDrillEffectContext.claimSound(level, eventPos)
-                && ShHsConfig.CLIENT.limitContraptionDrillBreakSounds.get()) {
-            if (!ClientDrillSoundLimiter.allow(level, pos, sound, source, ClientDrillSoundLimiter.Kind.BREAK)) {
-                return;
-            }
+                && ClientDrillEffectContext.suppressSound(level, eventPos)) {
+            return;
         }
         original.call(level, pos, sound, source, volume, pitch, distanceDelay);
     }

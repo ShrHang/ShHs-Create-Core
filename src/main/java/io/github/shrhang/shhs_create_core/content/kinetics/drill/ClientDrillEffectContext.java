@@ -8,9 +8,9 @@ public final class ClientDrillEffectContext {
 
     private ClientDrillEffectContext() {}
 
-    public static void run(ClientLevel level, BlockPos pos, boolean suppressParticles, Runnable action) {
+    public static void run(ClientLevel level, BlockPos pos, boolean suppressParticles, boolean playSound, Runnable action) {
         Scope previous = CURRENT.get();
-        CURRENT.set(new Scope(level, pos.immutable(), suppressParticles));
+        CURRENT.set(new Scope(level, pos.immutable(), suppressParticles, playSound));
         try {
             action.run();
         } finally {
@@ -22,13 +22,13 @@ public final class ClientDrillEffectContext {
         }
     }
 
-    public static boolean claimSound(ClientLevel level, BlockPos pos) {
+    public static boolean suppressSound(ClientLevel level, BlockPos pos) {
         Scope scope = matching(level, pos);
         if (scope == null || scope.soundClaimed) {
             return false;
         }
         scope.soundClaimed = true;
-        return true;
+        return !scope.playSound;
     }
 
     public static boolean suppressParticles(ClientLevel level, BlockPos pos) {
@@ -49,13 +49,15 @@ public final class ClientDrillEffectContext {
         private final ClientLevel level;
         private final BlockPos pos;
         private final boolean suppressParticles;
+        private final boolean playSound;
         private boolean soundClaimed;
         private boolean particlesClaimed;
 
-        private Scope(ClientLevel level, BlockPos pos, boolean suppressParticles) {
+        private Scope(ClientLevel level, BlockPos pos, boolean suppressParticles, boolean playSound) {
             this.level = level;
             this.pos = pos;
             this.suppressParticles = suppressParticles;
+            this.playSound = playSound;
         }
     }
 }

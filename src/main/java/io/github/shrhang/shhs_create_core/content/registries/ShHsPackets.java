@@ -1,7 +1,6 @@
 package io.github.shrhang.shhs_create_core.content.registries;
 
 import io.github.shrhang.shhs_create_core.content.kinetics.drill.ContraptionDrillBreakEffectPacket;
-import io.github.shrhang.shhs_create_core.content.kinetics.drill.ContraptionDrillHitSoundPacket;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.OpenPortableStockTickerPacket;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.RemotePackageOrderPacket;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.StockInventoryPacket;
@@ -10,11 +9,10 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 public class ShHsPackets {
-    private static final String VERSION = "0.0.5";
+    private static final String VERSION = "0.0.6";
 
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(VERSION);
-        registrar.playToClient(ContraptionDrillHitSoundPacket.TYPE, ContraptionDrillHitSoundPacket.STREAM_CODEC, ContraptionDrillHitSoundPacket::handle);
         registrar.playToClient(ContraptionDrillBreakEffectPacket.TYPE, ContraptionDrillBreakEffectPacket.STREAM_CODEC, ContraptionDrillBreakEffectPacket::handle);
         registrar.playToServer(OpenPortableStockTickerPacket.TYPE, OpenPortableStockTickerPacket.STREAM_CODEC, OpenPortableStockTickerPacket::handle);
         registrar.playToServer(StockInventoryPacket.StockRequestPacket.TYPE, StockInventoryPacket.StockRequestPacket.STREAM_CODEC, StockInventoryPacket.StockRequestPacket::handle);
