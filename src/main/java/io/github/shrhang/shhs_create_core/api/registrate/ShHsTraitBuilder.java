@@ -95,6 +95,6 @@ public class ShHsTraitBuilder<T extends MobTrait>
     }
 
     public static class ShHsTraitEntry<T extends MobTrait> extends RegistryEntry<MobTrait, T> {
-        public ShHsTraitEntry(ShHsRegistrate owner, DeferredHolder<MobTrait, T> delegate) {super(owner, delegate);}
+        private ShHsTraitEntry(ShHsRegistrate owner, DeferredHolder<MobTrait, T> delegate) {super(owner, delegate);}
     }
 }

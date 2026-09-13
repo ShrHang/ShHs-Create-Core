@@ -6,22 +6,24 @@
   "compatibilityLevel": "JAVA_21",
   "plugin": "io.github.shrhang.shhs_create_core.mixin.MixinPlugin",
   "mixins": [
-    "minecraft.server.level.ServerLevelMixin",
+    "create.content.fluids.tank.storage.creative.CreativeFluidTankMountedStorageMixin",
     "create.content.kinetics.base.BlockBreakingMovementBehaviourMixin",
     "create.foundation.utility.BlockHelperMixin",
-    "create.content.fluids.tank.storage.creative.CreativeFluidTankMountedStorageMixin",
     "curios.common.data.CuriosEntityManagerMixin",
     "fluidlogistics.content.processing.cooling.BulkCoolingFanProcessingTypeMixin",
     "irons_spellbooks.capabilities.magic.PlayerRecastsMixin",
-    "irons_spellbooks.util.TooltipsUtilsMixin"
+    "irons_spellbooks.util.TooltipsUtilsMixin",
+    "minecraft.server.level.ServerLevelMixin",
+    "minecraft.world.entity.monster.DrownedMixin",
+    "minecraft.world.entity.monster.HuskMixin"
   ],
   "client": [
-    "minecraft.client.renderer.LevelRendererMixin",
-    "minecraft.client.renderer.SkullBlockRendererMixin",
     "create.compat.jei.category.CreateRecipeCategoryMixin",
     "fluidlogistics.compat.jei.FluidLogisticsJEIMixin",
     "irons_spellbooks.gui.overlays.InscriptionTableScreenMixin",
-    "irons_spellbooks.gui.overlays.SpellWheelOverlayMixin"
+    "irons_spellbooks.gui.overlays.SpellWheelOverlayMixin",
+    "minecraft.client.renderer.LevelRendererMixin",
+    "minecraft.client.renderer.SkullBlockRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

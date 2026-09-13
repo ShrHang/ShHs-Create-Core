@@ -16,6 +16,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SkullBlock;
 import net.minecraft.world.level.block.WallSkullBlock;
@@ -72,6 +73,18 @@ public enum ShHsSkullTypes implements SkullBlock.Type {
                 .flatMap(type -> Stream.of(type.entry.head().get(), type.entry.wallHead().get()))
                 .toArray(Block[]::new);
         event.modify(BlockEntityType.SKULL, blocks);
+    }
+
+    public Block getBlock() {
+        return entry.head().get();
+    }
+
+    public Block getWallBlock() {
+        return entry.wallHead().get();
+    }
+
+    public Item getItem() {
+        return entry.asItem();
     }
 
     @Override
@@ -183,8 +196,9 @@ public enum ShHsSkullTypes implements SkullBlock.Type {
         }
     }
 
-    public record ShHsSkullEntry(
-            BlockEntry<ShHsSkullBlock> head,
-            BlockEntry<ShHsWallSkullBlock> wallHead
-    ) {}
+    public record ShHsSkullEntry(BlockEntry<ShHsSkullBlock> head, BlockEntry<ShHsWallSkullBlock> wallHead) {
+        public Item asItem() {
+            return head.get().asItem();
+        }
+    }
 }
