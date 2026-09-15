@@ -1,7 +1,9 @@
 package io.github.shrhang.shhs_create_core.content.registries;
 
 import com.simibubi.create.content.fluids.VirtualFluid;
+import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.tterrag.registrate.util.entry.FluidEntry;
+import io.github.shrhang.shhs_create_core.content.fluid.NonPlaceableFluid;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.dispenser.BlockSource;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
@@ -21,7 +23,7 @@ import static io.github.shrhang.shhs_create_core.ShHsCreateCore.REGISTRATE;
 public class ShHsFluids {
 
     public static final FluidEntry<VirtualFluid> HOSTILITY;
-    public static final FluidEntry<VirtualFluid> LIQUID_FERTILIZER;
+    public static final FluidEntry<NonPlaceableFluid> LIQUID_FERTILIZER;
     public static final FluidEntry<BaseFlowingFluid.Flowing> MIRACLE;
 
     static {
@@ -29,7 +31,11 @@ public class ShHsFluids {
                 .lang("Hostility")
                 .register();
 
-        LIQUID_FERTILIZER = REGISTRATE.virtualFluid("liquid_fertilizer")
+        LIQUID_FERTILIZER = REGISTRATE.virtualFluid(
+                        "liquid_fertilizer",
+                        CreateRegistrate::defaultFluidType,
+                        NonPlaceableFluid.Source::new,
+                        NonPlaceableFluid.Flowing::new)
                 .lang("Liquid Fertilizer")
                 .bucket()
                 .build()
