@@ -10,6 +10,14 @@
     },
     {
       "type": "minecraft:single",
+      "resource": "shhs_create_core:fluid/liquid_fertilizer_flow"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "shhs_create_core:fluid/liquid_fertilizer_still"
+    },
+    {
+      "type": "minecraft:single",
       "resource": "shhs_create_core:fluid/miracle_flow"
     },
     {

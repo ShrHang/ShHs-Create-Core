@@ -21,11 +21,18 @@ import static io.github.shrhang.shhs_create_core.ShHsCreateCore.REGISTRATE;
 public class ShHsFluids {
 
     public static final FluidEntry<VirtualFluid> HOSTILITY;
+    public static final FluidEntry<VirtualFluid> LIQUID_FERTILIZER;
     public static final FluidEntry<BaseFlowingFluid.Flowing> MIRACLE;
 
     static {
         HOSTILITY = REGISTRATE.virtualFluid("hostility")
                 .lang("Hostility")
+                .register();
+
+        LIQUID_FERTILIZER = REGISTRATE.virtualFluid("liquid_fertilizer")
+                .lang("Liquid Fertilizer")
+                .bucket()
+                .build()
                 .register();
 
         MIRACLE = REGISTRATE.standardFluid("miracle")
