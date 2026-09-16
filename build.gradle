@@ -135,7 +135,8 @@ repositories {
 }
 
 dependencies {
-    api("dev.latvian.mods:kubejs-neoforge:2101.7.2-build.348")
+    api("dev.latvian.mods:kubejs-neoforge:2101.7.2-build.377")
+    implementation "curse.maven:kubejs-curios-1255211:6825089"
 
     implementation("com.tterrag.registrate:Registrate:$registrate_version")
 
@@ -151,7 +152,7 @@ dependencies {
 
     implementation "maven.modrinth:create-food-filling:${minecraft_version}-${create_food_filling_version}-neoforge" // Create Food Filling
 
-    implementation "maven.modrinth:createfluidlogistic:QcUiaW4c" // Create Fluid Logistic
+    implementation "maven.modrinth:createfluidlogistic:${create_fluid_logistic_version}-mc${minecraft_version}" // Create Fluid Logistic
 
     implementation "maven.modrinth:create-wizardry:${minecraft_version}-${create_wizardry_version}"
 

@@ -3,12 +3,14 @@ package io.github.shrhang.shhs_create_core.content.registries;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.AllItems;
 import com.tterrag.registrate.providers.RegistrateRecipeProvider;
+import dev.xkmc.l2hostility.init.registrate.LHItems;
 import io.github.shrhang.shhs_create_core.ShHsCreateCore;
 import io.github.shrhang.shhs_create_core.content.hostility.items.EmptyTraitItem;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerItem;
 import com.tterrag.registrate.util.entry.ItemEntry;
 import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
+import net.minecraft.data.recipes.ShapelessRecipeBuilder;
 import top.theillusivec4.curios.api.CuriosTags;
 
 import static io.github.shrhang.shhs_create_core.ShHsCreateCore.REGISTRATE;
@@ -42,6 +44,11 @@ public class ShHsItems {
                 .lang("Empty Trait")
                 .tooltipSummary("An _Empty Vessel_ eager to absorb a little _Hostility_ from nearby creatures.")
                 .tooltipBehaviour(1, "When Used while Sneaking", "After _Charge_, _absorbs_ _one level_ of a random _Trait_ from the target and turns into its _Trait Item_.")
+                .recipe((ctx, prov) -> ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ctx.get())
+                        .requires(AllBlocks.PLACARD)
+                        .requires(LHItems.MIRACLE_POWDER)
+                        .unlockedBy("has_placard",  RegistrateRecipeProvider.has(AllBlocks.PLACARD.asItem()))
+                        .save(prov, ShHsCreateCore.rl("crafting/empty_trait")))
                 .register();
     }
 

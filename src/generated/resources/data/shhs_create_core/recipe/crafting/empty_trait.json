@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "create:placard"
+    },
+    {
+      "item": "l2hostility:miracle_powder"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "shhs_create_core:empty_trait"
+  }
+}
