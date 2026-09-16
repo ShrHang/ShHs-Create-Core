@@ -28,20 +28,24 @@ public class ShHsTagKey {
         SPELL_TAG_BUILDER.values().forEach(e -> e.accept(provider));
     }
 
-    public static final ShHsSpellTag ENTITY_SPELL_BLACKLIST =
-            ShHsSpellTag.create(ShHsCreateCore.rl("entity_spell_blacklist")).addSpell(
-                    GLUTTONY_SPELL,
-                    PLANAR_SIGHT_SPELL,
-                    POCKET_DIMENSION_SPELL,
-                    SACRIFICE_SPELL,
-                    SHIELD_SPELL,
-                    SPECTRAL_HAMMER_SPELL,
-                    SUMMON_ENDER_CHEST_SPELL,
-                    TELEKINESIS_SPELL,
-                    THROW_SPELL,
-                    TOUCH_DIG,
-                    WOLOLO_SPELL
-            );
+    public static final ShHsSpellTag ENTITY_SPELL_BLACKLIST;
+
+    static {
+        ENTITY_SPELL_BLACKLIST =
+                ShHsSpellTag.create(ShHsCreateCore.rl("entity_spell_blacklist")).addSpell(
+                        GLUTTONY_SPELL,
+                        PLANAR_SIGHT_SPELL,
+                        POCKET_DIMENSION_SPELL,
+                        SACRIFICE_SPELL,
+                        SHIELD_SPELL,
+                        SPECTRAL_HAMMER_SPELL,
+                        SUMMON_ENDER_CHEST_SPELL,
+                        TELEKINESIS_SPELL,
+                        THROW_SPELL,
+                        TOUCH_DIG,
+                        WOLOLO_SPELL
+                );
+    }
 
     public static void init() {
         REGISTRATE.addDataGenerator(ProviderType.ENTITY_TAGS, ShHsTagKey::onEntityTagGen);

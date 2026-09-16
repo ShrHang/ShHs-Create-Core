@@ -8,7 +8,8 @@ import net.minecraft.tags.TagKey;
 
 import java.util.function.Supplier;
 
-import static io.redspace.ironsspellbooks.api.registry.SpellRegistry.*;
+import static io.redspace.ironsspellbooks.api.registry.SpellRegistry.REGISTRY;
+import static io.redspace.ironsspellbooks.api.registry.SpellRegistry.SPELL_REGISTRY_KEY;
 
 public record ShHsSpellTag(TagKey<AbstractSpell> tag) {
     public static ShHsSpellTag create(ResourceLocation tag) {

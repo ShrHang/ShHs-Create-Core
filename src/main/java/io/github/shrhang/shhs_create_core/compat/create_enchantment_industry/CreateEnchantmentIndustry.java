@@ -1,7 +1,9 @@
 package io.github.shrhang.shhs_create_core.compat.create_enchantment_industry;
 
 import io.github.shrhang.shhs_create_core.compat.create_enchantment_industry.fluid.printing.ScollPrintingBehaviour;
+import io.github.shrhang.shhs_create_core.compat.create_enchantment_industry.fluid.printing.TraitPrintingBehaviour;
 import io.github.shrhang.shhs_create_core.compat.create_enchantment_industry.integration.jei.category.printing.ScollPrintingRecipeJEI;
+import io.github.shrhang.shhs_create_core.compat.create_enchantment_industry.integration.jei.category.printing.TraitPrintingRecipeJEI;
 import mezz.jei.api.registration.IRecipeRegistration;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -17,6 +19,7 @@ public class CreateEnchantmentIndustry {
 
     static {
         PRINTING_BEHAVIOURS.register("scroll", () -> new PrintingBehaviourProvider(ScollPrintingBehaviour::create));
+        PRINTING_BEHAVIOURS.register("trait", () -> new PrintingBehaviourProvider(TraitPrintingBehaviour::create));
     }
 
     public static void register(IEventBus modEventBus) {
@@ -25,5 +28,6 @@ public class CreateEnchantmentIndustry {
 
     public static void jei(IRecipeRegistration registration) {
         registration.addRecipes(PrintingCategory.TYPE, ScollPrintingRecipeJEI.listAll());
+        registration.addRecipes(PrintingCategory.TYPE, TraitPrintingRecipeJEI.listAll());
     }
 }
