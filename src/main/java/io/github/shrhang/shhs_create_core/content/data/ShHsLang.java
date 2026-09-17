@@ -4,19 +4,13 @@ import io.github.shrhang.shhs_create_core.content.registries.ShHsKeys;
 import io.github.shrhang.shhs_create_core.content.ponder.ShHsPonderPlugin;
 import com.tterrag.registrate.providers.ProviderType;
 import joptsimple.internal.Strings;
-import net.createmod.ponder.foundation.registration.DefaultPonderSceneRegistrationHelper;
-import net.createmod.ponder.foundation.registration.DefaultPonderTagRegistrationHelper;
-import net.createmod.ponder.foundation.registration.DefaultSharedTextRegistrationHelper;
-import net.createmod.ponder.foundation.registration.PonderLocalization;
-import net.createmod.ponder.foundation.registration.PonderSceneRegistry;
-import net.createmod.ponder.foundation.registration.PonderTagRegistry;
+import net.createmod.ponder.foundation.PonderIndex;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.Mth;
 
-import java.util.Map;
 import java.util.function.BiConsumer;
 
 import static io.github.shrhang.shhs_create_core.ShHsCreateCore.MODID;
@@ -93,49 +87,7 @@ public class ShHsLang {
     }
 
     private static void providePonderLang(BiConsumer<String, String> consumer) {
-        ShHsPonderPlugin plugin = new ShHsPonderPlugin();
-        IsolatedPonderLocalization localization = new IsolatedPonderLocalization();
-        PonderSceneRegistry scenes = new PonderSceneRegistry(localization);
-        PonderTagRegistry tags = new PonderTagRegistry(localization);
-
-        // Keep datagen isolated from Ponder plugins belonging to other loaded mods.
-        plugin.registerScenes(new DefaultPonderSceneRegistrationHelper(MODID, scenes));
-        plugin.registerTags(new DefaultPonderTagRegistrationHelper(MODID, tags, localization));
-        plugin.registerSharedText(new DefaultSharedTextRegistrationHelper(MODID, localization));
-
-        scenes.getRegisteredEntries()
-                .forEach(entry -> PonderSceneRegistry.compileScene(localization, entry.getValue(), null));
-        localization.provideIsolatedLang(consumer);
-    }
-
-    private static final class IsolatedPonderLocalization extends PonderLocalization {
-
-        private void provideIsolatedLang(BiConsumer<String, String> consumer) {
-            shared.entrySet()
-                    .stream()
-                    .filter(entry -> MODID.equals(entry.getKey().getNamespace()))
-                    .sorted(Map.Entry.comparingByKey())
-                    .forEach(entry -> consumer.accept(langKeyForShared(entry.getKey()), entry.getValue()));
-
-            tag.entrySet()
-                    .stream()
-                    .filter(entry -> MODID.equals(entry.getKey().getNamespace()))
-                    .sorted(Map.Entry.comparingByKey())
-                    .forEach(entry -> {
-                        consumer.accept(langKeyForTag(entry.getKey()), entry.getValue().getFirst());
-                        consumer.accept(langKeyForTagDescription(entry.getKey()), entry.getValue().getSecond());
-                    });
-
-            specific.entrySet()
-                    .stream()
-                    .filter(entry -> MODID.equals(entry.getKey().getNamespace()))
-                    .sorted(Map.Entry.comparingByKey())
-                    .forEach(entry -> entry.getValue()
-                            .entrySet()
-                            .stream()
-                            .sorted(Map.Entry.comparingByKey())
-                            .forEach(text -> consumer.accept(
-                                    langKeyForSpecific(entry.getKey(), text.getKey()), text.getValue())));
-        }
+        PonderIndex.addPlugin(new ShHsPonderPlugin());
+        PonderIndex.getLangAccess().provideLang(MODID, consumer);
     }
 }
