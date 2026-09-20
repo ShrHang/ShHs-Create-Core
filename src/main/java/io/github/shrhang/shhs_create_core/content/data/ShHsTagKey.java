@@ -6,7 +6,10 @@ import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.providers.RegistrateTagsProvider;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.block.Block;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -16,6 +19,9 @@ import static io.github.shrhang.shhs_create_core.ShHsCreateCore.REGISTRATE;
 import static io.redspace.ironsspellbooks.api.registry.SpellRegistry.*;
 
 public class ShHsTagKey {
+    public static final TagKey<Block> FAN_PROCESSING_CATALYSTS_MIRACLE = TagKey.create(
+            Registries.BLOCK, ShHsCreateCore.rl("fan_processing_catalysts/miracle"));
+
     public static final Map<ResourceLocation, Consumer<RegistrateTagsProvider.IntrinsicImpl<EntityType<?>>>> ENTITY_TAG_BUILDER = new TreeMap<>();
     public static void onEntityTagGen(RegistrateTagsProvider.IntrinsicImpl<EntityType<?>> provider) {
         ENTITY_TAG_BUILDER.values().forEach(e -> e.accept(provider));

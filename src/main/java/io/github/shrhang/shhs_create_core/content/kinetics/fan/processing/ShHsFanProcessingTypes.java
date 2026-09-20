@@ -5,6 +5,7 @@ import com.simibubi.create.api.registry.CreateBuiltInRegistries;
 import com.simibubi.create.content.kinetics.fan.processing.FanProcessingType;
 import com.simibubi.create.foundation.recipe.RecipeApplier;
 import io.github.shrhang.shhs_create_core.ShHsCreateCore;
+import io.github.shrhang.shhs_create_core.content.data.ShHsTagKey;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsFluids;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsRecipeTypes;
 import net.minecraft.core.BlockPos;
@@ -41,7 +42,9 @@ public class ShHsFanProcessingTypes {
         public boolean isValidAt(Level level, BlockPos pos) {
             FluidState state = level.getFluidState(pos);
             Fluid fluid = state.getType();
-            return fluid == ShHsFluids.MIRACLE.get() || fluid == ShHsFluids.MIRACLE.getSource();
+            return fluid == ShHsFluids.MIRACLE.get()
+                    || fluid == ShHsFluids.MIRACLE.getSource()
+                    || level.getBlockState(pos).is(ShHsTagKey.FAN_PROCESSING_CATALYSTS_MIRACLE);
         }
 
         @Override

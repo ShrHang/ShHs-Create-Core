@@ -12,6 +12,7 @@ import io.github.shrhang.shhs_create_core.content.data.ShHsLang;
 import io.github.shrhang.shhs_create_core.content.kinetics.fan.processing.MiracleFanProcessingRecipe;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerScreen;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsFluids;
+import io.github.shrhang.shhs_create_core.content.registries.ShHsBlocks;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsRecipeTypes;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
@@ -50,6 +51,7 @@ public class ShHsJeiPlugin implements IModPlugin {
                     return stack;
                 })
                 .catalyst(() -> ShHsFluids.MIRACLE.getBucket().orElse(Items.BUCKET))
+                .catalyst(() -> ShHsBlocks.FAN_MIRACLE_CATALYST.get())
                 .doubleItemIcon(AllItems.PROPELLER.get(), ShHsFluids.MIRACLE.getBucket().orElse(Items.BUCKET))
                 .emptyBackground(178, 72)
                 .build(rl("fan_miracle"), FanMiracleCategory::new));
