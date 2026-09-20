@@ -1,5 +1,9 @@
 package io.github.shrhang.shhs_create_core.content.registries;
 
+import com.hlysine.create_connected.config.FeatureToggle;
+import com.hlysine.create_connected.content.WrenchableBlock;
+import com.hlysine.create_connected.datagen.recipes.FeatureEnabledCondition;
+import com.hlysine.create_connected.registries.CCBlocks;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.AllTags;
 import com.simibubi.create.foundation.data.AssetLookup;
@@ -8,10 +12,6 @@ import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.simibubi.create.foundation.data.SharedProperties;
 import com.tterrag.registrate.providers.RegistrateRecipeProvider;
 import com.tterrag.registrate.util.entry.BlockEntry;
-import com.hlysine.create_connected.config.FeatureToggle;
-import com.hlysine.create_connected.content.WrenchableBlock;
-import com.hlysine.create_connected.datagen.recipes.FeatureEnabledCondition;
-import com.hlysine.create_connected.registries.CCBlocks;
 import io.github.shrhang.shhs_create_core.ShHsCreateCore;
 import io.github.shrhang.shhs_create_core.content.data.ShHsTagKey;
 import io.github.shrhang.shhs_create_core.content.fluid.sprayer.SprayerBlock;
@@ -29,6 +29,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.MapColor;
+import net.neoforged.neoforge.client.model.generators.ModelFile;
 
 import static com.simibubi.create.api.behaviour.movement.MovementBehaviour.movementBehaviour;
 import static com.simibubi.create.foundation.data.TagGen.pickaxeOnly;
@@ -100,9 +101,12 @@ public class ShHsBlocks {
                     AllTags.AllBlockTags.FAN_TRANSPARENT.tag,
                     ShHsTagKey.FAN_PROCESSING_CATALYSTS_MIRACLE
             )
-            .blockstate((ctx, prov) -> {})
+            .blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry(), prov.models()
+                    .getBuilder("block/" + ctx.getName() + "/block").parent(
+                            new ModelFile.UncheckedModelFile(
+                                    ResourceLocation.fromNamespaceAndPath("create_connected", "block/fan_catalyst/with_content"))
+                    ).texture("content", ShHsCreateCore.rl("fluid/miracle_still"))))
             .item(item -> item
-                    .model((ctx, prov) -> {})
                     .tooltipSummary("Dedicated _bulk miracle_ device. The catalyst's contents do not interact with the environment.")
                     .recipe((ctx, prov) -> ShapelessRecipeBuilder
                             .shapeless(RecipeCategory.MISC, CCBlocks.EMPTY_FAN_CATALYST.get())
