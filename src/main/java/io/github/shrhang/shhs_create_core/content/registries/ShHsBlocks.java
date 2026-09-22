@@ -1,6 +1,11 @@
 package io.github.shrhang.shhs_create_core.content.registries;
 
+import com.hlysine.create_connected.config.FeatureToggle;
+import com.hlysine.create_connected.content.WrenchableBlock;
+import com.hlysine.create_connected.datagen.recipes.FeatureEnabledCondition;
+import com.hlysine.create_connected.registries.CCBlocks;
 import com.simibubi.create.AllBlocks;
+import com.simibubi.create.AllTags;
 import com.simibubi.create.foundation.data.AssetLookup;
 import com.simibubi.create.foundation.data.BlockStateGen;
 import com.simibubi.create.foundation.data.CreateRegistrate;
@@ -8,6 +13,7 @@ import com.simibubi.create.foundation.data.SharedProperties;
 import com.tterrag.registrate.providers.RegistrateRecipeProvider;
 import com.tterrag.registrate.util.entry.BlockEntry;
 import io.github.shrhang.shhs_create_core.ShHsCreateCore;
+import io.github.shrhang.shhs_create_core.content.data.ShHsTagKey;
 import io.github.shrhang.shhs_create_core.content.fluid.sprayer.SprayerBlock;
 import io.github.shrhang.shhs_create_core.content.fluid.sprayer.SprayerModel;
 import io.github.shrhang.shhs_create_core.content.fluid.sprayer.SprayerMovementBehaviour;
@@ -17,11 +23,13 @@ import io.github.shrhang.shhs_create_core.content.logistics.brass_ender_chest.Br
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
+import net.minecraft.data.recipes.ShapelessRecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.MapColor;
+import net.neoforged.neoforge.client.model.generators.ModelFile;
 
 import static com.simibubi.create.api.behaviour.movement.MovementBehaviour.movementBehaviour;
 import static com.simibubi.create.foundation.data.TagGen.pickaxeOnly;
@@ -77,6 +85,40 @@ public class ShHsBlocks {
                             vertical ? "vertical" : "horizontal")))
             .onRegister(CreateRegistrate.blockModel(() -> SprayerModel::withAO))
             .onRegister(movementBehaviour(new SprayerMovementBehaviour()))
+            .register();
+
+    public static final BlockEntry<WrenchableBlock> FAN_MIRACLE_CATALYST = REGISTRATE
+            .block("fan_miracle_catalyst", WrenchableBlock::new)
+            .lang("Fan Miracle Catalyst")
+            .properties(p -> p
+                    .mapColor(MapColor.TERRACOTTA_LIGHT_GREEN)
+                    .strength(3.0f)
+                    .requiresCorrectToolForDrops()
+                    .noOcclusion()
+                    .isRedstoneConductor((state, level, pos) -> false)
+            )
+            .blockTags(
+                    AllTags.AllBlockTags.FAN_TRANSPARENT.tag,
+                    ShHsTagKey.FAN_PROCESSING_CATALYSTS_MIRACLE
+            )
+            .blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry(), prov.models()
+                    .getBuilder("block/" + ctx.getName() + "/block").parent(
+                            new ModelFile.UncheckedModelFile(
+                                    ResourceLocation.fromNamespaceAndPath("create_connected", "block/fan_catalyst/with_content"))
+                    ).texture("content", ShHsCreateCore.rl("fluid/miracle_still"))))
+            .item(item -> item
+                    .tooltipSummary("Dedicated _bulk miracle_ device. The catalyst's contents do not interact with the environment.")
+                    .recipe((ctx, prov) -> ShapelessRecipeBuilder
+                            .shapeless(RecipeCategory.MISC, CCBlocks.EMPTY_FAN_CATALYST.get())
+                            .requires(ctx.get())
+                            .unlockedBy("has_fan_miracle_catalyst", RegistrateRecipeProvider.has(ctx.get()))
+                            .save(
+                                    prov.withConditions(new FeatureEnabledCondition(CCBlocks.EMPTY_FAN_CATALYST.getId())),
+                                    ShHsCreateCore.rl("crafting/kinetics/empty_fan_catalyst_from_miracle")
+                            ))
+            )
+            .transform(pickaxeOnly())
+            .transform(FeatureToggle.registerDependent(CCBlocks.EMPTY_FAN_CATALYST))
             .register();
 
     /**

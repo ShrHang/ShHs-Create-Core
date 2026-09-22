@@ -5,9 +5,12 @@ import com.simibubi.create.api.data.recipe.*;
 import com.simibubi.create.content.processing.recipe.StandardProcessingRecipe;
 import com.simibubi.create.foundation.recipe.IRecipeTypeInfo;
 import com.tterrag.registrate.providers.ProviderType;
+import com.hlysine.create_connected.datagen.recipes.FeatureEnabledCondition;
+import com.hlysine.create_connected.registries.CCBlocks;
 import dev.xkmc.l2hostility.init.registrate.LHItems;
 import io.github.shrhang.shhs_create_core.content.kinetics.fan.processing.MiracleFanProcessingRecipe;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsFluids;
+import io.github.shrhang.shhs_create_core.content.registries.ShHsBlocks;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsItems;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsRecipeTypes;
 import net.minecraft.core.HolderLookup;
@@ -30,6 +33,7 @@ public class ShHsRecipes {
         REGISTRATE.addDataGenerator(ProviderType.GENERIC_SERVER, provider -> {
             provider.add(data -> new Emptying(data.output(), data.registries()));
             provider.add(data -> new Filling(data.output(), data.registries()));
+            provider.add(data -> new ItemApplication(data.output(), data.registries()));
             provider.add(data -> new Mixing(data.output(), data.registries()));
             provider.add(data -> new Miracle(data.output(), data.registries()));
         });
@@ -64,9 +68,28 @@ public class ShHsRecipes {
                 BOTTLE_CURSE = create("bottle_curse", b -> b
                         .require(Items.GLASS_BOTTLE)
                         .require(ShHsFluids.HOSTILITY.value(), 100)
-                        .output(LHItems.BOTTLE_CURSE.get()));
+                        .output(LHItems.BOTTLE_CURSE.get())),
+
+                FAN_MIRACLE_CATALYST = create("fan_miracle_catalyst", b -> b
+                        .require(CCBlocks.EMPTY_FAN_CATALYST.get())
+                        .require(ShHsFluids.MIRACLE.value(), 1000)
+                        .output(ShHsBlocks.FAN_MIRACLE_CATALYST.get())
+                        .withCondition(new FeatureEnabledCondition(CCBlocks.EMPTY_FAN_CATALYST.getId())));
 
         public Filling(PackOutput output, CompletableFuture<HolderLookup.Provider> registries) {
+            super(output, registries, MODID);
+        }
+    }
+
+    public static class ItemApplication extends ItemApplicationRecipeGen {
+        GeneratedRecipe
+                FAN_MIRACLE_CATALYST_FROM_EMPTY = create("fan_miracle_catalyst_from_empty", b -> b
+                        .require(CCBlocks.EMPTY_FAN_CATALYST.get())
+                        .require(ShHsFluids.MIRACLE.getBucket().orElse(Items.BUCKET))
+                        .output(ShHsBlocks.FAN_MIRACLE_CATALYST.get())
+                        .withCondition(new FeatureEnabledCondition(CCBlocks.EMPTY_FAN_CATALYST.getId())));
+
+        public ItemApplication(PackOutput output, CompletableFuture<HolderLookup.Provider> registries) {
             super(output, registries, MODID);
         }
     }
