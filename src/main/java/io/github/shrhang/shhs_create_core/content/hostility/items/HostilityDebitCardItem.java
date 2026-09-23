@@ -2,7 +2,6 @@ package io.github.shrhang.shhs_create_core.content.hostility.items;
 
 import com.mojang.logging.LogUtils;
 import dev.xkmc.l2hostility.content.capability.player.PlayerDifficulty;
-import dev.xkmc.l2hostility.content.logic.TraitManager;
 import dev.xkmc.l2hostility.init.data.LangData;
 import dev.xkmc.l2hostility.init.registrate.LHMiscs;
 import io.github.shrhang.shhs_create_core.ShHsConfig;
@@ -29,14 +28,19 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 import org.slf4j.Logger;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static io.github.shrhang.shhs_create_core.content.data.ShHsLang.textComponent;
+import static io.github.shrhang.shhs_create_core.content.data.ShHsLang.tooltipComponent;
 
 public class HostilityDebitCardItem extends Item {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final DustParticleOptions SWAP_PARTICLE =
             new DustParticleOptions(new Vector3f(0.58f, 0.12f, 0.82f), 1.25f);
+
+    private static final int DETAIL_TEXT_COLOR = 0xC9974C;
+    private static final int DETAIL_VALUE_COLOR = 0xF1DD79;
 
     public HostilityDebitCardItem(Properties properties) {
         super(properties);
@@ -77,30 +81,61 @@ public class HostilityDebitCardItem extends Item {
     public void appendHoverText(ItemStack stack, @NotNull TooltipContext context,
                                 @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
         HostilityProfile profile = stack.getOrDefault(ShHsComponentTypes.HOSTILITY_PROFILE, HostilityProfile.EMPTY);
-        tooltip.add(LangData.INFO_PLAYER_LEVEL.get(profile.persistentLevelString())
-                .withStyle(ChatFormatting.LIGHT_PURPLE));
+        boolean showDetails = Screen.hasShiftDown();
 
-        if (Screen.hasShiftDown()) {
-            tooltip.add(indent(LangData.INFO_PLAYER_ADAPTIVE_LEVEL.get(profile.baseLevel())
-                    .withStyle(ChatFormatting.GRAY)));
-            tooltip.add(indent(LangData.INFO_PLAYER_EXT_LEVEL.get(profile.extraLevel())
-                    .withStyle(ChatFormatting.GRAY)));
-            tooltip.add(indent(textComponent("hostility_debit_card.dimensions", profile.dimensions().size())
-                    .withStyle(ChatFormatting.GRAY)));
+        if (showDetails) tooltip.add(Component.empty());
 
-            int traitRankCap = profile.traitRankCap();
-            Object traitRankDisplay = traitRankCap > TraitManager.getMaxLevel()
-                    ? LangData.TOOLTIP_LEGENDARY.get().withStyle(ChatFormatting.DARK_PURPLE)
-                    : traitRankCap;
-            tooltip.add(LangData.INFO_PLAYER_CAP.get(traitRankDisplay).withStyle(ChatFormatting.GRAY));
-            tooltip.add(LangData.INFO_REWARD.get(profile.rewardCount()).withStyle(ChatFormatting.GRAY));
-            tooltip.add(textComponent("hostility_debit_card.dynamic_warning").withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.add(LangData.INFO_PLAYER_LEVEL.get(
+                Component.literal(profile.persistentLevelString()).withStyle(ChatFormatting.LIGHT_PURPLE))
+                .withStyle(ChatFormatting.GRAY));
+
+        if (showDetails) {
+            tooltip.add(indent(LangData.INFO_PLAYER_ADAPTIVE_LEVEL, profile.baseLevel()));
+
+            int extraLevel = profile.extraLevel();
+            if (extraLevel != 0) {
+                tooltip.add(indent(LangData.INFO_PLAYER_EXT_LEVEL, extraLevel));
+            }
+
+            Component dimensionCount = Component.literal(
+                    String.valueOf(profile.dimensions().size())
+            ).withColor(DETAIL_VALUE_COLOR);
+            tooltip.add(indent(tooltipComponent(
+                    "hostility_debit_card.dimensions",
+                    dimensionCount
+            ).withColor(DETAIL_TEXT_COLOR)));
+
+            int rewardCount = profile.rewardCount();
+            if (rewardCount > 0) {
+                Component reward = Component.literal(String.valueOf(rewardCount))
+                        .withStyle(ChatFormatting.GREEN);
+                tooltip.add(LangData.INFO_REWARD.get(reward)
+                        .withStyle(ChatFormatting.GRAY));
+            }
         }
+
+        if (profile.traitRankCap() > 5) {
+            tooltip.add(LangData.INFO_PLAYER_CAP.get(
+                    LangData.TOOLTIP_LEGENDARY.get().withStyle(ChatFormatting.GOLD)
+            ).withStyle(ChatFormatting.GRAY));
+        }
+
         super.appendHoverText(stack, context, tooltip, flag);
     }
 
     private static Component indent(Component component) {
-        return Component.literal("  ").append(component);
+        return Component.literal(" ").append(component);
+    }
+
+    private static Component indent(LangData lang, Object... args) {
+        Object[] styledArgs = Arrays.stream(args)
+                .map(arg -> arg instanceof Component component
+                        ? component.copy()
+                        : Component.literal(String.valueOf(arg)))
+                .map(component -> component.withColor(DETAIL_VALUE_COLOR))
+                .toArray(Object[]::new);
+
+        return indent(lang.get(styledArgs).withColor(DETAIL_TEXT_COLOR));
     }
 
     private void swapProfile(ItemStack stack, ServerPlayer player) {

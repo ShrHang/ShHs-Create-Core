@@ -60,13 +60,10 @@ public class ShHsLang {
         REGISTRATE.addRawLang(key("text","empty_trait_no_target"), "No valid target in sight.");
         REGISTRATE.addRawLang(key("text","empty_trait_no_traits"), "No traits can be extracted from this target.");
 
-        REGISTRATE.addRawLang(key("text", "hostility_debit_card.dimensions"), "Visited dimensions: %s");
-        REGISTRATE.addRawLang(key("text", "hostility_debit_card.dynamic_warning"),
-                "Equipment and dimension bonuses are not included.");
+        REGISTRATE.addRawLang(key("tooltip", "hostility_debit_card.dimensions"), "Visited dimensions: %s");
         REGISTRATE.addRawLang(key("text", "hostility_debit_card.invalid_profile"), "This card contains an unsupported hostility profile.");
         REGISTRATE.addRawLang(key("text", "hostility_debit_card.swap_failed"), "Failed to swap hostility profiles.");
-        REGISTRATE.addRawLang(key("text", "hostility_debit_card.swapped"),
-                "Player %s -> %s, Card %s -> %s");
+        REGISTRATE.addRawLang(key("text", "hostility_debit_card.swapped"), "Player %s -> %s, Card %s -> %s");
 
         REGISTRATE.addRawLang(key("title", "container.endchest"), "%s's %s");
         REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.header"), "Ender Chest Info");
