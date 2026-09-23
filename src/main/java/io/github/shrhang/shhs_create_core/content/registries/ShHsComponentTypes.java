@@ -1,6 +1,7 @@
 package io.github.shrhang.shhs_create_core.content.registries;
 
 import io.github.shrhang.shhs_create_core.ShHsCreateCore;
+import io.github.shrhang.shhs_create_core.content.hostility.items.HostilityProfile;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.LogisticsNetworkLink;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
@@ -18,6 +19,13 @@ public class ShHsComponentTypes {
             builder -> builder
                     .persistent(LogisticsNetworkLink.CODEC)
                     .networkSynchronized(LogisticsNetworkLink.STREAM_CODEC)
+    );
+
+    public static final DataComponentType<HostilityProfile> HOSTILITY_PROFILE = register(
+            "hostility_profile",
+            builder -> builder
+                    .persistent(HostilityProfile.CODEC)
+                    .networkSynchronized(HostilityProfile.STREAM_CODEC)
     );
 
     private static <T> DataComponentType<T> register(String name, UnaryOperator<DataComponentType.Builder<T>> builder) {

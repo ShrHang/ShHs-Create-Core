@@ -13,6 +13,7 @@
     "fluidlogistics.content.processing.cooling.BulkCoolingFanProcessingTypeMixin",
     "irons_spellbooks.capabilities.magic.PlayerRecastsMixin",
     "irons_spellbooks.util.TooltipsUtilsMixin",
+    "l2hostility.content.capability.player.PlayerDifficultyAccessor",
     "minecraft.server.level.ServerLevelMixin",
     "minecraft.world.entity.monster.DrownedMixin",
     "minecraft.world.entity.monster.HuskMixin"

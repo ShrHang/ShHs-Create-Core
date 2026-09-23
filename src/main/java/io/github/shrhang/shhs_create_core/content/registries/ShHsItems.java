@@ -6,6 +6,8 @@ import com.tterrag.registrate.providers.RegistrateRecipeProvider;
 import dev.xkmc.l2hostility.init.registrate.LHItems;
 import io.github.shrhang.shhs_create_core.ShHsCreateCore;
 import io.github.shrhang.shhs_create_core.content.hostility.items.EmptyTraitItem;
+import io.github.shrhang.shhs_create_core.content.hostility.items.HostilityDebitCardItem;
+import io.github.shrhang.shhs_create_core.content.hostility.items.HostilityProfile;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerItem;
 import com.tterrag.registrate.util.entry.ItemEntry;
 import net.minecraft.data.recipes.RecipeCategory;
@@ -18,6 +20,7 @@ import static io.github.shrhang.shhs_create_core.ShHsCreateCore.REGISTRATE;
 public class ShHsItems {
     public static final ItemEntry<PortableStockTickerItem> PORTABLE_STOCK_TICKER;
     public static final ItemEntry<EmptyTraitItem> EMPTY_TRAIT;
+    public static final ItemEntry<HostilityDebitCardItem> HOSTILITY_DEBIT_CARD;
 
     static {
         PORTABLE_STOCK_TICKER = REGISTRATE.item("portable_stock_ticker", PortableStockTickerItem::new)
@@ -49,6 +52,15 @@ public class ShHsItems {
                         .requires(LHItems.MIRACLE_POWDER)
                         .unlockedBy("has_placard",  RegistrateRecipeProvider.has(AllBlocks.PLACARD.asItem()))
                         .save(prov, ShHsCreateCore.rl("crafting/empty_trait")))
+                .register();
+
+        HOSTILITY_DEBIT_CARD = REGISTRATE.item("hostility_debit_card", HostilityDebitCardItem::new)
+                .properties(p -> p.stacksTo(1)
+                        .component(ShHsComponentTypes.HOSTILITY_PROFILE, HostilityProfile.EMPTY))
+                .model((ctx, pvd) -> pvd.generated(ctx, pvd.modLoc("item/hostility_debit_card")))
+                .lang("Hostility Debit Card")
+                .tooltipSummary("Stores a complete _Hostility Profile_ and swaps it with yours after charging.")
+                .tooltipBehaviour(1, "When Used", "_Swaps_ the stored profile with your current profile.")
                 .register();
     }
 

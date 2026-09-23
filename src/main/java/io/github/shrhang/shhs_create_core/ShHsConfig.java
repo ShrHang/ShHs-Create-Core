@@ -59,6 +59,9 @@ public class ShHsConfig {
 
         public final ModConfigSpec.DoubleValue realityTraitScale;
         public final ModConfigSpec.IntValue emptyTraitMinUseTicks;
+        public final ModConfigSpec.IntValue hostilityDebitCardUseDurationTicks;
+        public final ModConfigSpec.IntValue hostilityDebitCardCooldownTicks;
+        public final ModConfigSpec.BooleanValue hostilityDebitCardGenerateParticles;
         public final ModConfigSpec.DoubleValue wizardMaxManaPerLev;
         public final ModConfigSpec.DoubleValue wizardManaRegenPerLev;
 
@@ -108,6 +111,15 @@ public class ShHsConfig {
             emptyTraitMinUseTicks = builder
                     .comment("The minimum use time in ticks required for Empty Trait extraction. Set to 0 to allow immediate release.")
                     .defineInRange("emptyTraitMinUseTicks", 30, 0, 72000);
+            hostilityDebitCardUseDurationTicks = builder
+                    .comment("The use time in ticks required to swap profiles with the Hostility Debit Card. Set to 0 for immediate use.")
+                    .defineInRange("hostilityDebitCardUseDurationTicks", 20, 0, 72000);
+            hostilityDebitCardCooldownTicks = builder
+                    .comment("The cooldown in ticks applied after a successful Hostility Debit Card profile swap. Set to 0 to disable it.")
+                    .defineInRange("hostilityDebitCardCooldownTicks", 40, 0, 72000);
+            hostilityDebitCardGenerateParticles = builder
+                    .comment("Whether a successful Hostility Debit Card profile swap generates particles.")
+                    .define("hostilityDebitCardGenerateParticles", true);
             builder.push("trait");
             builder.push("wizard");
             wizardMaxManaPerLev = builder
