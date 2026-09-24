@@ -2,6 +2,7 @@ package io.github.shrhang.shhs_create_core.content.registries;
 
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.AllItems;
+import com.simibubi.create.content.processing.sequenced.SequencedAssemblyItem;
 import com.tterrag.registrate.providers.RegistrateRecipeProvider;
 import dev.xkmc.l2hostility.init.registrate.LHItems;
 import io.github.shrhang.shhs_create_core.ShHsCreateCore;
@@ -21,6 +22,7 @@ public class ShHsItems {
     public static final ItemEntry<PortableStockTickerItem> PORTABLE_STOCK_TICKER;
     public static final ItemEntry<EmptyTraitItem> EMPTY_TRAIT;
     public static final ItemEntry<HostilityDebitCardItem> HOSTILITY_DEBIT_CARD;
+    public static final ItemEntry<SequencedAssemblyItem> INCOMPLETE_HOSTILITY_DEBIT_CARD;
 
     static {
         PORTABLE_STOCK_TICKER = REGISTRATE.item("portable_stock_ticker", PortableStockTickerItem::new)
@@ -54,6 +56,7 @@ public class ShHsItems {
                         .save(prov, ShHsCreateCore.rl("crafting/empty_trait")))
                 .register();
 
+
         HOSTILITY_DEBIT_CARD = REGISTRATE.item("hostility_debit_card", HostilityDebitCardItem::new)
                 .properties(p -> p.stacksTo(1)
                         .component(ShHsComponentTypes.HOSTILITY_PROFILE, HostilityProfile.EMPTY))
@@ -61,6 +64,12 @@ public class ShHsItems {
                 .lang("Hostility Debit Card")
                 .tooltipSummary("Stores a complete _Hostility Profile_ and swaps it with yours after charging.")
                 .tooltipBehaviour(1, "When Used", "_Swaps_ the stored profile with your current profile.")
+                .register();
+
+        INCOMPLETE_HOSTILITY_DEBIT_CARD = REGISTRATE.item("incomplete_hostility_debit_card", SequencedAssemblyItem::new)
+                .model((ctx, pvd) -> pvd.generated(ctx, pvd.modLoc("item/imcomplete_hostility_debit_card")))
+                .lang("Incomplete Hostility Debit Card")
+                .removeTab(ShHsCreativeTabs.DEFAULT.getKey())
                 .register();
     }
 

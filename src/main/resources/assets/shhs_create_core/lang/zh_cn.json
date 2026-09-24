@@ -30,6 +30,7 @@
   "item.shhs_create_core.hostility_debit_card.tooltip.behaviour1": "将存储的档案与玩家当前的档案进行_交换_。",
   "item.shhs_create_core.hostility_debit_card.tooltip.condition1": "使用时",
   "item.shhs_create_core.hostility_debit_card.tooltip.summary": "存储玩家当前的_恶意档案_。",
+  "item.shhs_create_core.incomplete_hostility_debit_card": "未完成的恶意储蓄卡",
   "item.shhs_create_core.liquid_fertilizer_bucket": "液体肥料桶",
   "item.shhs_create_core.miracle_bucket": "奇迹桶",
   "item.shhs_create_core.portable_stock_ticker": "便携仓储发报机",

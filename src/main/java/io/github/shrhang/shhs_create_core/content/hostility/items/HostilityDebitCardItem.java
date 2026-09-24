@@ -105,6 +105,8 @@ public class HostilityDebitCardItem extends Item {
                     dimensionCount
             ).withColor(DETAIL_TEXT_COLOR)));
 
+            tooltip.add(Component.empty());
+
             int rewardCount = profile.rewardCount();
             if (rewardCount > 0) {
                 Component reward = Component.literal(String.valueOf(rewardCount))

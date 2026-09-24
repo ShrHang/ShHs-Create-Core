@@ -1,0 +1,77 @@
+{
+  "type": "create:sequenced_assembly",
+  "ingredient": {
+    "item": "create:brass_sheet"
+  },
+  "results": [
+    {
+      "id": "shhs_create_core:hostility_debit_card"
+    }
+  ],
+  "sequence": [
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "shhs_create_core:incomplete_hostility_debit_card"
+        },
+        {
+          "item": "shhs_create_core:empty_trait"
+        }
+      ],
+      "results": [
+        {
+          "id": "shhs_create_core:incomplete_hostility_debit_card"
+        }
+      ]
+    },
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "shhs_create_core:incomplete_hostility_debit_card"
+        },
+        {
+          "item": "l2hostility:bottle_of_sanity"
+        }
+      ],
+      "results": [
+        {
+          "id": "shhs_create_core:incomplete_hostility_debit_card"
+        }
+      ]
+    },
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "shhs_create_core:incomplete_hostility_debit_card"
+        },
+        {
+          "item": "create:electron_tube"
+        }
+      ],
+      "results": [
+        {
+          "id": "shhs_create_core:incomplete_hostility_debit_card"
+        }
+      ]
+    },
+    {
+      "type": "create:cutting",
+      "ingredients": [
+        {
+          "item": "shhs_create_core:incomplete_hostility_debit_card"
+        }
+      ],
+      "results": [
+        {
+          "id": "shhs_create_core:incomplete_hostility_debit_card"
+        }
+      ]
+    }
+  ],
+  "transitional_item": {
+    "id": "shhs_create_core:incomplete_hostility_debit_card"
+  }
+}

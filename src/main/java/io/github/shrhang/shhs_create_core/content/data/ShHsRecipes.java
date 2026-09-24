@@ -2,6 +2,8 @@ package io.github.shrhang.shhs_create_core.content.data;
 
 import com.simibubi.create.AllItems;
 import com.simibubi.create.api.data.recipe.*;
+import com.simibubi.create.content.kinetics.deployer.DeployerApplicationRecipe;
+import com.simibubi.create.content.kinetics.saw.CuttingRecipe;
 import com.simibubi.create.content.processing.recipe.StandardProcessingRecipe;
 import com.simibubi.create.foundation.recipe.IRecipeTypeInfo;
 import com.tterrag.registrate.providers.ProviderType;
@@ -35,6 +37,7 @@ public class ShHsRecipes {
             provider.add(data -> new Filling(data.output(), data.registries()));
             provider.add(data -> new ItemApplication(data.output(), data.registries()));
             provider.add(data -> new Mixing(data.output(), data.registries()));
+            provider.add(data -> new SequencedAssembly(data.output(), data.registries()));
             provider.add(data -> new Miracle(data.output(), data.registries()));
         });
     }
@@ -107,6 +110,23 @@ public class ShHsRecipes {
                         .output(ShHsFluids.MIRACLE.value(), 250));
 
         public Mixing(PackOutput output, CompletableFuture<HolderLookup.Provider> registries) {
+            super(output, registries, MODID);
+        }
+    }
+
+    public static class SequencedAssembly extends SequencedAssemblyRecipeGen {
+        GeneratedRecipe
+                HOSTILITY_DEBIT_CARD = create("hostility_debit_card", b -> b
+                        .require(AllItems.BRASS_SHEET)
+                        .transitionTo(ShHsItems.INCOMPLETE_HOSTILITY_DEBIT_CARD.get())
+                        .addOutput(ShHsItems.HOSTILITY_DEBIT_CARD.get(), 1)
+                        .loops(1)
+                        .addStep(DeployerApplicationRecipe::new, rb -> rb.require(ShHsItems.EMPTY_TRAIT.get()))
+                        .addStep(DeployerApplicationRecipe::new, rb -> rb.require(LHItems.BOTTLE_SANITY.get()))
+                        .addStep(DeployerApplicationRecipe::new, rb -> rb.require(AllItems.ELECTRON_TUBE.get()))
+                        .addStep(CuttingRecipe::new, rb -> rb));
+
+        public SequencedAssembly(PackOutput output, CompletableFuture<HolderLookup.Provider> registries) {
             super(output, registries, MODID);
         }
     }

@@ -30,6 +30,7 @@
   "item.shhs_create_core.hostility_debit_card.tooltip.behaviour1": "_Swaps_ the stored profile with your current profile.",
   "item.shhs_create_core.hostility_debit_card.tooltip.condition1": "When Used",
   "item.shhs_create_core.hostility_debit_card.tooltip.summary": "Stores a complete _Hostility Profile_ and swaps it with yours after charging.",
+  "item.shhs_create_core.incomplete_hostility_debit_card": "Incomplete Hostility Debit Card",
   "item.shhs_create_core.liquid_fertilizer_bucket": "Liquid Fertilizer Bucket",
   "item.shhs_create_core.miracle_bucket": "Miracle Bucket",
   "item.shhs_create_core.portable_stock_ticker": "Portable Stock Ticker",
