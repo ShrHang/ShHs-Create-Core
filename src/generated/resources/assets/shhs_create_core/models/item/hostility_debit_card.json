@@ -1,6 +1,7 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "shhs_create_core:item/hostility_debit_card"
+    "layer0": "shhs_create_core:item/imcomplete_hostility_debit_card",
+    "layer1": "shhs_create_core:item/add_hostility_debit_card"
   }
 }

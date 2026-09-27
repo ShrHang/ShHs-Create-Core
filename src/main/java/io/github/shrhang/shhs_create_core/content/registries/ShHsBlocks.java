@@ -42,15 +42,15 @@ public class ShHsBlocks {
     public static final BlockEntry<DimensionParcelStationBlock> DIMENSION_PARCEL_STATION = REGISTRATE
             .block("dimension_parcel_station", DimensionParcelStationBlock::new)
             .lang("Dimension Parcel Station")
-            .initialProperties(() -> BDBlocks.NET_INTERFACE.get())
-            .properties(p -> p.requiresCorrectToolForDrops())
+            .initialProperties(BDBlocks.NET_INTERFACE::get)
+            .properties(p -> p
+                    .requiresCorrectToolForDrops()
+                    .noOcclusion()
+            )
             .blockTags(BlockTags.MINEABLE_WITH_PICKAXE)
-            .blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry(),
-                    new ModelFile.UncheckedModelFile(ResourceLocation.fromNamespaceAndPath(
-                            "beyonddimensions", "block/net_interface"))))
-            .item(item -> item.model((ctx, prov) -> prov.getBuilder(ctx.getName()).parent(
-                    new ModelFile.UncheckedModelFile(ResourceLocation.fromNamespaceAndPath(
-                            "beyonddimensions", "block/net_interface")))))
+            .blockstate((ctx, prov) ->
+                    prov.horizontalBlock(ctx.getEntry(), prov.models().getExistingFile(ctx.getId())))
+            .item(item -> {})
             .register();
 
     public static final BlockEntry<BrassEnderChestBlock> BRASS_ENDER_CHEST = REGISTRATE

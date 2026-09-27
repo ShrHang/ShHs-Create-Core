@@ -1,7 +1,19 @@
 {
   "variants": {
-    "": {
-      "model": "beyonddimensions:block/net_interface"
+    "facing=east": {
+      "model": "shhs_create_core:block/dimension_parcel_station",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "shhs_create_core:block/dimension_parcel_station"
+    },
+    "facing=south": {
+      "model": "shhs_create_core:block/dimension_parcel_station",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "shhs_create_core:block/dimension_parcel_station",
+      "y": 270
     }
   }
 }

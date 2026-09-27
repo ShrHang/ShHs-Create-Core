@@ -4,6 +4,7 @@ import com.simibubi.create.content.logistics.packager.PackagerBlock;
 import com.wintercogs.beyonddimensions.api.dimensionnet.DimensionsNet;
 import com.wintercogs.beyonddimensions.common.block.NetedBlock;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
@@ -13,16 +14,47 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 public class DimensionParcelStationBlock extends NetedBlock implements EntityBlock {
+    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+
     public DimensionParcelStationBlock(Properties properties) {
         super(properties);
+        registerDefaultState(defaultBlockState().setValue(FACING, Direction.NORTH));
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder);
+        builder.add(FACING);
+    }
+
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+    }
+
+    @Override
+    protected BlockState rotate(BlockState state, Rotation rotation) {
+        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
+    }
+
+    @Override
+    protected BlockState mirror(BlockState state, Mirror mirror) {
+        return state.setValue(FACING, mirror.mirror(state.getValue(FACING)));
     }
 
     @Override
@@ -31,7 +63,7 @@ public class DimensionParcelStationBlock extends NetedBlock implements EntityBlo
                 && level.getBlockEntity(pos) instanceof DimensionParcelStationBlockEntity station) {
             DimensionsNet net = DimensionsNet.getPrimaryNetFromPlayer(player);
             if (net != null && net.isManager(player))
-                bind(station, net, player, true);
+                bind(station, net, player);
         }
     }
 
@@ -84,15 +116,14 @@ public class DimensionParcelStationBlock extends NetedBlock implements EntityBlo
                     "text.shhs_create_core.dimension_parcel_station.no_binding_permission"));
             return;
         }
-        bind(station, target, player, true);
+        bind(station, target, player);
     }
 
-    private static void bind(DimensionParcelStationBlockEntity station, DimensionsNet net,
-                             ServerPlayer player, boolean reportFailure) {
+    private static void bind(DimensionParcelStationBlockEntity station, DimensionsNet net, ServerPlayer player) {
         if (station.trySetNetId(net.getId())) {
             player.sendSystemMessage(Component.translatable(
                     "text.shhs_create_core.dimension_parcel_station.bound", net.getNetworkName()));
-        } else if (reportFailure) {
+        } else {
             player.sendSystemMessage(Component.translatable(
                     "text.shhs_create_core.dimension_parcel_station.limit_reached"));
         }
