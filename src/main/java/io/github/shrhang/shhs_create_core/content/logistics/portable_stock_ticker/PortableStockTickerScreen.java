@@ -68,7 +68,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
     private List<List<BigItemStack>> currentItemSource;
 
     private EditBox searchBox;
-    private EditBox addressBox;
+    private PortableStockTickerAddressEditBox addressBox;
     private boolean scrollHandleActive;
     private boolean refreshSearchNextTick = true;
     private boolean moveToTopNextTick = true;
@@ -124,11 +124,9 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
         addWidget(searchBox);
 
         String previousAddress = addressBox == null ? "" : addressBox.getValue();
-        addressBox = new EditBox(font, leftPos + 27, topPos + windowHeight - 36, 92, 10,
-                CreateLang.translateDirect("gui.stock_keeper.package_address"));
-        addressBox.setBordered(false);
+        addressBox = new PortableStockTickerAddressEditBox(this, font, leftPos + 27,
+                topPos + windowHeight - 36, 92, 10, menu.addresses.addresses());
         addressBox.setTextColor(0x714A40);
-        addressBox.setMaxLength(64);
         addressBox.setValue(previousAddress);
         addRenderableWidget(addressBox);
 
@@ -142,6 +140,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
     @Override
     protected void containerTick() {
         super.containerTick();
+        addressBox.tick();
         PortableStockTickerClientData.Snapshot snapshot = PortableStockTickerClientData.get(menu.networkId);
         if (snapshot != null) {
             snapshot.tick();

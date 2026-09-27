@@ -2,6 +2,7 @@ package io.github.shrhang.shhs_create_core.content.logistics.portable_stock_tick
 
 import io.github.shrhang.shhs_create_core.content.registries.ShHsComponentTypes;
 import com.simibubi.create.Create;
+import com.simibubi.create.content.equipment.clipboard.ClipboardBlockEntity;
 import com.simibubi.create.content.logistics.packagerLink.PackagerLinkBlockEntity;
 import com.simibubi.create.content.logistics.stockTicker.StockCheckingBlockEntity;
 import com.simibubi.create.foundation.utility.CreateLang;
@@ -22,9 +23,13 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import top.theillusivec4.curios.api.CuriosApi;
@@ -68,21 +73,84 @@ public class PortableStockTickerItem extends Item {
     @Override
     public @NotNull InteractionResultHolder<ItemStack> use(Level level, Player player, @NotNull InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        if (player.isCrouching()) {
+            if (!isLookingAtAir(level, player)) {
+                return InteractionResultHolder.pass(stack);
+            }
+            if (!level.isClientSide()) {
+                int cleared = stack.getOrDefault(ShHsComponentTypes.PORTABLE_STOCK_TICKER_ADDRESSES,
+                        PortableStockTickerAddresses.EMPTY).addresses().size();
+                stack.remove(ShHsComponentTypes.PORTABLE_STOCK_TICKER_ADDRESSES);
+                player.displayClientMessage(textComponent("portable_stock_ticker.addresses_cleared", cleared), true);
+            }
+            return new InteractionResultHolder<>(InteractionResult.sidedSuccess(level.isClientSide()), stack);
+        }
+
         if (level.isClientSide()) {
             return InteractionResultHolder.pass(stack);
         }
 
-        if (player.isCrouching()) {
-            BlockHitResult blockHitResult = (BlockHitResult) player.pick(player.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE), 0.0f, false);
-            if (linkTo(player, stack, level, blockHitResult.getBlockPos())) {
-                player.displayClientMessage(CreateLang.translate("logistically_linked.tuned").component(), true);
-                return new InteractionResultHolder<>(InteractionResult.SUCCESS, stack);
-            }
-            return new InteractionResultHolder<>(InteractionResult.PASS, stack);
-        }
-
         InteractionResult result = tryToOpenMenu(player, stack) ? InteractionResult.SUCCESS : InteractionResult.PASS;
         return new InteractionResultHolder<>(result, stack);
+    }
+
+    private static boolean isLookingAtAir(Level level, Player player) {
+        double blockRange = player.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE);
+        HitResult blockHit = player.pick(blockRange, 0, false);
+        if (blockHit.getType() != HitResult.Type.MISS) {
+            return false;
+        }
+
+        double entityRange = player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE);
+        Vec3 start = player.getEyePosition();
+        Vec3 look = player.getViewVector(1);
+        Vec3 end = start.add(look.scale(entityRange));
+        AABB bounds = player.getBoundingBox().expandTowards(look.scale(entityRange)).inflate(1);
+        return ProjectileUtil.getEntityHitResult(level, player, start, end, bounds,
+                entity -> entity != player && !entity.isSpectator() && entity.isPickable()) == null;
+    }
+
+    @Override
+    public @NotNull InteractionResult useOn(UseOnContext context) {
+        Player player = context.getPlayer();
+        if (player == null || !player.isCrouching()) {
+            return InteractionResult.PASS;
+        }
+
+        Level level = context.getLevel();
+        BlockEntity blockEntity = level.getBlockEntity(context.getClickedPos());
+        if (blockEntity instanceof ClipboardBlockEntity clipboard) {
+            if (!level.isClientSide()) {
+                saveAddresses(player, context.getItemInHand(), clipboard);
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide());
+        }
+
+        if (!(blockEntity instanceof StockCheckingBlockEntity)
+                && !(blockEntity instanceof PackagerLinkBlockEntity)) {
+            return InteractionResult.PASS;
+        }
+
+        if (!level.isClientSide() && linkTo(player, context.getItemInHand(), level, context.getClickedPos())) {
+            player.displayClientMessage(CreateLang.translate("logistically_linked.tuned").component(), true);
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide());
+    }
+
+    private static void saveAddresses(Player player, ItemStack stack, ClipboardBlockEntity clipboard) {
+        PortableStockTickerAddresses found = PortableStockTickerAddresses.fromClipboard(clipboard.components());
+        if (found.addresses().isEmpty()) {
+            player.displayClientMessage(textComponent("portable_stock_ticker.no_clipboard_addresses"), true);
+            return;
+        }
+
+        PortableStockTickerAddresses existing = stack.getOrDefault(
+                ShHsComponentTypes.PORTABLE_STOCK_TICKER_ADDRESSES, PortableStockTickerAddresses.EMPTY);
+        PortableStockTickerAddresses merged = existing.merge(found);
+        int added = merged.addresses().size() - existing.addresses().size();
+        stack.set(ShHsComponentTypes.PORTABLE_STOCK_TICKER_ADDRESSES, merged);
+        player.displayClientMessage(textComponent("portable_stock_ticker.addresses_saved", added,
+                merged.addresses().size()), true);
     }
 
     public static boolean linkTo(Player player, ItemStack stack, Level level, BlockPos pos) {
@@ -116,7 +184,12 @@ public class PortableStockTickerItem extends Item {
         UUID networkId = link.networkId();
         if (!checkLink(player, networkId)) return false;
 
-        player.openMenu(new PortableStockTickerMenuProvider(networkId), buf -> buf.writeUUID(networkId));
+        PortableStockTickerAddresses addresses = stack.getOrDefault(
+                ShHsComponentTypes.PORTABLE_STOCK_TICKER_ADDRESSES, PortableStockTickerAddresses.EMPTY);
+        player.openMenu(new PortableStockTickerMenuProvider(networkId, addresses), buf -> {
+            buf.writeUUID(networkId);
+            PortableStockTickerAddresses.STREAM_CODEC.encode(buf, addresses);
+        });
         return true;
     }
 
@@ -187,11 +260,12 @@ public class PortableStockTickerItem extends Item {
         return true;
     }
 
-    public record PortableStockTickerMenuProvider(UUID networkId) implements MenuProvider {
+    public record PortableStockTickerMenuProvider(UUID networkId,
+                                                  PortableStockTickerAddresses addresses) implements MenuProvider {
 
         @Override
         public AbstractContainerMenu createMenu(int containerId, @NotNull Inventory playerInventory, @NotNull Player player) {
-            return PortableStockTickerMenu.create(containerId, playerInventory, networkId);
+            return PortableStockTickerMenu.create(containerId, playerInventory, networkId, addresses);
         }
 
         @Override

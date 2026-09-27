@@ -12,19 +12,25 @@ import java.util.UUID;
 
 public class PortableStockTickerMenu extends AbstractContainerMenu {
     public final UUID networkId;
+    public final PortableStockTickerAddresses addresses;
     public Object screenReference;
 
-    public PortableStockTickerMenu(MenuType<?> type, int id, Inventory playerInventory, UUID networkId) {
+    public PortableStockTickerMenu(MenuType<?> type, int id, Inventory playerInventory, UUID networkId,
+                                   PortableStockTickerAddresses addresses) {
         super(type, id);
         this.networkId = networkId;
+        this.addresses = addresses;
     }
 
     public PortableStockTickerMenu(MenuType<?> type, int id, Inventory playerInventory, RegistryFriendlyByteBuf extraData) {
-        this(type, id, playerInventory, extraData.readUUID());
+        this(type, id, playerInventory, extraData.readUUID(),
+                PortableStockTickerAddresses.STREAM_CODEC.decode(extraData));
     }
 
-    public static PortableStockTickerMenu create(int containerId, Inventory playerInventory, UUID networkId) {
-        return new PortableStockTickerMenu(ShHsMenuTypes.PORTABLE_STOCK_TICKER.get(), containerId, playerInventory, networkId);
+    public static PortableStockTickerMenu create(int containerId, Inventory playerInventory, UUID networkId,
+                                                  PortableStockTickerAddresses addresses) {
+        return new PortableStockTickerMenu(ShHsMenuTypes.PORTABLE_STOCK_TICKER.get(), containerId, playerInventory,
+                networkId, addresses);
     }
 
     @Override

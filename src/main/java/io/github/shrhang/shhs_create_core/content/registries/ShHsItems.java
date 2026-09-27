@@ -32,6 +32,8 @@ public class ShHsItems {
                 .tooltipSummary("Allows you to connect to a _Logistics Network_ and remotely view its stock information.")
                 .tooltipBehaviour(1, "When used", "If linked network exists and _is loaded_, opens a request menu.")
                 .tooltipBehaviour(2, "When used in Sneak on Blocks", "If the target block is a _Stock Ticker_, _Stock Link_ or _Redstone Requester_, links to its network.")
+                .tooltipBehaviour(3, "When used in Sneak on a Clipboard", "Saves all _package addresses_ written on it.")
+                .tooltipBehaviour(4, "When used in Sneak in the Air", "Clears all _saved package addresses_.")
                 .tag(CuriosTags.CURIO)
                 .recipe((ctx, prov) -> ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ctx.get())
                         .define('A', AllBlocks.STOCK_LINK.asItem())

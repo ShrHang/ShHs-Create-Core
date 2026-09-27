@@ -76,6 +76,9 @@ public class ShHsLang {
         REGISTRATE.addRawLang(key("text","portable_stock_ticker.no_data"), "Not Linked to a Logistics Network");
         REGISTRATE.addRawLang(key("text","portable_stock_ticker.no_network"), "Linked Logistics Network no exists.");
         REGISTRATE.addRawLang(key("text","portable_stock_ticker.unloaded"), "Linked Logistics Network is unloaded.");
+        REGISTRATE.addRawLang(key("text", "portable_stock_ticker.no_clipboard_addresses"), "No package addresses found on the clipboard.");
+        REGISTRATE.addRawLang(key("text", "portable_stock_ticker.addresses_saved"), "Saved %s new address(es); %s total.");
+        REGISTRATE.addRawLang(key("text", "portable_stock_ticker.addresses_cleared"), "Cleared %s saved address(es).");
 
         REGISTRATE.addRawLang("container.shhs_create_core.dimension_parcel_station", "Dimension Parcel Station");
         REGISTRATE.addRawLang(key("text", "dimension_parcel_station.bound"), "Bound to %s.");
