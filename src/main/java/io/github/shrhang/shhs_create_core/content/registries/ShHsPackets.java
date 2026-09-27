@@ -21,7 +21,6 @@ public class ShHsPackets {
         registrar.playToServer(RemotePackageOrderPacket.TYPE, RemotePackageOrderPacket.STREAM_CODEC, RemotePackageOrderPacket::handle);
         registrar.playToClient(StockInventoryPacket.StockResponsePacket.TYPE, StockInventoryPacket.StockResponsePacket.STREAM_CODEC, StockInventoryPacket.StockResponsePacket::handle);
         registrar.playToClient(StockStatusPacket.StockStatusResponsePacket.TYPE, StockStatusPacket.StockStatusResponsePacket.STREAM_CODEC, StockStatusPacket.StockStatusResponsePacket::handle);
-        registrar.playToServer(DimensionParcelStationTogglePacket.TYPE, DimensionParcelStationTogglePacket.STREAM_CODEC,
-                DimensionParcelStationTogglePacket::handle);
+        registrar.playToServer(DimensionParcelStationTogglePacket.TYPE, DimensionParcelStationTogglePacket.STREAM_CODEC, DimensionParcelStationTogglePacket::handle);
     }
 }

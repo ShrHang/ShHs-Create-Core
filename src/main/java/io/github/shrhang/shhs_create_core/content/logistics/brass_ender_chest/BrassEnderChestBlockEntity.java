@@ -1,11 +1,11 @@
 package io.github.shrhang.shhs_create_core.content.logistics.brass_ender_chest;
 
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
-import com.simibubi.create.api.packager.InventoryIdentifier;
 import com.simibubi.create.content.equipment.clipboard.ClipboardCloneable;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import io.github.shrhang.shhs_create_core.api.packager.VirtualInventoryIdentifier;
+import io.github.shrhang.shhs_create_core.api.packager.VirtualInventoryProvider;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -25,9 +25,9 @@ import java.util.UUID;
 
 import static io.github.shrhang.shhs_create_core.content.data.ShHsLang.tooltipComponentForGoggles;
 
-public class BrassEnderChestBlockEntity extends SmartBlockEntity implements IHaveGoggleInformation, ClipboardCloneable {
+public class BrassEnderChestBlockEntity extends SmartBlockEntity
+        implements IHaveGoggleInformation, ClipboardCloneable, VirtualInventoryProvider {
     private UUID targetUUID;
-    private InventoryIdentifier invId;
     private boolean isLocked;
 
     public String targetName = "???";
@@ -70,15 +70,18 @@ public class BrassEnderChestBlockEntity extends SmartBlockEntity implements IHav
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
     }
 
-    private void init() {
-        invId = new BrassEnderChestBlockInvId(targetUUID);
-        if (targetUUID != null && level != null && level.getPlayerByUUID(targetUUID) != null)
-            targetName = Objects.requireNonNull(level.getPlayerByUUID(targetUUID)).getName().getString();
+    private void refreshTargetName() {
+        if (targetUUID == null || level == null)
+            return;
+        Player targetPlayer = level.getPlayerByUUID(targetUUID);
+        if (targetPlayer != null)
+            targetName = targetPlayer.getName().getString();
     }
 
-    public InventoryIdentifier getInvId() {
-        init();
-        return this.invId;
+    @Override
+    public @Nullable VirtualInventoryIdentifier getVirtualInventoryIdentifier() {
+        refreshTargetName();
+        return targetUUID == null ? null : new BrassEnderChestBlockInvId(targetUUID);
     }
 
     @Override
@@ -105,7 +108,7 @@ public class BrassEnderChestBlockEntity extends SmartBlockEntity implements IHav
         if (!Objects.equals(this.targetUUID, newUUID))
             this.inventory = null;
         this.targetUUID = newUUID;
-        init();
+        refreshTargetName();
         notifyUpdate();
     }
 
@@ -174,6 +177,6 @@ public class BrassEnderChestBlockEntity extends SmartBlockEntity implements IHav
         return inventory;
     }
 
-    public record BrassEnderChestBlockInvId(UUID targetUUID) implements VirtualInventoryIdentifier {
+    private record BrassEnderChestBlockInvId(UUID targetUUID) implements VirtualInventoryIdentifier {
     }
 }

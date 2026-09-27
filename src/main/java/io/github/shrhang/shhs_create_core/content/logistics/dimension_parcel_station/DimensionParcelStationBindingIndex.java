@@ -2,7 +2,6 @@ package io.github.shrhang.shhs_create_core.content.logistics.dimension_parcel_st
 
 import com.wintercogs.beyonddimensions.api.event.dimensionnet.DimensionsNetEvent;
 import io.github.shrhang.shhs_create_core.ShHsConfig;
-import io.github.shrhang.shhs_create_core.ShHsCreateCore;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.HolderLookup;
@@ -15,9 +14,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -26,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@EventBusSubscriber(modid = ShHsCreateCore.MODID)
 public final class DimensionParcelStationBindingIndex extends SavedData {
     private static final String DATA_NAME = "ShHsDimensionParcelStations";
     private static final Factory<DimensionParcelStationBindingIndex> FACTORY =
@@ -37,6 +35,11 @@ public final class DimensionParcelStationBindingIndex extends SavedData {
 
     public static DimensionParcelStationBindingIndex get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(FACTORY, DATA_NAME);
+    }
+
+    public static void init() {
+        NeoForge.EVENT_BUS.addListener(DimensionParcelStationBindingIndex::onServerStarted);
+        NeoForge.EVENT_BUS.addListener(DimensionParcelStationBindingIndex::onNetworkDestroyed);
     }
 
     private static DimensionParcelStationBindingIndex load(CompoundTag tag, HolderLookup.Provider registries) {
@@ -165,7 +168,7 @@ public final class DimensionParcelStationBindingIndex extends SavedData {
         List<GlobalPos> stale = new ArrayList<>();
         for (Map.Entry<GlobalPos, Entry> indexed : entries.entrySet()) {
             ServerLevel level = server.getLevel(indexed.getKey().dimension());
-            if (level == null || !level.hasChunkAt(indexed.getKey().pos()))
+            if (level == null || !level.isLoaded(indexed.getKey().pos()))
                 continue;
             if (!(level.getBlockEntity(indexed.getKey().pos()) instanceof DimensionParcelStationBlockEntity station)
                     || station.getNetId() != indexed.getValue().netId())
@@ -179,7 +182,7 @@ public final class DimensionParcelStationBindingIndex extends SavedData {
 
     private void clearLoadedStation(MinecraftServer server, GlobalPos pos, int netId) {
         ServerLevel level = server.getLevel(pos.dimension());
-        if (level == null || !level.hasChunkAt(pos.pos()))
+        if (level == null || !level.isLoaded(pos.pos()))
             return;
         if (level.getBlockEntity(pos.pos()) instanceof DimensionParcelStationBlockEntity station
                 && station.getNetId() == netId) {
@@ -190,16 +193,14 @@ public final class DimensionParcelStationBindingIndex extends SavedData {
         }
     }
 
-    @SubscribeEvent
-    public static void onServerStarted(ServerStartedEvent event) {
+    private static void onServerStarted(ServerStartedEvent event) {
         DimensionParcelStationBindingIndex index = get(event.getServer());
         index.cleanLoadedStaleEntries(event.getServer());
         index.reconcile(event.getServer());
     }
 
-    @SubscribeEvent
-    public static void onNetworkDestroyed(DimensionsNetEvent.Destroyed event) {
-        MinecraftServer server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+    private static void onNetworkDestroyed(DimensionsNetEvent.Destroyed event) {
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
         if (server == null)
             return;
         DimensionParcelStationBindingIndex index = get(server);
@@ -219,7 +220,7 @@ public final class DimensionParcelStationBindingIndex extends SavedData {
     }
 
     public static void reconcileCurrentServer() {
-        MinecraftServer server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
         if (server != null) {
             server.execute(() -> {
                 DimensionParcelStationBindingIndex index = get(server);

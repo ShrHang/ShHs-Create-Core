@@ -6,6 +6,8 @@ import com.wintercogs.beyonddimensions.api.capability.helper.unordered.ItemUnifi
 import com.wintercogs.beyonddimensions.api.dimensionnet.DimensionsNet;
 import com.wintercogs.beyonddimensions.common.block.entity.NetedBlockEntity;
 import io.github.shrhang.shhs_create_core.ShHsConfig;
+import io.github.shrhang.shhs_create_core.api.packager.VirtualInventoryIdentifier;
+import io.github.shrhang.shhs_create_core.api.packager.VirtualInventoryProvider;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsBlockEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -28,7 +30,8 @@ import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class DimensionParcelStationBlockEntity extends NetedBlockEntity implements MenuProvider {
+public class DimensionParcelStationBlockEntity extends NetedBlockEntity
+        implements MenuProvider, VirtualInventoryProvider {
     private static final String FLUID_PACKAGER_CLASS =
             "com.yision.fluidlogistics.content.logistics.fluidPackager.FluidPackagerBlockEntity";
 
@@ -109,6 +112,14 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity implemen
         return fluidHandler;
     }
 
+    public boolean isItemPackagerPlacementTarget() {
+        return getNetId() >= 0 && (allowItemInput || allowItemOutput);
+    }
+
+    public boolean isFluidPackagerPlacementTarget() {
+        return getNetId() >= 0 && (allowFluidInput || allowFluidOutput);
+    }
+
     private static boolean isFluidPackager(@Nullable BlockEntity blockEntity) {
         return blockEntity != null && FLUID_PACKAGER_CLASS.equals(blockEntity.getClass().getName());
     }
@@ -177,6 +188,11 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity implemen
         if (!(level instanceof ServerLevel serverLevel) || getNetId() < 0)
             return 0;
         return DimensionParcelStationBindingIndex.get(serverLevel.getServer()).activeCount(getNetId());
+    }
+
+    @Override
+    public @Nullable VirtualInventoryIdentifier getVirtualInventoryIdentifier() {
+        return getNetId() < 0 ? null : new DimensionParcelStationInventoryIdentifier(getNetId());
     }
 
     @Override
@@ -300,5 +316,8 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity implemen
         public @NotNull FluidStack drain(int maxDrain, FluidAction action) {
             return allowFluidOutput ? delegate.drain(maxDrain, action) : FluidStack.EMPTY;
         }
+    }
+
+    private record DimensionParcelStationInventoryIdentifier(int netId) implements VirtualInventoryIdentifier {
     }
 }

@@ -13,9 +13,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(PackagerBlockEntity.class)
 public abstract class PackagerBlockEntityMixin {
     @Inject(method = "isTargetingSameInventory", at = @At("HEAD"), cancellable = true, remap = false)
-    private void shhsc_c$matchVirtualInventoryIdentifier(@Nullable IdentifiedInventory inventory,
-                                                         CallbackInfoReturnable<Boolean> cir) {
-        if (inventory == null || !(inventory.identifier() instanceof VirtualInventoryIdentifier))
+    private void shhsc_c$matchVirtualInventory(@Nullable IdentifiedInventory inventory,
+                                               CallbackInfoReturnable<Boolean> cir) {
+        if (inventory == null || !(inventory.identifier() instanceof VirtualInventoryIdentifier virtualIdentifier))
             return;
         PackagerBlockEntity self = (PackagerBlockEntity) (Object) this;
         if (self.getLevel() == null || self.targetInventory == null) {
@@ -24,6 +24,6 @@ public abstract class PackagerBlockEntityMixin {
         }
         InventoryIdentifier current = InventoryIdentifier.get(self.getLevel(),
                 self.targetInventory.getTarget().getOpposite());
-        cir.setReturnValue(inventory.identifier().equals(current));
+        cir.setReturnValue(virtualIdentifier.matches(current));
     }
 }

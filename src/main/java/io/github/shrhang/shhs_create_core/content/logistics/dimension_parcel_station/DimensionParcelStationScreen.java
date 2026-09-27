@@ -35,10 +35,8 @@ public class DimensionParcelStationScreen extends AbstractContainerScreen<Dimens
     }
 
     private void addToggle(DimensionParcelStationBlockEntity.Channel channel, int x, int y) {
-        Button button = Button.builder(label(channel), ignored -> {
-                    PacketDistributor.sendToServer(new DimensionParcelStationTogglePacket(
-                            menu.getPos(), channel.ordinal()));
-                })
+        Button button = Button.builder(label(channel), ignored -> PacketDistributor.sendToServer(new DimensionParcelStationTogglePacket(
+                menu.getPos(), channel.ordinal())))
                 .bounds(x, y, 90, 20)
                 .build();
         button.active = menu.mayConfigure();
