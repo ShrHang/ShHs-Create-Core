@@ -2,6 +2,7 @@ package io.github.shrhang.shhs_create_core;
 
 import io.github.shrhang.shhs_create_core.content.event.ClientEvents;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerScreen;
+import io.github.shrhang.shhs_create_core.content.logistics.dimension_parcel_station.DimensionParcelStationScreen;
 import io.github.shrhang.shhs_create_core.content.ponder.ShHsPonderPlugin;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsKeys;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsMenuTypes;
@@ -43,5 +44,6 @@ public class ShHsClient {
 
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(ShHsMenuTypes.PORTABLE_STOCK_TICKER.get(), PortableStockTickerScreen::new);
+        event.register(ShHsMenuTypes.DIMENSION_PARCEL_STATION.get(), DimensionParcelStationScreen::new);
     }
 }

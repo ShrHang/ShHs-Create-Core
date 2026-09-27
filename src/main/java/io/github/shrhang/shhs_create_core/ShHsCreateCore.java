@@ -13,6 +13,7 @@ import io.github.shrhang.shhs_create_core.content.data.ShHsRecipes;
 import io.github.shrhang.shhs_create_core.content.data.ShHsTagKey;
 import io.github.shrhang.shhs_create_core.content.event.ServerEvents;
 import io.github.shrhang.shhs_create_core.content.kinetics.fan.processing.ShHsFanProcessingTypes;
+import io.github.shrhang.shhs_create_core.content.logistics.dimension_parcel_station.DimensionParcelStationBindingIndex;
 import io.github.shrhang.shhs_create_core.content.registries.*;
 import net.createmod.catnip.lang.FontHelper;
 import net.minecraft.resources.ResourceLocation;
@@ -20,6 +21,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 import net.neoforged.neoforge.registries.RegisterEvent;
 
@@ -53,6 +55,7 @@ public class ShHsCreateCore {
         modEventBus.addListener(ShHsCreateCore::onRegister);
         modEventBus.addListener(ShHsPackets::register);
         modEventBus.addListener(ShHsCreateCore::modifyEntityAttributes);
+        modEventBus.addListener(ShHsCreateCore::onConfigReload);
     }
 
     public static void init(final FMLCommonSetupEvent event) {
@@ -67,6 +70,10 @@ public class ShHsCreateCore {
 
     public static void modifyEntityAttributes(final EntityAttributeModificationEvent event) {
         event.getTypes().forEach(entityType -> event.add(entityType, CoPAttrs.REALITY));
+    }
+
+    public static void onConfigReload(final ModConfigEvent.Reloading event) {
+        DimensionParcelStationBindingIndex.reconcileCurrentServer();
     }
 
     private static void gatherData() {

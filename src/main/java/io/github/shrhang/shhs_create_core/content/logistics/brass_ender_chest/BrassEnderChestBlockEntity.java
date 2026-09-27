@@ -5,7 +5,7 @@ import com.simibubi.create.api.packager.InventoryIdentifier;
 import com.simibubi.create.content.equipment.clipboard.ClipboardCloneable;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
-import net.createmod.catnip.math.BlockFace;
+import io.github.shrhang.shhs_create_core.api.packager.VirtualInventoryIdentifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -174,11 +174,6 @@ public class BrassEnderChestBlockEntity extends SmartBlockEntity implements IHav
         return inventory;
     }
 
-    public record BrassEnderChestBlockInvId(UUID targetUUID) implements InventoryIdentifier {
-        @Override
-        public boolean contains(BlockFace face) {
-            UUID uuid = face.serializeNBT().getUUID("TargetPlayer");
-            return targetUUID.equals(uuid);
-        }
+    public record BrassEnderChestBlockInvId(UUID targetUUID) implements VirtualInventoryIdentifier {
     }
 }

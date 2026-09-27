@@ -20,6 +20,8 @@ import io.github.shrhang.shhs_create_core.content.fluid.sprayer.SprayerMovementB
 import io.github.shrhang.shhs_create_core.content.hostility.absorber.HostilityAbsorberBlock;
 import io.github.shrhang.shhs_create_core.content.hostility.absorber.HostilityAbsorberMovementBehaviour;
 import io.github.shrhang.shhs_create_core.content.logistics.brass_ender_chest.BrassEnderChestBlock;
+import io.github.shrhang.shhs_create_core.content.logistics.dimension_parcel_station.DimensionParcelStationBlock;
+import com.wintercogs.beyonddimensions.common.init.BDBlocks;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
@@ -36,6 +38,20 @@ import static com.simibubi.create.foundation.data.TagGen.pickaxeOnly;
 import static io.github.shrhang.shhs_create_core.ShHsCreateCore.REGISTRATE;
 
 public class ShHsBlocks {
+
+    public static final BlockEntry<DimensionParcelStationBlock> DIMENSION_PARCEL_STATION = REGISTRATE
+            .block("dimension_parcel_station", DimensionParcelStationBlock::new)
+            .lang("Dimension Parcel Station")
+            .initialProperties(() -> BDBlocks.NET_INTERFACE.get())
+            .properties(p -> p.requiresCorrectToolForDrops())
+            .blockTags(BlockTags.MINEABLE_WITH_PICKAXE)
+            .blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry(),
+                    new ModelFile.UncheckedModelFile(ResourceLocation.fromNamespaceAndPath(
+                            "beyonddimensions", "block/net_interface"))))
+            .item(item -> item.model((ctx, prov) -> prov.getBuilder(ctx.getName()).parent(
+                    new ModelFile.UncheckedModelFile(ResourceLocation.fromNamespaceAndPath(
+                            "beyonddimensions", "block/net_interface")))))
+            .register();
 
     public static final BlockEntry<BrassEnderChestBlock> BRASS_ENDER_CHEST = REGISTRATE
             .block("brass_ender_chest", BrassEnderChestBlock::new)

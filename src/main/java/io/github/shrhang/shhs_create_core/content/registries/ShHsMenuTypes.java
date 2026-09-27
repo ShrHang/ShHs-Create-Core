@@ -2,6 +2,7 @@ package io.github.shrhang.shhs_create_core.content.registries;
 
 import io.github.shrhang.shhs_create_core.ShHsCreateCore;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerMenu;
+import io.github.shrhang.shhs_create_core.content.logistics.dimension_parcel_station.DimensionParcelStationMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.bus.api.IEventBus;
@@ -18,6 +19,10 @@ public class ShHsMenuTypes {
                     IMenuTypeExtension.create((windowId, inv, data) ->
                             new PortableStockTickerMenu(ShHsMenuTypes.PORTABLE_STOCK_TICKER.get(), windowId, inv, data))
             );
+
+    public static final DeferredHolder<MenuType<?>, MenuType<DimensionParcelStationMenu>> DIMENSION_PARCEL_STATION =
+            MENUS.register("dimension_parcel_station", () ->
+                    IMenuTypeExtension.create(DimensionParcelStationMenu::new));
 
     public static void register(IEventBus bus) {
         MENUS.register(bus);

@@ -8,9 +8,12 @@
   "mixins": [
     "create.content.fluids.tank.storage.creative.CreativeFluidTankMountedStorageMixin",
     "create.content.kinetics.base.BlockBreakingMovementBehaviourMixin",
+    "create.content.logistics.packagerLink.LogisticsManagerMixin",
+    "create.content.logistics.packager.PackagerBlockEntityMixin",
     "create.foundation.utility.BlockHelperMixin",
     "curios.common.data.CuriosEntityManagerMixin",
     "fluidlogistics.content.processing.cooling.BulkCoolingFanProcessingTypeMixin",
+    "fluidlogistics.content.logistics.fluidPackager.FluidPackagerBlockEntityMixin",
     "irons_spellbooks.capabilities.magic.PlayerRecastsMixin",
     "irons_spellbooks.util.TooltipsUtilsMixin",
     "l2hostility.content.capability.player.PlayerDifficultyAccessor",

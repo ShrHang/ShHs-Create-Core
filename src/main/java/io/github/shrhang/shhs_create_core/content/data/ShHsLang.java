@@ -77,6 +77,22 @@ public class ShHsLang {
         REGISTRATE.addRawLang(key("text","portable_stock_ticker.no_network"), "Linked Logistics Network no exists.");
         REGISTRATE.addRawLang(key("text","portable_stock_ticker.unloaded"), "Linked Logistics Network is unloaded.");
 
+        REGISTRATE.addRawLang("container.shhs_create_core.dimension_parcel_station", "Dimension Parcel Station");
+        REGISTRATE.addRawLang(key("text", "dimension_parcel_station.bound"), "Bound to %s.");
+        REGISTRATE.addRawLang(key("text", "dimension_parcel_station.unbound"), "Unbound from dimension network %s.");
+        REGISTRATE.addRawLang(key("text", "dimension_parcel_station.no_binding_permission"), "Only network managers may bind or unbind this station.");
+        REGISTRATE.addRawLang(key("text", "dimension_parcel_station.no_primary_network"), "You do not have a primary dimension network.");
+        REGISTRATE.addRawLang(key("text", "dimension_parcel_station.limit_reached"), "This dimension network cannot accept another parcel station.");
+        REGISTRATE.addRawLang(key("text", "dimension_parcel_station.item_input"), "Item input");
+        REGISTRATE.addRawLang(key("text", "dimension_parcel_station.item_output"), "Item output");
+        REGISTRATE.addRawLang(key("text", "dimension_parcel_station.fluid_input"), "Fluid input");
+        REGISTRATE.addRawLang(key("text", "dimension_parcel_station.fluid_output"), "Fluid output");
+        REGISTRATE.addRawLang(key("text", "dimension_parcel_station.enabled"), "On");
+        REGISTRATE.addRawLang(key("text", "dimension_parcel_station.disabled"), "Off");
+        REGISTRATE.addRawLang(key("text", "dimension_parcel_station.unbound_status"), "Not bound to a dimension network");
+        REGISTRATE.addRawLang(key("text", "dimension_parcel_station.network_status"), "Network #%s · %s station(s)");
+        REGISTRATE.addRawLang(key("text", "dimension_parcel_station.read_only"), "Read-only: insufficient network permission");
+
         REGISTRATE.addRawLang(key("tooltip","sprayer.header"), "Sprayer Info");
         REGISTRATE.addRawLang(key("tooltip","sprayer.angle"), "Angle: %s / %s°");
         REGISTRATE.addRawLang(key("tooltip","sprayer.range"), "Range: %s x %s x %s");
