@@ -55,6 +55,33 @@ public class ShHsLang {
     }
 
     public static void init() {
+        REGISTRATE.addRawLang(key("text", "terminal.title"), "Dimension Logistics Terminal");
+        REGISTRATE.addRawLang(key("text", "terminal.search"), "Search inventory");
+        REGISTRATE.addRawLang(key("text", "terminal.collect"), "Request items");
+        REGISTRATE.addRawLang(key("text", "terminal.orders"), "My orders");
+        REGISTRATE.addRawLang(key("text", "terminal.stock"), "Inventory");
+        REGISTRATE.addRawLang(key("text", "terminal.claim"), "Claim packages");
+        REGISTRATE.addRawLang(key("text", "terminal.end"), "End wait & claim");
+        REGISTRATE.addRawLang(key("text", "terminal.clear_craft"), "Clear crafting grid");
+        REGISTRATE.addRawLang(key("text", "terminal.basket"), "Selection · scroll to browse");
+        REGISTRATE.addRawLang(key("text", "terminal.no_network"), "No accessible primary network");
+        REGISTRATE.addRawLang(key("text", "terminal.deposit_hint"), "Shift-click inventory to deposit");
+        REGISTRATE.addRawLang(key("text", "terminal.no_orders"), "No pending orders");
+        REGISTRATE.addRawLang(key("text", "terminal.ready"), "Ready to collect");
+        REGISTRATE.addRawLang(key("text", "terminal.waiting"), "Waiting for deliveries");
+        REGISTRATE.addRawLang(key("text", "terminal.progress"), "Held: %s · Packages: %s");
+        REGISTRATE.addRawLang(key("text", "terminal.missing"), "Still missing:");
+        REGISTRATE.addRawLang(key("text", "terminal.amount"), "Amount: %s");
+        REGISTRATE.addRawLang(key("text", "terminal.local"), "Source: dimension network");
+        REGISTRATE.addRawLang(key("text", "terminal.external"), "Source: logistics network %s");
+        REGISTRATE.addRawLang(key("text", "terminal.unavailable"), "Route unavailable or address unset");
+        REGISTRATE.addRawLang(key("text", "terminal.missing_materials"), "Missing materials in your inventory and dimension network.");
+        REGISTRATE.addRawLang(key("text", "terminal.submit_failed"), "Unable to submit: check stock, route, permissions and packager capacity.");
+        REGISTRATE.addRawLang(key("text", "terminal.address"), "Receiving address");
+        REGISTRATE.addRawLang(key("text", "terminal.save"), "Save");
+        REGISTRATE.addRawLang(key("text", "terminal.no_routes"), "No connected logistics networks");
+        REGISTRATE.addRawLang(key("text", "terminal.route"), "Network %s/%s · %s");
+        REGISTRATE.addRawLang(key("text", "terminal.address_hint"), "Exact address; no * or ? wildcards.");
         REGISTRATE.addRawLang(key("text","no_enough_spell_tolerance"), "At least %s Spell Tolerance is required to cast this spell.");
         REGISTRATE.addRawLang(key("text","need_tolerance"), "Need Spell Tolerance: %s");
         REGISTRATE.addRawLang(key("text","empty_trait_no_target"), "No valid target in sight.");

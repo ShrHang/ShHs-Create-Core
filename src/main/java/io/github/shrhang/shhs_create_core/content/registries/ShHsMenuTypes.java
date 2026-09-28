@@ -24,6 +24,10 @@ public class ShHsMenuTypes {
             MENUS.register("dimension_parcel_station", () ->
                     IMenuTypeExtension.create(DimensionParcelStationMenu::new));
 
+    public static final DeferredHolder<MenuType<?>, MenuType<io.github.shrhang.shhs_create_core.content.logistics.terminal.DimensionLogisticsTerminalMenu>> DIMENSION_LOGISTICS_TERMINAL =
+            MENUS.register("dimension_logistics_terminal", () -> IMenuTypeExtension.create(
+                    io.github.shrhang.shhs_create_core.content.logistics.terminal.DimensionLogisticsTerminalMenu::new));
+
     public static void register(IEventBus bus) {
         MENUS.register(bus);
     }

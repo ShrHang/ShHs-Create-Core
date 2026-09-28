@@ -13,6 +13,10 @@ import net.minecraft.world.item.ItemStack;
 public class DimensionParcelStationMenu extends AbstractContainerMenu {
     private final BlockPos pos;
     private final ContainerData data;
+    public java.util.UUID session;
+    public net.minecraft.nbt.ListTag clientRoutes = new net.minecraft.nbt.ListTag();
+    private final Player player;
+    private int ticks;
 
     public DimensionParcelStationMenu(int containerId, Inventory inventory, RegistryFriendlyByteBuf buffer) {
         this(containerId, inventory, buffer.readBlockPos(), new SimpleContainerData(4));
@@ -27,7 +31,35 @@ public class DimensionParcelStationMenu extends AbstractContainerMenu {
         super(ShHsMenuTypes.DIMENSION_PARCEL_STATION.get(), containerId);
         this.pos = pos;
         this.data = data;
+        this.player = inventory.player;
+        this.session = inventory.player.level().isClientSide() ? new java.util.UUID(0, 0) : java.util.UUID.randomUUID();
         addDataSlots(data);
+    }
+
+    @Override
+    public void broadcastChanges() {
+        super.broadcastChanges();
+        if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer && ticks++ % 20 == 0) sendRoutes(serverPlayer);
+    }
+
+    public void sendRoutes(net.minecraft.server.level.ServerPlayer player) {
+        if (!(player.level().getBlockEntity(pos) instanceof DimensionParcelStationBlockEntity station)) return;
+        net.minecraft.nbt.ListTag routes = new net.minecraft.nbt.ListTag();
+        for (java.util.UUID network : io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalStock.connectedNetworks(station)) {
+            if (!com.simibubi.create.Create.LOGISTICS.mayInteract(network, player)) continue;
+            net.minecraft.nbt.CompoundTag route = new net.minecraft.nbt.CompoundTag();
+            route.putUUID("Network", network); route.putString("Address", station.getReceiveAddress(network));
+            routes.add(route);
+        }
+        net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
+        tag.put("Routes", routes);
+        io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalPackets.send(player, containerId, session, 0, 0, true, tag);
+    }
+
+    public void receiveRoutes(java.util.UUID session, net.minecraft.nbt.CompoundTag tag) {
+        if (!this.session.equals(new java.util.UUID(0, 0)) && !this.session.equals(session)) return;
+        this.session = session;
+        this.clientRoutes = tag.getList("Routes", net.minecraft.nbt.Tag.TAG_COMPOUND);
     }
 
     private static ContainerData serverData(DimensionParcelStationBlockEntity station, Player player) {

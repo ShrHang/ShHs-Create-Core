@@ -11,6 +11,7 @@
     "create.content.logistics.packagerLink.LogisticsManagerMixin",
     "create.content.logistics.packager.PackagerBlockMixin",
     "create.content.logistics.packager.PackagerBlockEntityMixin",
+    "create.content.logistics.packager.TerminalRepackageMixin",
     "create.foundation.utility.BlockHelperMixin",
     "curios.common.data.CuriosEntityManagerMixin",
     "fluidlogistics.content.processing.cooling.BulkCoolingFanProcessingTypeMixin",

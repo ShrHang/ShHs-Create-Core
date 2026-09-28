@@ -133,6 +133,13 @@ public final class DimensionParcelStationBindingIndex extends SavedData {
         return count;
     }
 
+    public synchronized List<GlobalPos> stations(int netId) {
+        return entries.entrySet().stream()
+                .filter(entry -> !entry.getValue().revoked() && entry.getValue().netId() == netId)
+                .sorted(Comparator.comparingLong(entry -> entry.getValue().sequence()))
+                .map(Map.Entry::getKey).toList();
+    }
+
     public synchronized void reconcile(MinecraftServer server) {
         int limit = ShHsConfig.SERVER.dimensionParcelStationMaxPerNetwork.get();
         if (limit < 0)

@@ -11,5 +11,6 @@ public class ServerEvents {
         ShHsAttackListener.init();
         ServerDrillSoundLimiter.init();
         DimensionParcelStationBindingIndex.init();
+        io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalEvents.init();
     }
 }

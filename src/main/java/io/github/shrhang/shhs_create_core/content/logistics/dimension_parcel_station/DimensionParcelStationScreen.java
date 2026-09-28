@@ -10,15 +10,21 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class DimensionParcelStationScreen extends AbstractContainerScreen<DimensionParcelStationMenu> {
     private final Map<DimensionParcelStationBlockEntity.Channel, Button> buttons =
             new EnumMap<>(DimensionParcelStationBlockEntity.Channel.class);
+    private net.minecraft.client.gui.components.EditBox address;
+    private Button networkButton;
+    private Button saveAddress;
+    private UUID selectedNetwork;
+    private int routeIndex;
 
     public DimensionParcelStationScreen(DimensionParcelStationMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
-        imageWidth = 210;
-        imageHeight = ModList.get().isLoaded("fluidlogistics") ? 150 : 124;
+        imageWidth = 260;
+        imageHeight = ModList.get().isLoaded("fluidlogistics") ? 222 : 196;
         inventoryLabelY = -1000;
     }
 
@@ -32,6 +38,41 @@ public class DimensionParcelStationScreen extends AbstractContainerScreen<Dimens
             addToggle(DimensionParcelStationBlockEntity.Channel.FLUID_INPUT, leftPos + 12, topPos + 82);
             addToggle(DimensionParcelStationBlockEntity.Channel.FLUID_OUTPUT, leftPos + 108, topPos + 82);
         }
+        int y = topPos + imageHeight - 94;
+        networkButton = addRenderableWidget(Button.builder(net.minecraft.network.chat.Component.empty(), ignored -> {
+            routeIndex++; selectedNetwork = null; updateRoute();
+        }).bounds(leftPos + 12, y, 236, 20).build());
+        address = new net.minecraft.client.gui.components.EditBox(font, leftPos + 12, y + 27, 168, 18,
+                io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalData.text("address"));
+        address.setMaxLength(64);
+        addRenderableWidget(address);
+        saveAddress = addRenderableWidget(Button.builder(
+                io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalData.text("save"), ignored -> {
+            if (selectedNetwork == null) return;
+            net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag();
+            data.putUUID("Network", selectedNetwork); data.putString("Address", address.getValue());
+            PacketDistributor.sendToServer(new io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalPackets.Action(
+                    menu.containerId, menu.session, io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalPackets.ADDRESS, data));
+        }).bounds(leftPos + 185, y + 26, 63, 20).build());
+        updateRoute();
+    }
+
+    private void updateRoute() {
+        int count = menu.clientRoutes.size();
+        networkButton.active = count > 1;
+        saveAddress.active = count > 0 && menu.mayConfigure();
+        address.setEditable(saveAddress.active);
+        if (count == 0) {
+            selectedNetwork = null;
+            networkButton.setMessage(io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalData.text("no_routes"));
+            return;
+        }
+        routeIndex = Math.floorMod(routeIndex, count);
+        var route = menu.clientRoutes.getCompound(routeIndex);
+        java.util.UUID network = route.getUUID("Network");
+        if (!network.equals(selectedNetwork)) { address.setValue(route.getString("Address")); selectedNetwork = network; }
+        networkButton.setMessage(io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalData.text(
+                "route", routeIndex + 1, count, network.toString().substring(0, 8)));
     }
 
     private void addToggle(DimensionParcelStationBlockEntity.Channel channel, int x, int y) {
@@ -54,6 +95,7 @@ public class DimensionParcelStationScreen extends AbstractContainerScreen<Dimens
     @Override
     protected void containerTick() {
         super.containerTick();
+        updateRoute();
         buttons.forEach((channel, button) -> {
             button.setMessage(label(channel));
             button.active = menu.mayConfigure();
@@ -74,6 +116,8 @@ public class DimensionParcelStationScreen extends AbstractContainerScreen<Dimens
                 : Component.translatable("text.shhs_create_core.dimension_parcel_station.network_status",
                 menu.getNetId(), menu.getStationCount());
         graphics.drawString(font, network, 10, 28, 0xd7e7ee, false);
+        graphics.drawString(font, io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalData.text("address_hint"),
+                12, imageHeight - 38, 0xd7e7ee, false);
         if (!menu.mayConfigure())
             graphics.drawString(font, Component.translatable(
                     "text.shhs_create_core.dimension_parcel_station.read_only"), 10,

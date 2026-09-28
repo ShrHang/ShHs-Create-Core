@@ -84,11 +84,14 @@ public class ShHsJeiPlugin implements IModPlugin {
 
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
+        registration.addGuiContainerHandler(io.github.shrhang.shhs_create_core.content.logistics.terminal.DimensionLogisticsTerminalScreen.class,
+                new io.github.shrhang.shhs_create_core.compat.jei.terminal.TerminalGuiHandler());
         registration.addGuiContainerHandler(PortableStockTickerScreen.class, new PortableStockTickerGuiContainerHandler());
     }
 
     @Override
     public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
+        registration.addRecipeTransferHandler(new io.github.shrhang.shhs_create_core.compat.jei.terminal.TerminalRecipeTransferHandler(registration.getTransferHelper()), mezz.jei.api.constants.RecipeTypes.CRAFTING);
         registration.addUniversalRecipeTransferHandler(new PortableStockTickerTransferHandler(registration.getJeiHelpers()));
     }
 }

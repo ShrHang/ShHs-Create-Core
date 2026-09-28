@@ -39,6 +39,23 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
     private boolean allowItemOutput = true;
     private boolean allowFluidInput = true;
     private boolean allowFluidOutput = true;
+    private final java.util.Map<java.util.UUID, String> receiveAddresses = new java.util.HashMap<>();
+
+    public String getReceiveAddress(java.util.UUID network) {
+        return receiveAddresses.getOrDefault(network, "");
+    }
+
+    public void setReceiveAddress(java.util.UUID network, String address, Player player) {
+        if (!mayConfigure(player) || address.length() > 64
+                || !io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalStock.connectedNetworks(this).contains(network)
+                || !com.simibubi.create.Create.LOGISTICS.mayInteract(network, player)) return;
+        address = address.strip();
+        if (address.contains("*") || address.contains("?") || address.chars().anyMatch(Character::isISOControl)) return;
+        if (address.isEmpty()) receiveAddresses.remove(network);
+        else receiveAddresses.put(network, address);
+        setChanged();
+        sendBlockUpdated();
+    }
 
     private DimensionsNet handlerNet;
     private StationItemHandler itemHandler;
@@ -198,6 +215,12 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        receiveAddresses.clear();
+        net.minecraft.nbt.ListTag addresses = tag.getList("TerminalAddresses", net.minecraft.nbt.Tag.TAG_COMPOUND);
+        for (int i = 0; i < addresses.size(); i++) {
+            CompoundTag entry = addresses.getCompound(i);
+            if (entry.hasUUID("Network")) receiveAddresses.put(entry.getUUID("Network"), entry.getString("Address"));
+        }
         allowItemInput = !tag.contains("AllowItemInput") || tag.getBoolean("AllowItemInput");
         allowItemOutput = !tag.contains("AllowItemOutput") || tag.getBoolean("AllowItemOutput");
         allowFluidInput = !tag.contains("AllowFluidInput") || tag.getBoolean("AllowFluidInput");
@@ -208,6 +231,14 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
+        net.minecraft.nbt.ListTag addresses = new net.minecraft.nbt.ListTag();
+        receiveAddresses.forEach((network, address) -> {
+            CompoundTag entry = new CompoundTag();
+            entry.putUUID("Network", network);
+            entry.putString("Address", address);
+            addresses.add(entry);
+        });
+        tag.put("TerminalAddresses", addresses);
         tag.putBoolean("AllowItemInput", allowItemInput);
         tag.putBoolean("AllowItemOutput", allowItemOutput);
         tag.putBoolean("AllowFluidInput", allowFluidInput);

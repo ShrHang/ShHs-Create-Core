@@ -43,6 +43,7 @@ public class ShHsClient {
     }
 
     public static void registerScreens(RegisterMenuScreensEvent event) {
+        event.register(ShHsMenuTypes.DIMENSION_LOGISTICS_TERMINAL.get(), io.github.shrhang.shhs_create_core.content.logistics.terminal.DimensionLogisticsTerminalScreen::new);
         event.register(ShHsMenuTypes.PORTABLE_STOCK_TICKER.get(), PortableStockTickerScreen::new);
         event.register(ShHsMenuTypes.DIMENSION_PARCEL_STATION.get(), DimensionParcelStationScreen::new);
     }
