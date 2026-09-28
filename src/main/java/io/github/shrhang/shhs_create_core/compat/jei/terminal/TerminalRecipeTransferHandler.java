@@ -4,7 +4,6 @@ import io.github.shrhang.shhs_create_core.content.logistics.terminal.*;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsMenuTypes;
 import mezz.jei.api.constants.RecipeTypes;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
-import mezz.jei.api.helpers.IJeiHelpers;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.transfer.*;
 import net.minecraft.nbt.CompoundTag;

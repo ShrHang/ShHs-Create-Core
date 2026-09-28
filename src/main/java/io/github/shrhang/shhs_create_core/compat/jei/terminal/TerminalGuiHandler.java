@@ -15,5 +15,5 @@ public final class TerminalGuiHandler implements IGuiContainerHandler<DimensionL
         return screen.hoveredIngredient(mouseX, mouseY).flatMap(entry -> builder.createBuilder(entry.getKey()).buildWithArea(entry.getValue()));
     }
     @Override
-    public List<Rect2i> getGuiExtraAreas(DimensionLogisticsTerminalScreen screen) { return List.of(screen.physicalBounds()); }
+    public List<Rect2i> getGuiExtraAreas(DimensionLogisticsTerminalScreen screen) { return List.of(); }
 }

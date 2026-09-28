@@ -51,7 +51,7 @@ public class ShHsJeiPlugin implements IModPlugin {
                     return stack;
                 })
                 .catalyst(() -> ShHsFluids.MIRACLE.getBucket().orElse(Items.BUCKET))
-                .catalyst(() -> ShHsBlocks.FAN_MIRACLE_CATALYST.get())
+                .catalyst(ShHsBlocks.FAN_MIRACLE_CATALYST::get)
                 .doubleItemIcon(AllItems.PROPELLER.get(), ShHsFluids.MIRACLE.getBucket().orElse(Items.BUCKET))
                 .emptyBackground(178, 72)
                 .build(rl("fan_miracle"), FanMiracleCategory::new));

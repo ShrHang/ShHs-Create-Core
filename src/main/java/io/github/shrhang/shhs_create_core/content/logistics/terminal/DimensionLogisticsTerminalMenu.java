@@ -3,7 +3,6 @@ package io.github.shrhang.shhs_create_core.content.logistics.terminal;
 import com.wintercogs.beyonddimensions.api.dimensionnet.DimensionsNet;
 import com.wintercogs.beyonddimensions.api.storage.key.impl.ItemStackKey;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsMenuTypes;
-import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.*;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
@@ -14,6 +13,8 @@ import net.minecraft.world.entity.player.*;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.loading.FMLEnvironment;
 
 import java.util.*;
 
@@ -22,6 +23,7 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
     public final Player player;
     public final int netId;
     public final UUID session;
+    public final boolean compactLayout;
     public final CraftingContainer crafting = new TransientCraftingContainer(this, 3, 3);
     private final ResultContainer result = new ResultContainer();
     public List<TerminalStock.Entry> clientStock = List.of();
@@ -36,6 +38,7 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
     private long revision;
     private int ticks;
     private boolean changingCraft;
+    private boolean clientSlotsActive = true;
 
     public DimensionLogisticsTerminalMenu(int id, Inventory inventory, RegistryFriendlyByteBuf buffer) {
         this(id, inventory, buffer.readInt(), buffer.readUUID());
@@ -44,8 +47,18 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
     public DimensionLogisticsTerminalMenu(int id, Inventory inventory, int netId, UUID session) {
         super(ShHsMenuTypes.DIMENSION_LOGISTICS_TERMINAL.get(), id);
         this.player = inventory.player; this.netId = netId; this.session = session;
+        compactLayout = FMLEnvironment.dist == Dist.CLIENT
+                && DimensionLogisticsTerminalClientLayout.isCompact();
+        int slotOffset = compactLayout
+                ? DimensionLogisticsTerminalLayout.COMPACT_RIGHT_PANEL_X
+                - DimensionLogisticsTerminalLayout.RIGHT_PANEL_X
+                : 0;
         addSlot(new ResultSlot(player, crafting, result, 0,
-                DimensionLogisticsTerminalLayout.CRAFT_RESULT_X, DimensionLogisticsTerminalLayout.CRAFT_RESULT_Y) {
+                DimensionLogisticsTerminalLayout.CRAFT_RESULT_X + slotOffset,
+                DimensionLogisticsTerminalLayout.CRAFT_RESULT_Y) {
+            @Override
+            public boolean isActive() { return clientSlotsActive; }
+
             @Override
             public boolean mayPickup(Player player) { return (player.level().isClientSide() || network() != null) && super.mayPickup(player); }
 
@@ -65,17 +78,28 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
             }
         });
         for (int y = 0; y < 3; y++) for (int x = 0; x < 3; x++)
-            addSlot(new Slot(crafting, x + y * 3,
-                    DimensionLogisticsTerminalLayout.CRAFT_INPUT_X + x * 18,
+            addSlot(responsiveSlot(crafting, x + y * 3,
+                    DimensionLogisticsTerminalLayout.CRAFT_INPUT_X + slotOffset + x * 18,
                     DimensionLogisticsTerminalLayout.CRAFT_INPUT_Y + y * 18));
         for (int y = 0; y < 3; y++) for (int x = 0; x < 9; x++)
-            addSlot(new Slot(inventory, x + y * 9 + 9,
-                    DimensionLogisticsTerminalLayout.PLAYER_INVENTORY_X + x * 18,
+            addSlot(responsiveSlot(inventory, x + y * 9 + 9,
+                    DimensionLogisticsTerminalLayout.PLAYER_INVENTORY_X + slotOffset + x * 18,
                     DimensionLogisticsTerminalLayout.PLAYER_INVENTORY_Y + y * 18));
         for (int x = 0; x < 9; x++)
-            addSlot(new Slot(inventory, x,
-                    DimensionLogisticsTerminalLayout.PLAYER_INVENTORY_X + x * 18,
+            addSlot(responsiveSlot(inventory, x,
+                    DimensionLogisticsTerminalLayout.PLAYER_INVENTORY_X + slotOffset + x * 18,
                     DimensionLogisticsTerminalLayout.PLAYER_HOTBAR_Y));
+    }
+
+    private Slot responsiveSlot(Container container, int index, int x, int y) {
+        return new Slot(container, index, x, y) {
+            @Override
+            public boolean isActive() { return clientSlotsActive; }
+        };
+    }
+
+    public void setClientSlotsActive(boolean active) {
+        if (player.level().isClientSide()) clientSlotsActive = active;
     }
 
     public DimensionsNet network() {

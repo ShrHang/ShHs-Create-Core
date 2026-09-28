@@ -4,6 +4,7 @@
   "text.shhs_create_core.terminal.collect": "取货",
   "text.shhs_create_core.terminal.orders": "我的订单",
   "text.shhs_create_core.terminal.stock": "库存",
+  "text.shhs_create_core.terminal.switch": "切换",
   "text.shhs_create_core.terminal.claim": "领取包裹",
   "text.shhs_create_core.terminal.end": "结束等待并领取",
   "text.shhs_create_core.terminal.clear_craft": "清空合成栏",

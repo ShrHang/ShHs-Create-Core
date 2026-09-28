@@ -24,7 +24,6 @@ import java.util.*;
 
 @GameTestHolder(ShHsCreateCore.MODID)
 @PrefixGameTestTemplate(false)
-@SuppressWarnings("removal")
 public class TerminalGameTests {
     private static ServerPlayer player(GameTestHelper helper) {
         return new net.neoforged.neoforge.common.util.FakePlayer(helper.getLevel(),

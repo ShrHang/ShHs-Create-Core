@@ -41,7 +41,7 @@ public final class TerminalOrders extends SavedData {
         public boolean ended;
         public final List<ItemStack> held = new ArrayList<>();
         public final List<ItemStack> packages = new ArrayList<>();
-        public final List<Shipment> shipments = new ArrayList<>();
+        private final List<Shipment> shipments = new ArrayList<>();
         public Order(UUID id, UUID owner, int netId) {
             this.id = id; this.owner = owner; this.netId = netId;
         }
@@ -228,7 +228,7 @@ public final class TerminalOrders extends SavedData {
             int slot = 0;
             while (slot < PackageItem.SLOTS && !order.held.isEmpty()) {
                 ItemStack stack = order.held.getFirst();
-                boolean bulky = !stack.getItem().canFitInsideContainerItems();
+                boolean bulky = !stack.getItem().canFitInsideContainerItems(stack);
                 if (bulky && slot != 0) break;
                 int count = Math.min(stack.getCount(), stack.getMaxStackSize());
                 contents.setStackInSlot(slot++, stack.split(count));

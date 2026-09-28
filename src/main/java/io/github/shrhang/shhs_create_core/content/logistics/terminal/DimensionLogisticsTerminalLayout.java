@@ -5,8 +5,11 @@ final class DimensionLogisticsTerminalLayout {
     static final int RIGHT_PANEL_WIDTH = 192;
     static final int WINDOW_WIDTH = LEFT_PANEL_WIDTH + RIGHT_PANEL_WIDTH;
     static final int MIN_WINDOW_HEIGHT = 256;
+    static final int LAYOUT_MARGIN = 12;
+    static final int JEI_RESERVED_WIDTH = RIGHT_PANEL_WIDTH;
 
     static final int RIGHT_PANEL_X = LEFT_PANEL_WIDTH;
+    static final int COMPACT_RIGHT_PANEL_X = (LEFT_PANEL_WIDTH - RIGHT_PANEL_WIDTH) / 2;
     static final int HEADER_HEIGHT = 16;
     static final int BACKGROUND_SLICE_HEIGHT = 16;
     static final int CRAFT_TEXTURE_HEIGHT = 56;

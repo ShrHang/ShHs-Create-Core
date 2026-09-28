@@ -86,6 +86,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         private static final int ORDER_MISSING_Y = 113;
         private static final int ORDER_MISSING_ROWS = 3;
         private static final int TEXT_COLOR = 0x4A2D31;
+        private static final int SWITCH_HEIGHT = 16;
     }
 
     private final LinkedHashMap<TerminalData.Selection, Integer> basket = new LinkedHashMap<>();
@@ -97,7 +98,8 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
     private Button endButton;
     private int basketOffset, orderIndex, missingRow;
     private int windowHeight;
-    private float uiScale = 1;
+    private final boolean compactLayout;
+    private boolean craftingTab;
     private boolean showingOrders;
     private boolean scrollHandleActive;
     private UUID submission;
@@ -107,25 +109,23 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
 
     public DimensionLogisticsTerminalScreen(DimensionLogisticsTerminalMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
-        imageWidth = DimensionLogisticsTerminalLayout.WINDOW_WIDTH;
+        compactLayout = menu.compactLayout;
+        imageWidth = compactLayout
+                ? DimensionLogisticsTerminalLayout.LEFT_PANEL_WIDTH
+                : DimensionLogisticsTerminalLayout.WINDOW_WIDTH;
         imageHeight = DimensionLogisticsTerminalLayout.MIN_WINDOW_HEIGHT;
     }
 
     @Override
     protected void init() {
-        initializeScale();
+        initializeLayout();
         super.init();
         initWidgets();
         refreshSearchResults();
         refreshWidgetState();
     }
 
-    private void initializeScale() {
-        // Slot hit-testing, widgets and rendering share this logical coordinate system.
-        uiScale = Math.min(1f, Math.min((width - 12f) / imageWidth,
-                (height - 12f) / DimensionLogisticsTerminalLayout.MIN_WINDOW_HEIGHT));
-        width = (int) (width / uiScale);
-        height = (int) (height / uiScale);
+    private void initializeLayout() {
         int appropriateHeight = height - 10;
         appropriateHeight -= Mth.positiveModulo(
                 appropriateHeight - STOCK_HEADER.getHeight() - STOCK_FOOTER.getHeight(),
@@ -135,6 +135,12 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         windowHeight = Math.clamp(appropriateHeight,
                 DimensionLogisticsTerminalLayout.MIN_WINDOW_HEIGHT, maximumHeight);
         imageHeight = windowHeight;
+    }
+
+    private int rightPanelX() {
+        return compactLayout
+                ? DimensionLogisticsTerminalLayout.COMPACT_RIGHT_PANEL_X
+                : DimensionLogisticsTerminalLayout.RIGHT_PANEL_X;
     }
 
     private void initWidgets() {
@@ -220,12 +226,15 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
 
     private void refreshWidgetState() {
         CompoundTag order = currentOrder();
+        boolean leftPanelVisible = !compactLayout || !craftingTab;
         viewButton.setMessage(TerminalData.text(showingOrders ? "stock" : "orders"));
-        searchBox.visible = !showingOrders;
-        claimButton.visible = showingOrders;
-        endButton.visible = showingOrders;
+        searchBox.visible = leftPanelVisible && !showingOrders;
+        viewButton.visible = leftPanelVisible;
+        claimButton.visible = leftPanelVisible && showingOrders;
+        endButton.visible = leftPanelVisible && showingOrders;
         claimButton.active = selectedOrder != null && order.getBoolean("Ready");
         endButton.active = selectedOrder != null && !order.getBoolean("Ready");
+        menu.setClientSlotsActive(!compactLayout || craftingTab);
     }
 
     private boolean validBasket() {
@@ -261,10 +270,13 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
 
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-        renderStockPanelBackground(graphics);
-        renderRightPanel(graphics);
-        if (showingOrders) renderOrders(graphics);
-        else renderStock(graphics, partialTick, mouseX, mouseY);
+        boolean leftPanelVisible = !compactLayout || !craftingTab;
+        if (leftPanelVisible) {
+            renderStockPanelBackground(graphics);
+            if (showingOrders) renderOrders(graphics);
+            else renderStock(graphics, partialTick, mouseX, mouseY);
+        }
+        if (!compactLayout || craftingTab) renderRightPanel(graphics);
     }
 
     @Override
@@ -390,7 +402,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
     }
 
     private void renderRightPanel(GuiGraphics graphics) {
-        int x = leftPos + DimensionLogisticsTerminalLayout.RIGHT_PANEL_X;
+        int x = leftPos + rightPanelX();
         int y = topPos;
         ShHsGuiTextures.DIMENSION_LOGISTICS_TERMINAL_HEADER.render(graphics, x, y);
         y += ShHsGuiTextures.DIMENSION_LOGISTICS_TERMINAL_HEADER.getHeight();
@@ -493,26 +505,24 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
     }
 
     public Optional<Map.Entry<ItemStack, Rect2i>> hoveredIngredient(double mouseX, double mouseY) {
-        HoveredEntry hovered = hovered(logical(mouseX), logical(mouseY));
+        HoveredEntry hovered = hovered((int) mouseX, (int) mouseY);
         return hovered == null ? Optional.empty() : Optional.of(Map.entry(hovered.entry().stack(),
                 new Rect2i((int) mouseX - 8, (int) mouseY - 8, 16, 16)));
-    }
-
-    public Rect2i physicalBounds() {
-        return new Rect2i((int) (leftPos * uiScale), (int) (topPos * uiScale), (int) (imageWidth * uiScale), (int) (imageHeight * uiScale));
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics, mouseX, mouseY, partialTick);
-        int x = logical(mouseX);
-        int y = logical(mouseY);
-        graphics.pose().pushPose();
-        graphics.pose().scale(uiScale, uiScale, 1);
-        super.render(graphics, x, y, partialTick);
-        renderTooltip(graphics, x, y);
-        renderEntryTooltip(graphics, x, y);
-        graphics.pose().popPose();
+        super.render(graphics, mouseX, mouseY, partialTick);
+        renderTooltip(graphics, mouseX, mouseY);
+        renderEntryTooltip(graphics, mouseX, mouseY);
+        if (compactLayout) renderSwitchButton(graphics);
+    }
+
+    private void renderSwitchButton(GuiGraphics graphics) {
+        Component label = TerminalData.text("switch");
+        graphics.drawString(font, label, leftPos + (imageWidth - font.width(label)) / 2,
+                topPos + 4, 0x603d39, false);
     }
 
     private void renderEntryTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -529,8 +539,14 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        double x = logical(mouseX);
-        double y = logical(mouseY);
+        if (compactLayout && button == 0 && mouseX >= leftPos && mouseX < leftPos + imageWidth
+                && mouseY >= topPos && mouseY < topPos + Layout.SWITCH_HEIGHT) {
+            craftingTab = !craftingTab;
+            refreshWidgetState();
+            return true;
+        }
+        double x = mouseX;
+        double y = mouseY;
         if (!showingOrders && button == 1 && searchBox.isMouseOver(x, y)) {
             searchBox.setValue("");
             searchBox.setFocused(true);
@@ -618,8 +634,8 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double dx, double dy) {
-        double x = logical(mouseX);
-        double y = logical(mouseY);
+        double x = mouseX;
+        double y = mouseY;
         if (x >= leftPos + Layout.LEFT_MOUSE_X && x <= leftPos + Layout.LEFT_MOUSE_X + Layout.LEFT_MOUSE_WIDTH) {
             int direction = (int) Math.signum(dy);
             if (showingOrders) {
@@ -645,25 +661,21 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         return super.mouseScrolled(x, y, dx, dy);
     }
 
-    private int logical(double coordinate) {
-        return (int) (coordinate / uiScale);
-    }
-
     @Override
     public boolean mouseReleased(double x, double y, int button) {
         if (button == 0 && scrollHandleActive) {
             scrollHandleActive = false;
             return true;
         }
-        return super.mouseReleased(logical(x), logical(y), button);
+        return super.mouseReleased(x, y, button);
     }
 
     @Override public boolean mouseDragged(double x, double y, int button, double dx, double dy) {
         if (button == 0 && scrollHandleActive) {
-            updateScrollFromMouse(logical(y));
+            updateScrollFromMouse(y);
             return true;
         }
-        return super.mouseDragged(logical(x), logical(y), button, dx / uiScale, dy / uiScale);
+        return super.mouseDragged(x, y, button, dx, dy);
     }
     @Override public boolean keyPressed(int key, int scan, int modifiers) {
         if (key == 257 && hasShiftDown() && !showingOrders && !basket.isEmpty() && validBasket()) {

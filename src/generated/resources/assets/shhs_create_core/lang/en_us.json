@@ -124,6 +124,7 @@
   "text.shhs_create_core.terminal.search": "Search inventory",
   "text.shhs_create_core.terminal.stock": "Inventory",
   "text.shhs_create_core.terminal.submit_failed": "Unable to submit: check stock, route, permissions and packager capacity.",
+  "text.shhs_create_core.terminal.switch": "Switch",
   "text.shhs_create_core.terminal.title": "Dimension Logistics Terminal",
   "text.shhs_create_core.terminal.unavailable": "Route unavailable or address unset",
   "text.shhs_create_core.terminal.waiting": "Waiting for deliveries",

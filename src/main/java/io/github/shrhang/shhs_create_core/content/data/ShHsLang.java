@@ -60,6 +60,7 @@ public class ShHsLang {
         REGISTRATE.addRawLang(key("text", "terminal.collect"), "Request items");
         REGISTRATE.addRawLang(key("text", "terminal.orders"), "My orders");
         REGISTRATE.addRawLang(key("text", "terminal.stock"), "Inventory");
+        REGISTRATE.addRawLang(key("text", "terminal.switch"), "Switch");
         REGISTRATE.addRawLang(key("text", "terminal.claim"), "Claim packages");
         REGISTRATE.addRawLang(key("text", "terminal.end"), "End wait & claim");
         REGISTRATE.addRawLang(key("text", "terminal.clear_craft"), "Clear crafting grid");
