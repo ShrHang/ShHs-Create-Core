@@ -88,16 +88,14 @@ public final class TerminalStock {
     public static List<Entry> snapshot(ServerPlayer player, DimensionsNet net) {
         if (net == null) return List.of();
         List<Entry> result = new ArrayList<>();
-        Set<ItemStackKey> local = new HashSet<>();
         for (var value : net.getUnifiedStorage().getStorage()) {
             if (value.key() instanceof ItemStackKey key && value.amount() > 0) {
-                local.add(key);
                 result.add(new Entry(key.copyStackWithCount(1), value.amount(), null, true));
             }
         }
         for (Route route : routes(player, net.getId()).values()) {
             for (var value : externalSummary(net.getId(), route, player.server.overworld().getGameTime(), false).getStacks()) {
-                if (value.count > 0 && !local.contains(new ItemStackKey(value.stack)))
+                if (value.count > 0)
                     result.add(new Entry(value.stack.copyWithCount(1), value.count, route.network(), !route.address().isBlank()));
             }
         }
