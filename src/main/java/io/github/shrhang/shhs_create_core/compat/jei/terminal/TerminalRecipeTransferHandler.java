@@ -25,6 +25,8 @@ public final class TerminalRecipeTransferHandler implements IRecipeTransferHandl
     @SuppressWarnings("removal")
     public @Nullable IRecipeTransferError transferRecipe(DimensionLogisticsTerminalMenu menu, RecipeHolder<CraftingRecipe> recipe,
                                                          IRecipeSlotsView slots, Player player, boolean maxTransfer, boolean doTransfer) {
+        if (!menu.isClientCraftSlotsActive())
+            return helpers.createUserErrorWithTooltip(TerminalData.text("crafting_hidden"));
         if (TerminalCrafting.plan(recipe.value(), menu.availableForCrafting()) == null)
             return helpers.createUserErrorWithTooltip(TerminalData.text("missing_materials"));
         if (doTransfer) {

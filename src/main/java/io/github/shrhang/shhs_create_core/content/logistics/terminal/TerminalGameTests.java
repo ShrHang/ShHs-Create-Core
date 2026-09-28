@@ -43,33 +43,33 @@ public class TerminalGameTests {
     }
 
     @GameTest(template = "terminal_empty", batch = "terminal")
-    public static void terminal_local_order_conserves_items(GameTestHelper helper) {
+    public static void terminal_local_virtual_slot_conserves_items(GameTestHelper helper) {
         ServerPlayer player = player(helper);
         DimensionsNet net = DimensionsNet.createNewNetForPlayer(player, 100000, 100);
         helper.assertTrue(net != null, "Create primary network");
         ItemStack iron = new ItemStack(Items.IRON_INGOT);
-        net.getUnifiedStorage().insert(new ItemStackKey(iron), 1300, false);
-        for (int i = 0; i < 36; i++) player.getInventory().setItem(i, new ItemStack(Items.COBBLESTONE, 64));
-        TerminalOrders service = new TerminalOrders();
-        UUID submission = UUID.randomUUID();
-        List<TerminalStock.Entry> request = List.of(new TerminalStock.Entry(iron, 1300, null, true));
-        helper.assertTrue(service.submit(player, net, submission, request), "Submit local order");
-        helper.assertTrue(service.submit(player, net, submission, request), "Retry must be idempotent");
-        helper.assertTrue(net.getUnifiedStorage().getStackByKey(new ItemStackKey(iron)).amount() == 0, "Withdraw exactly once");
-        helper.assertTrue(service.forPlayer(player.getUUID()).getFirst().packages.size() == 3, "1300 iron needs three nine-slot packages");
-        TerminalOrders restored = TerminalOrders.load(service.save(new CompoundTag(), player.registryAccess()), player.registryAccess());
-        ServerPlayer other = player(helper);
-        restored.claim(other, submission, true);
-        helper.assertTrue(restored.forPlayer(player.getUUID()).getFirst().packages.size() == 3, "Other player cannot claim");
+        net.getUnifiedStorage().insert(new ItemStackKey(iron), 130, false);
+        DimensionLogisticsTerminalMenu menu = new DimensionLogisticsTerminalMenu(
+                7, player.getInventory(), net.getId(), UUID.randomUUID());
+        menu.clickLocal(iron, 0, false);
+        helper.assertTrue(menu.getCarried().getCount() == 64
+                && net.getUnifiedStorage().getStackByKey(new ItemStackKey(iron)).amount() == 66,
+                "Left click takes one maximum stack");
+        menu.clickLocal(iron, 1, false);
+        helper.assertTrue(menu.getCarried().getCount() == 63
+                && net.getUnifiedStorage().getStackByKey(new ItemStackKey(iron)).amount() == 67,
+                "Right click deposits one matching carried item");
+        menu.setCarried(new ItemStack(Items.DIAMOND, 5));
+        menu.clickLocal(iron, 0, false);
+        helper.assertTrue(menu.getCarried().is(Items.IRON_INGOT) && menu.getCarried().getCount() == 64,
+                "Different cursor stack is deposited before swapping");
+        helper.assertTrue(net.getUnifiedStorage().getStackByKey(new ItemStackKey(new ItemStack(Items.DIAMOND))).amount() == 5,
+                "Swapped cursor items enter the dimension network");
         player.getInventory().clearContent();
-        restored.claim(player, submission, false);
-        restored.claim(player, submission, false);
-        int actual = 0;
-        for (ItemStack box : player.getInventory().items) if (box.getItem() instanceof PackageItem) {
-            var contents = PackageItem.getContents(box);
-            for (int i = 0; i < contents.getSlots(); i++) actual += contents.getStackInSlot(i).getCount();
-        }
-        helper.assertTrue(actual == 1300 && restored.forPlayer(player.getUUID()).isEmpty(), "No lost or duplicated items after restore and repeated claim");
+        menu.setCarried(ItemStack.EMPTY);
+        menu.clickLocal(iron, 0, true);
+        helper.assertTrue(player.getInventory().countItem(Items.IRON_INGOT) == 3,
+                "Shift click transfers only the remaining local stock");
         helper.succeed();
     }
 

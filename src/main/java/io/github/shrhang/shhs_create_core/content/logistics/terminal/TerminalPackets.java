@@ -8,6 +8,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
@@ -15,7 +16,8 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import java.util.*;
 
 public final class TerminalPackets {
-    public static final int DEPOSIT = 0, SUBMIT = 1, CLAIM = 2, END = 3, CLEAR_CRAFT = 4, FILL = 5, ADDRESS = 6;
+    public static final int DEPOSIT = 0, SUBMIT = 1, CLAIM = 2, END = 3, CLEAR_CRAFT = 4, FILL = 5,
+            ADDRESS = 6, LOCAL_CLICK = 7, CLAIM_READY = 8, END_INCOMPLETE = 9;
     private TerminalPackets() {}
 
     public static void register(PayloadRegistrar registrar) {
@@ -72,6 +74,8 @@ public final class TerminalPackets {
         CompoundTag data = packet.data();
         switch (packet.operation()) {
             case DEPOSIT -> menu.depositCursor();
+            case LOCAL_CLICK -> menu.clickLocal(ItemStack.parseOptional(player.registryAccess(), data.getCompound("Stack")),
+                    data.getInt("Button"), data.getBoolean("QuickMove"));
             case CLEAR_CRAFT -> menu.clearCrafting();
             case FILL -> {
                 ResourceLocation id = ResourceLocation.tryParse(data.getString("Recipe"));
@@ -81,7 +85,7 @@ public final class TerminalPackets {
                 var net = menu.network();
                 if (net == null || !data.hasUUID("Submission")) return;
                 ListTag list = data.getList("Items", Tag.TAG_COMPOUND);
-                if (list.size() > TerminalData.MAX_LINES) return;
+                if (list.size() > TerminalData.MAX_ORDER_LINES) return;
                 List<TerminalStock.Entry> entries = new ArrayList<>();
                 for (int i = 0; i < list.size(); i++) entries.add(TerminalData.entry(list.getCompound(i), player.registryAccess()));
                 if (TerminalOrders.get(player.server).submit(player, net, data.getUUID("Submission"), entries)) {
@@ -91,6 +95,8 @@ public final class TerminalPackets {
             case CLAIM, END -> {
                 if (data.hasUUID("Order")) TerminalOrders.get(player.server).claim(player, data.getUUID("Order"), packet.operation() == END);
             }
+            case CLAIM_READY -> TerminalOrders.get(player.server).claimReady(player);
+            case END_INCOMPLETE -> TerminalOrders.get(player.server).endIncomplete(player);
             default -> { return; }
         }
         menu.sendSnapshot();

@@ -9,7 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import java.util.*;
 
 public final class TerminalData {
-    public static final int MAX_LINES = 128;
+    public static final int MAX_ORDER_LINES = 9;
     public static final int MAX_ITEMS = 32768;
     public static final int MAX_ACTIVE_ORDERS = 64;
 

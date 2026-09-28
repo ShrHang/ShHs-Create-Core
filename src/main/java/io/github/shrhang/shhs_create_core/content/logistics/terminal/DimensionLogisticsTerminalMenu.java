@@ -17,6 +17,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.loading.FMLEnvironment;
 
 import java.util.*;
+import java.util.function.BooleanSupplier;
 
 public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
     public static final int RESULT = 0, CRAFT_START = 1, CRAFT_END = 10, PLAYER_START = 10, PLAYER_END = 46;
@@ -24,21 +25,31 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
     public final int netId;
     public final UUID session;
     public final boolean compactLayout;
+    public final int windowHeight;
+    public final int rightPanelX;
+    public final int orderPanelY;
+    public final int craftPanelY;
+    public final int playerPanelY;
+    public final int bottomPanelY;
+    public final boolean modulesCanShare;
+    public final boolean orderCanShow;
+    public final boolean craftCanShow;
     public final CraftingContainer crafting = new TransientCraftingContainer(this, 3, 3);
     private final ResultContainer result = new ResultContainer();
     public List<TerminalStock.Entry> clientStock = List.of();
-    public ListTag clientOrders = new ListTag();
+    public List<TerminalOrderSummary> clientOrders = List.of();
     public String clientNetworkName = "";
     public UUID acceptedSubmission;
     public long clientRevision = -1;
     private long receivingRevision = -1;
     private int nextPart;
     private final List<TerminalStock.Entry> receiving = new ArrayList<>();
-    private ListTag receivingOrders = new ListTag();
+    private final List<TerminalOrderSummary> receivingOrders = new ArrayList<>();
     private long revision;
     private int ticks;
     private boolean changingCraft;
-    private boolean clientSlotsActive = true;
+    private boolean clientPlayerSlotsActive = true;
+    private boolean clientCraftSlotsActive = true;
 
     public DimensionLogisticsTerminalMenu(int id, Inventory inventory, RegistryFriendlyByteBuf buffer) {
         this(id, inventory, buffer.readInt(), buffer.readUUID());
@@ -47,17 +58,30 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
     public DimensionLogisticsTerminalMenu(int id, Inventory inventory, int netId, UUID session) {
         super(ShHsMenuTypes.DIMENSION_LOGISTICS_TERMINAL.get(), id);
         this.player = inventory.player; this.netId = netId; this.session = session;
-        compactLayout = FMLEnvironment.dist == Dist.CLIENT
-                && DimensionLogisticsTerminalClientLayout.isCompact();
-        int slotOffset = compactLayout
-                ? DimensionLogisticsTerminalLayout.COMPACT_RIGHT_PANEL_X
-                - DimensionLogisticsTerminalLayout.RIGHT_PANEL_X
-                : 0;
+        DimensionLogisticsTerminalClientLayout.Snapshot layout = FMLEnvironment.dist == Dist.CLIENT
+                ? DimensionLogisticsTerminalClientLayout.create()
+                : new DimensionLogisticsTerminalClientLayout.Snapshot(false,
+                DimensionLogisticsTerminalLayout.windowHeight(266));
+        compactLayout = layout.compact();
+        windowHeight = layout.windowHeight();
+        rightPanelX = compactLayout ? DimensionLogisticsTerminalLayout.COMPACT_RIGHT_PANEL_X
+                : DimensionLogisticsTerminalLayout.RIGHT_PANEL_X;
+        bottomPanelY = windowHeight - DimensionLogisticsTerminalLayout.BOTTOM_TEXTURE_HEIGHT;
+        playerPanelY = bottomPanelY - DimensionLogisticsTerminalLayout.PLAYER_TEXTURE_HEIGHT;
+        int optionalHeight = Math.max(0,
+                playerPanelY - DimensionLogisticsTerminalLayout.HEADER_TEXTURE_HEIGHT);
+        modulesCanShare = optionalHeight >= DimensionLogisticsTerminalLayout.ORDER_TEXTURE_HEIGHT
+                + DimensionLogisticsTerminalLayout.CRAFT_TEXTURE_HEIGHT;
+        orderCanShow = optionalHeight >= DimensionLogisticsTerminalLayout.ORDER_TEXTURE_HEIGHT;
+        craftCanShow = optionalHeight >= DimensionLogisticsTerminalLayout.CRAFT_TEXTURE_HEIGHT;
+        orderPanelY = DimensionLogisticsTerminalLayout.HEADER_TEXTURE_HEIGHT;
+        craftPanelY = orderPanelY + (modulesCanShare
+                ? DimensionLogisticsTerminalLayout.ORDER_TEXTURE_HEIGHT : 0);
         addSlot(new ResultSlot(player, crafting, result, 0,
-                DimensionLogisticsTerminalLayout.CRAFT_RESULT_X + slotOffset,
-                DimensionLogisticsTerminalLayout.CRAFT_RESULT_Y) {
+                rightPanelX + DimensionLogisticsTerminalLayout.CRAFT_RESULT_X,
+                craftPanelY + DimensionLogisticsTerminalLayout.CRAFT_RESULT_Y) {
             @Override
-            public boolean isActive() { return clientSlotsActive; }
+            public boolean isActive() { return clientCraftSlotsActive; }
 
             @Override
             public boolean mayPickup(Player player) { return (player.level().isClientSide() || network() != null) && super.mayPickup(player); }
@@ -79,27 +103,38 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
         });
         for (int y = 0; y < 3; y++) for (int x = 0; x < 3; x++)
             addSlot(responsiveSlot(crafting, x + y * 3,
-                    DimensionLogisticsTerminalLayout.CRAFT_INPUT_X + slotOffset + x * 18,
-                    DimensionLogisticsTerminalLayout.CRAFT_INPUT_Y + y * 18));
+                    rightPanelX + DimensionLogisticsTerminalLayout.CRAFT_INPUT_X
+                            + x * DimensionLogisticsTerminalLayout.CRAFT_SLOT_STEP,
+                    craftPanelY + DimensionLogisticsTerminalLayout.CRAFT_INPUT_Y
+                            + y * DimensionLogisticsTerminalLayout.CRAFT_SLOT_STEP,
+                    () -> clientCraftSlotsActive));
         for (int y = 0; y < 3; y++) for (int x = 0; x < 9; x++)
             addSlot(responsiveSlot(inventory, x + y * 9 + 9,
-                    DimensionLogisticsTerminalLayout.PLAYER_INVENTORY_X + slotOffset + x * 18,
-                    DimensionLogisticsTerminalLayout.PLAYER_INVENTORY_Y + y * 18));
+                    rightPanelX + DimensionLogisticsTerminalLayout.PLAYER_INVENTORY_X + x * 18,
+                    playerPanelY + DimensionLogisticsTerminalLayout.PLAYER_INVENTORY_Y + y * 18,
+                    () -> clientPlayerSlotsActive));
         for (int x = 0; x < 9; x++)
             addSlot(responsiveSlot(inventory, x,
-                    DimensionLogisticsTerminalLayout.PLAYER_INVENTORY_X + slotOffset + x * 18,
-                    DimensionLogisticsTerminalLayout.PLAYER_HOTBAR_Y));
+                    rightPanelX + DimensionLogisticsTerminalLayout.PLAYER_INVENTORY_X + x * 18,
+                    playerPanelY + DimensionLogisticsTerminalLayout.PLAYER_HOTBAR_Y,
+                    () -> clientPlayerSlotsActive));
     }
 
-    private Slot responsiveSlot(Container container, int index, int x, int y) {
+    private Slot responsiveSlot(Container container, int index, int x, int y, BooleanSupplier active) {
         return new Slot(container, index, x, y) {
             @Override
-            public boolean isActive() { return clientSlotsActive; }
+            public boolean isActive() { return active.getAsBoolean(); }
         };
     }
 
-    public void setClientSlotsActive(boolean active) {
-        if (player.level().isClientSide()) clientSlotsActive = active;
+    public void setClientSlotActivity(boolean playerActive, boolean craftActive) {
+        if (!player.level().isClientSide()) return;
+        clientPlayerSlotsActive = playerActive;
+        clientCraftSlotsActive = craftActive;
+    }
+
+    public boolean isClientCraftSlotsActive() {
+        return clientCraftSlotsActive;
     }
 
     public DimensionsNet network() {
@@ -119,6 +154,62 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
         broadcastChanges();
     }
 
+    public void clickLocal(ItemStack template, int button, boolean quickMove) {
+        if (player.level().isClientSide() || template.isEmpty() || button < 0 || button > 1) return;
+        DimensionsNet net = network();
+        if (net == null) return;
+        ItemStackKey key = new ItemStackKey(template);
+        long stored = net.getUnifiedStorage().getStorage().stream()
+                .filter(entry -> entry.key() instanceof ItemStackKey itemKey && itemKey.equals(key))
+                .mapToLong(entry -> entry.amount()).sum();
+        if (stored <= 0) return;
+
+        if (quickMove) {
+            int count = Math.min((int) Math.min(stored, template.getMaxStackSize()), inventorySpace(template));
+            ItemStack extracted = withdrawLocal(key, count);
+            if (!extracted.isEmpty()) {
+                player.getInventory().add(extracted);
+                if (!extracted.isEmpty()) deposit(extracted);
+            }
+        } else {
+            ItemStack carried = getCarried();
+            if (carried.isEmpty()) {
+                int maximum = (int) Math.min(stored, template.getMaxStackSize());
+                int count = button == 1 ? (maximum + 1) / 2 : maximum;
+                setCarried(withdrawLocal(key, count));
+            } else if (ItemStack.isSameItemSameComponents(carried, template)) {
+                depositAmount(carried, button == 1 ? 1 : carried.getCount());
+                setCarried(carried.isEmpty() ? ItemStack.EMPTY : carried);
+            } else {
+                depositAmount(carried, carried.getCount());
+                setCarried(carried.isEmpty()
+                        ? withdrawLocal(key, (int) Math.min(stored, template.getMaxStackSize()))
+                        : carried);
+            }
+        }
+        broadcastChanges();
+    }
+
+    private int inventorySpace(ItemStack template) {
+        int space = 0;
+        for (ItemStack current : player.getInventory().items) {
+            if (current.isEmpty()) space += template.getMaxStackSize();
+            else if (ItemStack.isSameItemSameComponents(current, template))
+                space += Math.max(0, current.getMaxStackSize() - current.getCount());
+            if (space >= template.getMaxStackSize()) return template.getMaxStackSize();
+        }
+        return space;
+    }
+
+    private void depositAmount(ItemStack stack, int count) {
+        if (count <= 0 || stack.isEmpty()) return;
+        DimensionsNet net = network();
+        if (net == null) return;
+        int offered = Math.min(count, stack.getCount());
+        long remainder = net.getUnifiedStorage().insert(new ItemStackKey(stack), offered, false).amount();
+        stack.shrink(offered - (int) remainder);
+    }
+
     private void deposit(ItemStack stack) {
         DimensionsNet net = network();
         if (net == null || stack.isEmpty()) return;
@@ -136,6 +227,12 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
             int removed = Math.min(count - obtained, stack.getCount());
             stack.shrink(removed); obtained += removed;
         }
+        return obtained == 0 ? ItemStack.EMPTY : key.copyStackWithCount(obtained);
+    }
+
+    private ItemStack withdrawLocal(ItemStackKey key, int count) {
+        if (count <= 0 || network() == null) return ItemStack.EMPTY;
+        int obtained = (int) network().getUnifiedStorage().extract(key, count, false, false).amount();
         return obtained == 0 ? ItemStack.EMPTY : key.copyStackWithCount(obtained);
     }
 
@@ -264,7 +361,7 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
         DimensionsNet net = network();
         List<TerminalStock.Entry> stock = TerminalStock.snapshot(serverPlayer, net);
         long version = ++revision;
-        ListTag summaries = TerminalOrders.get(serverPlayer.server).summaries(serverPlayer);
+        List<TerminalOrderSummary> summaries = TerminalOrders.get(serverPlayer.server).summaries(serverPlayer);
         int stockParts = Math.max(1, (stock.size() + 31) / 32);
         int parts = stockParts + summaries.size();
         for (int part = 0; part < parts; part++) {
@@ -274,7 +371,9 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
             tag.put("Stock", list);
             tag.putString("Name", net == null ? "" : net.getNetworkName().getString());
             if (part >= stockParts) {
-                ListTag orderPart = new ListTag(); orderPart.add(summaries.getCompound(part - stockParts)); tag.put("Orders", orderPart);
+                ListTag orderPart = new ListTag();
+                orderPart.add(summaries.get(part - stockParts).save(player.registryAccess()));
+                tag.put("Orders", orderPart);
             }
             if (acceptedSubmission != null) tag.putUUID("Accepted", acceptedSubmission);
             TerminalPackets.send(serverPlayer, containerId, session, version, part, part == parts - 1, tag);
@@ -283,14 +382,16 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
 
     public void receive(long revision, int part, boolean last, CompoundTag tag) {
         if (revision <= clientRevision) return;
-        if (part == 0) { receiving.clear(); receivingOrders = new ListTag(); receivingRevision = revision; nextPart = 0; }
+        if (part == 0) { receiving.clear(); receivingOrders.clear(); receivingRevision = revision; nextPart = 0; }
         if (revision != receivingRevision || part != nextPart++) return;
         ListTag list = tag.getList("Stock", Tag.TAG_COMPOUND);
         for (int i = 0; i < list.size(); i++) receiving.add(TerminalData.entry(list.getCompound(i), player.registryAccess()));
-        receivingOrders.addAll(tag.getList("Orders", Tag.TAG_COMPOUND));
+        ListTag orderTags = tag.getList("Orders", Tag.TAG_COMPOUND);
+        for (int i = 0; i < orderTags.size(); i++)
+            receivingOrders.add(TerminalOrderSummary.load(orderTags.getCompound(i), player.registryAccess()));
         if (last) {
             clientStock = List.copyOf(receiving); clientRevision = revision;
-            clientOrders = receivingOrders; clientNetworkName = tag.getString("Name");
+            clientOrders = List.copyOf(receivingOrders); clientNetworkName = tag.getString("Name");
             if (tag.hasUUID("Accepted")) acceptedSubmission = tag.getUUID("Accepted");
         }
     }

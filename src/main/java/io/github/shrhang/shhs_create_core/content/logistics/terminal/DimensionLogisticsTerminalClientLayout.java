@@ -9,11 +9,15 @@ import net.neoforged.fml.ModList;
 final class DimensionLogisticsTerminalClientLayout {
     private DimensionLogisticsTerminalClientLayout() {}
 
-    static boolean isCompact() {
+    static Snapshot create() {
+        var window = Minecraft.getInstance().getWindow();
         int requiredWidth = DimensionLogisticsTerminalLayout.WINDOW_WIDTH
                 + DimensionLogisticsTerminalLayout.LAYOUT_MARGIN;
         if (ModList.get().isLoaded("jei"))
             requiredWidth += DimensionLogisticsTerminalLayout.JEI_RESERVED_WIDTH;
-        return Minecraft.getInstance().getWindow().getGuiScaledWidth() < requiredWidth;
+        return new Snapshot(window.getGuiScaledWidth() < requiredWidth,
+                DimensionLogisticsTerminalLayout.windowHeight(window.getGuiScaledHeight()));
     }
+
+    record Snapshot(boolean compact, int windowHeight) {}
 }
