@@ -8,11 +8,11 @@ import net.minecraft.resources.ResourceLocation;
 
 public enum ShHsGuiTextures implements ScreenElement, TextureSheetSegment {
     // Dimension Logistics Terminal
-    DIMENSION_LOGISTICS_TERMINAL_HEADER("dimension_logistics_terminal", 256, 20),
-    DIMENSION_LOGISTICS_TERMINAL_CRAFT("dimension_logistics_terminal", 0, 32, 256, 62),
-    DIMENSION_LOGISTICS_TERMINAL_BUFFER("dimension_logistics_terminal", 0, 96, 256, 4),
-    DIMENSION_LOGISTICS_TERMINAL_PLAYER("dimension_logistics_terminal", 0, 112, 256, 89),
-    DIMENSION_LOGISTICS_TERMINAL_BOTTOM("dimension_logistics_terminal", 0, 208, 256, 18),
+    DIMENSION_LOGISTICS_TERMINAL_HEADER("create", "stock_keeper_categories", 32, 0, 192, 16),
+    DIMENSION_LOGISTICS_TERMINAL_BACKGROUND("create", "stock_keeper_categories", 32, 32, 192, 16),
+    DIMENSION_LOGISTICS_TERMINAL_CRAFT("dimension_logistics_terminal", 32, 0, 192, 56),
+    DIMENSION_LOGISTICS_TERMINAL_PLAYER("dimension_logistics_terminal", 32, 64, 192, 90),
+    DIMENSION_LOGISTICS_TERMINAL_BOTTOM("dimension_logistics_terminal", 32, 160, 192, 32),
     ;
 
     public final ResourceLocation location;
@@ -26,7 +26,11 @@ public enum ShHsGuiTextures implements ScreenElement, TextureSheetSegment {
     }
 
     ShHsGuiTextures(String location, int startX, int startY, int width, int height) {
-        this.location = ShHsCreateCore.rl("textures/gui/" + location + ".png");
+        this(ShHsCreateCore.MODID, location, startX, startY, width, height);
+    }
+
+    ShHsGuiTextures(String namespace, String location, int startX, int startY, int width, int height) {
+        this.location = ResourceLocation.fromNamespaceAndPath(namespace, "textures/gui/" + location + ".png");
         this.width = width;
         this.height = height;
         this.startX = startX;

@@ -19,9 +19,6 @@ import java.util.*;
 
 public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
     public static final int RESULT = 0, CRAFT_START = 1, CRAFT_END = 10, PLAYER_START = 10, PLAYER_END = 46;
-    public static final int RIGHT_PANEL_X = 224;
-    public static final int CRAFT_PANEL_Y = 20;
-    public static final int PLAYER_PANEL_Y = 86;
     public final Player player;
     public final int netId;
     public final UUID session;
@@ -47,7 +44,8 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
     public DimensionLogisticsTerminalMenu(int id, Inventory inventory, int netId, UUID session) {
         super(ShHsMenuTypes.DIMENSION_LOGISTICS_TERMINAL.get(), id);
         this.player = inventory.player; this.netId = netId; this.session = session;
-        addSlot(new ResultSlot(player, crafting, result, 0, RIGHT_PANEL_X + 158, CRAFT_PANEL_Y + 20) {
+        addSlot(new ResultSlot(player, crafting, result, 0,
+                DimensionLogisticsTerminalLayout.CRAFT_RESULT_X, DimensionLogisticsTerminalLayout.CRAFT_RESULT_Y) {
             @Override
             public boolean mayPickup(Player player) { return (player.level().isClientSide() || network() != null) && super.mayPickup(player); }
 
@@ -67,11 +65,17 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
             }
         });
         for (int y = 0; y < 3; y++) for (int x = 0; x < 3; x++)
-            addSlot(new Slot(crafting, x + y * 3, RIGHT_PANEL_X + 66 + x * 18, CRAFT_PANEL_Y + 2 + y * 18));
+            addSlot(new Slot(crafting, x + y * 3,
+                    DimensionLogisticsTerminalLayout.CRAFT_INPUT_X + x * 18,
+                    DimensionLogisticsTerminalLayout.CRAFT_INPUT_Y + y * 18));
         for (int y = 0; y < 3; y++) for (int x = 0; x < 9; x++)
-            addSlot(new Slot(inventory, x + y * 9 + 9, RIGHT_PANEL_X + 48 + x * 18, PLAYER_PANEL_Y + 7 + y * 18));
+            addSlot(new Slot(inventory, x + y * 9 + 9,
+                    DimensionLogisticsTerminalLayout.PLAYER_INVENTORY_X + x * 18,
+                    DimensionLogisticsTerminalLayout.PLAYER_INVENTORY_Y + y * 18));
         for (int x = 0; x < 9; x++)
-            addSlot(new Slot(inventory, x, RIGHT_PANEL_X + 48 + x * 18, PLAYER_PANEL_Y + 65));
+            addSlot(new Slot(inventory, x,
+                    DimensionLogisticsTerminalLayout.PLAYER_INVENTORY_X + x * 18,
+                    DimensionLogisticsTerminalLayout.PLAYER_HOTBAR_Y));
     }
 
     public DimensionsNet network() {

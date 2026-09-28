@@ -14,6 +14,7 @@ import com.simibubi.create.content.logistics.stockTicker.PackageOrder;
 import com.simibubi.create.content.logistics.stockTicker.PackageOrderWithCrafts;
 import com.simibubi.create.content.logistics.stockTicker.PackageOrderWithCrafts.CraftingEntry;
 import com.simibubi.create.content.logistics.stockTicker.StockKeeperRequestScreen.SearchSyncMode;
+import com.simibubi.create.content.trains.station.NoShadowFontWrapper;
 import com.simibubi.create.foundation.gui.AllGuiTextures;
 import com.simibubi.create.foundation.gui.menu.AbstractSimiContainerScreen;
 import com.simibubi.create.foundation.utility.CreateLang;
@@ -117,14 +118,15 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
         besideSearchButtonY = topPos + 18;
 
         Component searchLabel = CreateLang.translateDirect("gui.stock_keeper.search_items");
-        searchBox = new EditBox(font, leftPos + 71, topPos + 22, 100, 9, searchLabel);
+        NoShadowFontWrapper inputFont = new NoShadowFontWrapper(font);
+        searchBox = new EditBox(inputFont, leftPos + 71, topPos + 22, 100, 9, searchLabel);
         searchBox.setMaxLength(50);
         searchBox.setBordered(false);
         searchBox.setTextColor(0x4A2D31);
         addWidget(searchBox);
 
         String previousAddress = addressBox == null ? "" : addressBox.getValue();
-        addressBox = new PortableStockTickerAddressEditBox(this, font, leftPos + 27,
+        addressBox = new PortableStockTickerAddressEditBox(this, inputFont, leftPos + 27,
                 topPos + windowHeight - 36, 92, 10, menu.addresses.addresses());
         addressBox.setTextColor(0x714A40);
         addressBox.setValue(previousAddress);
