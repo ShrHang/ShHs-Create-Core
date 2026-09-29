@@ -1,11 +1,12 @@
 package io.github.shrhang.shhs_create_core.content.registries;
 
 import io.github.shrhang.shhs_create_core.content.kinetics.drill.ContraptionDrillBreakEffectPacket;
+import io.github.shrhang.shhs_create_core.content.logistics.dimension_parcel_station.DimensionParcelStationTogglePacket;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.OpenPortableStockTickerPacket;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.RemotePackageOrderPacket;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.StockInventoryPacket;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.StockStatusPacket;
-import io.github.shrhang.shhs_create_core.content.logistics.dimension_parcel_station.DimensionParcelStationTogglePacket;
+import io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalPackets;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
@@ -14,7 +15,7 @@ public class ShHsPackets {
 
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(VERSION);
-        io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalPackets.register(registrar);
+        TerminalPackets.register(registrar);
         registrar.playToClient(ContraptionDrillBreakEffectPacket.TYPE, ContraptionDrillBreakEffectPacket.STREAM_CODEC, ContraptionDrillBreakEffectPacket::handle);
         registrar.playToServer(OpenPortableStockTickerPacket.TYPE, OpenPortableStockTickerPacket.STREAM_CODEC, OpenPortableStockTickerPacket::handle);
         registrar.playToServer(StockInventoryPacket.StockRequestPacket.TYPE, StockInventoryPacket.StockRequestPacket.STREAM_CODEC, StockInventoryPacket.StockRequestPacket::handle);

@@ -1,8 +1,12 @@
 package io.github.shrhang.shhs_create_core.content.logistics.dimension_parcel_station;
 
+import io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalData;
+import io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalPackets;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.fml.ModList;
@@ -15,7 +19,7 @@ import java.util.UUID;
 public class DimensionParcelStationScreen extends AbstractContainerScreen<DimensionParcelStationMenu> {
     private final Map<DimensionParcelStationBlockEntity.Channel, Button> buttons =
             new EnumMap<>(DimensionParcelStationBlockEntity.Channel.class);
-    private net.minecraft.client.gui.components.EditBox address;
+    private EditBox address;
     private Button networkButton;
     private Button saveAddress;
     private UUID selectedNetwork;
@@ -39,20 +43,22 @@ public class DimensionParcelStationScreen extends AbstractContainerScreen<Dimens
             addToggle(DimensionParcelStationBlockEntity.Channel.FLUID_OUTPUT, leftPos + 108, topPos + 82);
         }
         int y = topPos + imageHeight - 94;
-        networkButton = addRenderableWidget(Button.builder(net.minecraft.network.chat.Component.empty(), ignored -> {
-            routeIndex++; selectedNetwork = null; updateRoute();
+        networkButton = addRenderableWidget(Button.builder(Component.empty(), ignored -> {
+            routeIndex++;
+            selectedNetwork = null;
+            updateRoute();
         }).bounds(leftPos + 12, y, 236, 20).build());
-        address = new net.minecraft.client.gui.components.EditBox(font, leftPos + 12, y + 27, 168, 18,
-                io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalData.text("address"));
+        address = new EditBox(font, leftPos + 12, y + 27, 168, 18, TerminalData.text("address"));
         address.setMaxLength(64);
         addRenderableWidget(address);
-        saveAddress = addRenderableWidget(Button.builder(
-                io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalData.text("save"), ignored -> {
-            if (selectedNetwork == null) return;
-            net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag();
-            data.putUUID("Network", selectedNetwork); data.putString("Address", address.getValue());
-            PacketDistributor.sendToServer(new io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalPackets.Action(
-                    menu.containerId, menu.session, io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalPackets.ADDRESS, data));
+        saveAddress = addRenderableWidget(Button.builder(TerminalData.text("save"), ignored -> {
+            if (selectedNetwork == null)
+                return;
+            CompoundTag data = new CompoundTag();
+            data.putUUID("Network", selectedNetwork);
+            data.putString("Address", address.getValue());
+            PacketDistributor.sendToServer(new TerminalPackets.Action(
+                    menu.containerId, menu.session, TerminalPackets.ADDRESS, data));
         }).bounds(leftPos + 185, y + 26, 63, 20).build());
         updateRoute();
     }
@@ -64,14 +70,17 @@ public class DimensionParcelStationScreen extends AbstractContainerScreen<Dimens
         address.setEditable(saveAddress.active);
         if (count == 0) {
             selectedNetwork = null;
-            networkButton.setMessage(io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalData.text("no_routes"));
+            networkButton.setMessage(TerminalData.text("no_routes"));
             return;
         }
         routeIndex = Math.floorMod(routeIndex, count);
         var route = menu.clientRoutes.getCompound(routeIndex);
-        java.util.UUID network = route.getUUID("Network");
-        if (!network.equals(selectedNetwork)) { address.setValue(route.getString("Address")); selectedNetwork = network; }
-        networkButton.setMessage(io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalData.text(
+        UUID network = route.getUUID("Network");
+        if (!network.equals(selectedNetwork)) {
+            address.setValue(route.getString("Address"));
+            selectedNetwork = network;
+        }
+        networkButton.setMessage(TerminalData.text(
                 "route", routeIndex + 1, count, network.toString().substring(0, 8)));
     }
 
@@ -85,11 +94,11 @@ public class DimensionParcelStationScreen extends AbstractContainerScreen<Dimens
     }
 
     private Component label(DimensionParcelStationBlockEntity.Channel channel) {
-        String name = Component.translatable("text.shhs_create_core.dimension_parcel_station."
-                + channel.name().toLowerCase()).getString();
-        String state = Component.translatable("text.shhs_create_core.dimension_parcel_station."
-                + (menu.isAllowed(channel) ? "enabled" : "disabled")).getString();
-        return Component.literal(name + ": " + state);
+        return Component.translatable("text.shhs_create_core.dimension_parcel_station."
+                        + channel.name().toLowerCase())
+                .append(": ")
+                .append(Component.translatable("text.shhs_create_core.dimension_parcel_station."
+                        + (menu.isAllowed(channel) ? "enabled" : "disabled")));
     }
 
     @Override
@@ -116,8 +125,7 @@ public class DimensionParcelStationScreen extends AbstractContainerScreen<Dimens
                 : Component.translatable("text.shhs_create_core.dimension_parcel_station.network_status",
                 menu.getNetId(), menu.getStationCount());
         graphics.drawString(font, network, 10, 28, 0xd7e7ee, false);
-        graphics.drawString(font, io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalData.text("address_hint"),
-                12, imageHeight - 38, 0xd7e7ee, false);
+        graphics.drawString(font, TerminalData.text("address_hint"), 12, imageHeight - 38, 0xd7e7ee, false);
         if (!menu.mayConfigure())
             graphics.drawString(font, Component.translatable(
                     "text.shhs_create_core.dimension_parcel_station.read_only"), 10,

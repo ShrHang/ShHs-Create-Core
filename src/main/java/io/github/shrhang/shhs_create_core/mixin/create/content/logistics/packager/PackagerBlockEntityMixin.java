@@ -8,8 +8,10 @@ import com.simibubi.create.content.logistics.packager.IdentifiedInventory;
 import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
 import com.simibubi.create.content.logistics.stockTicker.PackageOrderWithCrafts;
 import io.github.shrhang.shhs_create_core.api.packager.VirtualInventoryIdentifier;
+import io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalOrders;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -31,10 +33,11 @@ public abstract class PackagerBlockEntityMixin {
                                               Operation<Boolean> original,
                                               ItemStack box, boolean outerSimulate) {
         // The unpacking API loses the box's order/fragment IDs; capture the enclosing method argument.
-        if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-            Boolean received = io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalOrders
-                    .get(serverLevel.getServer()).receive(serverLevel, pos, box, simulate);
-            if (received != null) return received;
+        if (level instanceof ServerLevel serverLevel) {
+            Boolean received = TerminalOrders.get(serverLevel.getServer())
+                    .receive(serverLevel, pos, box, simulate);
+            if (received != null)
+                return received;
         }
         return original.call(handler, level, pos, state, side, items, context, simulate);
     }

@@ -3,7 +3,6 @@ package io.github.shrhang.shhs_create_core.content.logistics.terminal;
 import com.wintercogs.beyonddimensions.api.dimensionnet.DimensionsNet;
 import net.minecraft.commands.Commands;
 import net.minecraft.world.SimpleMenuProvider;
-import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
@@ -16,8 +15,6 @@ public final class TerminalEvents {
     public static void init() {
         NeoForge.EVENT_BUS.addListener(TerminalEvents::commands);
         NeoForge.EVENT_BUS.addListener(TerminalEvents::stopped);
-        if (!FMLEnvironment.production)
-            NeoForge.EVENT_BUS.addListener(TerminalGameTests::prepareTemplate);
     }
 
     private static void commands(RegisterCommandsEvent event) {

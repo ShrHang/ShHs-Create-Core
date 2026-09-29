@@ -1,5 +1,6 @@
 package io.github.shrhang.shhs_create_core.content.logistics.dimension_parcel_station;
 
+import com.simibubi.create.Create;
 import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
 import com.wintercogs.beyonddimensions.api.capability.helper.unordered.FluidUnifiedStorageHandler;
 import com.wintercogs.beyonddimensions.api.capability.helper.unordered.ItemUnifiedStorageHandler;
@@ -10,12 +11,15 @@ import io.github.shrhang.shhs_create_core.api.packager.VirtualInventoryIdentifie
 import io.github.shrhang.shhs_create_core.api.packager.VirtualInventoryProvider;
 import io.github.shrhang.shhs_create_core.compat.Mods;
 import io.github.shrhang.shhs_create_core.compat.fluidlogistics.FluidLogistics;
+import io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalStock;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsBlockEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.MenuProvider;
@@ -32,34 +36,43 @@ import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 public class DimensionParcelStationBlockEntity extends NetedBlockEntity
         implements MenuProvider, VirtualInventoryProvider {
     private boolean allowItemInput = true;
     private boolean allowItemOutput = true;
     private boolean allowFluidInput = true;
     private boolean allowFluidOutput = true;
-    private final java.util.Map<java.util.UUID, String> receiveAddresses = new java.util.HashMap<>();
-
-    public String getReceiveAddress(java.util.UUID network) {
-        return receiveAddresses.getOrDefault(network, "");
-    }
-
-    public void setReceiveAddress(java.util.UUID network, String address, Player player) {
-        if (!mayConfigure(player) || address.length() > 64
-                || !io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalStock.connectedNetworks(this).contains(network)
-                || !com.simibubi.create.Create.LOGISTICS.mayInteract(network, player)) return;
-        address = address.strip();
-        if (address.contains("*") || address.contains("?") || address.chars().anyMatch(Character::isISOControl)) return;
-        if (address.isEmpty()) receiveAddresses.remove(network);
-        else receiveAddresses.put(network, address);
-        setChanged();
-        sendBlockUpdated();
-    }
+    private final Map<UUID, String> receiveAddresses = new HashMap<>();
 
     private DimensionsNet handlerNet;
     private StationItemHandler itemHandler;
     private StationItemHandler repackagerItemHandler;
     private StationFluidHandler fluidHandler;
+
+    public String getReceiveAddress(UUID network) {
+        return receiveAddresses.getOrDefault(network, "");
+    }
+
+    public void setReceiveAddress(UUID network, String address, Player player) {
+        if (!mayConfigure(player) || address.length() > 64
+                || !TerminalStock.connectedNetworks(this).contains(network)
+                || !Create.LOGISTICS.mayInteract(network, player))
+            return;
+        address = address.strip();
+        if (address.contains("*") || address.contains("?")
+                || address.chars().anyMatch(Character::isISOControl))
+            return;
+        if (address.isEmpty())
+            receiveAddresses.remove(network);
+        else
+            receiveAddresses.put(network, address);
+        setChanged();
+        sendBlockUpdated();
+    }
 
     public DimensionParcelStationBlockEntity(BlockPos pos, BlockState state) {
         this(ShHsBlockEntityTypes.DIMENSION_PARCEL_STATION_BE.get(), pos, state);
@@ -109,37 +122,48 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
 
     @Nullable
     public IItemHandlerModifiable getItemHandler(Direction side) {
-        if (side == null || getNet() == null)
+        if (side == null)
             return null;
-        BlockEntity neighbor = level == null ? null : level.getBlockEntity(worldPosition.relative(side));
+        DimensionsNet net = getNet();
+        if (net == null)
+            return null;
+        BlockEntity neighbor = adjacentBlockEntity(side);
         if (isFluidRepackager(neighbor)) {
             if (!canAcceptMixedPackages() && !allowItemOutput)
                 return null;
-            ensureHandlers();
+            ensureHandlers(net);
             return repackagerItemHandler;
         }
         if ((!allowItemInput && !allowItemOutput) || !(neighbor instanceof PackagerBlockEntity)
                 || isFluidPackager(neighbor))
             return null;
-        ensureHandlers();
+        ensureHandlers(net);
         return itemHandler;
     }
 
     @Nullable
     public IFluidHandler getFluidHandler(Direction side) {
-        if (side == null || getNet() == null)
+        if (side == null)
             return null;
-        BlockEntity neighbor = level == null ? null : level.getBlockEntity(worldPosition.relative(side));
+        DimensionsNet net = getNet();
+        if (net == null)
+            return null;
+        BlockEntity neighbor = adjacentBlockEntity(side);
         if (isFluidRepackager(neighbor)) {
             if (!canAcceptMixedPackages())
                 return null;
-            ensureHandlers();
+            ensureHandlers(net);
             return fluidHandler;
         }
         if ((!allowFluidInput && !allowFluidOutput) || !isFluidPackager(neighbor))
             return null;
-        ensureHandlers();
+        ensureHandlers(net);
         return fluidHandler;
+    }
+
+    @Nullable
+    private BlockEntity adjacentBlockEntity(Direction side) {
+        return level == null ? null : level.getBlockEntity(worldPosition.relative(side));
     }
 
     public boolean isItemPackagerPlacementTarget() {
@@ -171,21 +195,14 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
                 : packager instanceof PackagerBlockEntity && allowItemOutput;
     }
 
-    private void ensureHandlers() {
-        DimensionsNet net = getNet();
+    private void ensureHandlers(DimensionsNet net) {
         if (net == handlerNet)
             return;
         handlerNet = net;
-        if (net == null) {
-            itemHandler = null;
-            repackagerItemHandler = null;
-            fluidHandler = null;
-        } else {
-            ItemUnifiedStorageHandler itemDelegate = new ItemUnifiedStorageHandler(net.getUnifiedStorage());
-            itemHandler = new StationItemHandler(itemDelegate, false);
-            repackagerItemHandler = new StationItemHandler(itemDelegate, true);
-            fluidHandler = new StationFluidHandler(new FluidUnifiedStorageHandler(net.getUnifiedStorage()));
-        }
+        ItemUnifiedStorageHandler itemDelegate = new ItemUnifiedStorageHandler(net.getUnifiedStorage());
+        itemHandler = new StationItemHandler(itemDelegate, false);
+        repackagerItemHandler = new StationItemHandler(itemDelegate, true);
+        fluidHandler = new StationFluidHandler(new FluidUnifiedStorageHandler(net.getUnifiedStorage()));
     }
 
     private void resetHandlers() {
@@ -245,7 +262,7 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         receiveAddresses.clear();
-        net.minecraft.nbt.ListTag addresses = tag.getList("TerminalAddresses", net.minecraft.nbt.Tag.TAG_COMPOUND);
+        ListTag addresses = tag.getList("TerminalAddresses", Tag.TAG_COMPOUND);
         for (int i = 0; i < addresses.size(); i++) {
             CompoundTag entry = addresses.getCompound(i);
             if (entry.hasUUID("Network")) receiveAddresses.put(entry.getUUID("Network"), entry.getString("Address"));
@@ -260,7 +277,7 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        net.minecraft.nbt.ListTag addresses = new net.minecraft.nbt.ListTag();
+        ListTag addresses = new ListTag();
         receiveAddresses.forEach((network, address) -> {
             CompoundTag entry = new CompoundTag();
             entry.putUUID("Network", network);

@@ -1,14 +1,20 @@
 package io.github.shrhang.shhs_create_core.content.logistics.terminal;
 
 import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.*;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.ItemStack;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 public record TerminalOrderSummary(UUID id, boolean ready, int packages, List<Line> lines) {
     public record Line(ItemStack stack, UUID network, long requested, long remaining) {
-        public long delivered() { return Math.max(0, requested - remaining); }
+        public long delivered() {
+            return Math.max(0, requested - remaining);
+        }
     }
 
     public CompoundTag save(HolderLookup.Provider registries) {
@@ -36,8 +42,9 @@ public record TerminalOrderSummary(UUID id, boolean ready, int packages, List<Li
             CompoundTag encoded = encodedLines.getCompound(i);
             if (!encoded.hasUUID("Network")) continue;
             ItemStack stack = ItemStack.parseOptional(registries, encoded.getCompound("Stack"));
-            if (!stack.isEmpty()) lines.add(new Line(stack, encoded.getUUID("Network"),
-                    encoded.getLong("Requested"), encoded.getLong("Remaining")));
+            if (!stack.isEmpty())
+                lines.add(new Line(stack, encoded.getUUID("Network"),
+                        encoded.getLong("Requested"), encoded.getLong("Remaining")));
         }
         return new TerminalOrderSummary(tag.getUUID("Id"), tag.getBoolean("Ready"),
                 tag.getInt("Packages"), List.copyOf(lines));

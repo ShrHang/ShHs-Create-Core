@@ -22,7 +22,18 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 
 public final class DimensionLogisticsTerminalScreen extends AbstractContainerScreen<DimensionLogisticsTerminalMenu> {
     private static final AllGuiTextures STOCK_HEADER = AllGuiTextures.STOCK_KEEPER_REQUEST_HEADER;

@@ -4,20 +4,35 @@ import com.wintercogs.beyonddimensions.api.dimensionnet.DimensionsNet;
 import com.wintercogs.beyonddimensions.api.storage.key.KeyAmount;
 import com.wintercogs.beyonddimensions.api.storage.key.impl.ItemStackKey;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsMenuTypes;
-import net.minecraft.nbt.*;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
-import net.minecraft.world.entity.player.*;
-import net.minecraft.world.inventory.*;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.inventory.ResultContainer;
+import net.minecraft.world.inventory.ResultSlot;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.inventory.TransientCraftingContainer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.crafting.CraftingRecipe;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.loading.FMLEnvironment;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.function.BooleanSupplier;
 
 public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
@@ -40,7 +55,6 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
     public List<TerminalStock.Entry> clientStock = List.of();
     public List<TerminalOrderSummary> clientOrders = List.of();
     public Map<UUID, String> clientSourceAddresses = Map.of();
-    public String clientNetworkName = "";
     public UUID acceptedSubmission;
     public long clientRevision = -1;
     private long receivingRevision = -1;
@@ -60,7 +74,9 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
 
     public DimensionLogisticsTerminalMenu(int id, Inventory inventory, int netId, UUID session) {
         super(ShHsMenuTypes.DIMENSION_LOGISTICS_TERMINAL.get(), id);
-        this.player = inventory.player; this.netId = netId; this.session = session;
+        this.player = inventory.player;
+        this.netId = netId;
+        this.session = session;
         DimensionLogisticsTerminalClientLayout.Snapshot layout = FMLEnvironment.dist == Dist.CLIENT
                 ? DimensionLogisticsTerminalClientLayout.create()
                 : new DimensionLogisticsTerminalClientLayout.Snapshot(false,
@@ -124,7 +140,9 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
     private Slot responsiveSlot(Container container, int index, int x, int y, BooleanSupplier active) {
         return new Slot(container, index, x, y) {
             @Override
-            public boolean isActive() { return active.getAsBoolean(); }
+            public boolean isActive() {
+                return active.getAsBoolean();
+            }
         };
     }
 
@@ -139,13 +157,16 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
     }
 
     public DimensionsNet network() {
-        if (player.level().isClientSide()) return null;
+        if (player.level().isClientSide())
+            return null;
         DimensionsNet primary = DimensionsNet.getPrimaryNetFromPlayer(player);
         return primary != null && primary.getId() == netId && primary.getPlayers().contains(player.getUUID()) ? primary : null;
     }
 
     @Override
-    public boolean stillValid(Player player) { return player.isAlive(); }
+    public boolean stillValid(Player player) {
+        return player.isAlive();
+    }
 
     public void depositCursor() {
         if (player.level().isClientSide() || getCarried().isEmpty()) return;
@@ -230,80 +251,110 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
     }
 
     private ItemStack withdrawLocal(ItemStackKey key, int count) {
-        if (count <= 0 || network() == null) return ItemStack.EMPTY;
-        int obtained = (int) network().getUnifiedStorage().extract(key, count, false, false).amount();
+        DimensionsNet net = network();
+        if (count <= 0 || net == null)
+            return ItemStack.EMPTY;
+        int obtained = (int) net.getUnifiedStorage().extract(key, count, false, false).amount();
         return obtained == 0 ? ItemStack.EMPTY : key.copyStackWithCount(obtained);
     }
 
     public Map<ItemStackKey, Long> availableForCrafting() {
         Map<ItemStackKey, Long> pool = new LinkedHashMap<>();
         if (player.level().isClientSide()) {
-            for (var entry : clientStock) if (entry.network() == null) pool.merge(new ItemStackKey(entry.stack()), entry.amount(), Long::sum);
-        } else if (network() != null) {
-            for (var entry : network().getUnifiedStorage().getStorage())
-                if (entry.key() instanceof ItemStackKey key) pool.merge(key, entry.amount(), Long::sum);
+            for (var entry : clientStock)
+                if (entry.network() == null)
+                    pool.merge(new ItemStackKey(entry.stack()), entry.amount(), Long::sum);
+        } else {
+            DimensionsNet net = network();
+            if (net != null)
+                for (var entry : net.getUnifiedStorage().getStorage())
+                    if (entry.key() instanceof ItemStackKey key)
+                        pool.merge(key, entry.amount(), Long::sum);
         }
-        for (ItemStack stack : player.getInventory().items) if (!stack.isEmpty()) pool.merge(new ItemStackKey(stack), (long) stack.getCount(), Long::sum);
-        for (ItemStack stack : crafting.getItems()) if (!stack.isEmpty()) pool.merge(new ItemStackKey(stack), (long) stack.getCount(), Long::sum);
+        for (ItemStack stack : player.getInventory().items)
+            if (!stack.isEmpty())
+                pool.merge(new ItemStackKey(stack), (long) stack.getCount(), Long::sum);
+        for (ItemStack stack : crafting.getItems())
+            if (!stack.isEmpty())
+                pool.merge(new ItemStackKey(stack), (long) stack.getCount(), Long::sum);
         return pool;
     }
 
     public void fillRecipe(ResourceLocation recipeId, boolean maximum) {
         if (network() == null) return;
         var holder = player.level().getRecipeManager().byKey(recipeId).orElse(null);
-        if (holder == null || !(holder.value() instanceof CraftingRecipe recipe)) return;
+        if (holder == null || !(holder.value() instanceof CraftingRecipe recipe))
+            return;
         Map<ItemStackKey, Long> available = availableForCrafting();
         ItemStack[] plan = TerminalCrafting.plan(recipe, available);
-        if (plan == null) { player.displayClientMessage(TerminalData.text("missing_materials"), true); return; }
+        if (plan == null) {
+            player.displayClientMessage(TerminalData.text("missing_materials"), true);
+            return;
+        }
         Map<ItemStackKey, Integer> uses = new HashMap<>();
-        for (ItemStack stack : plan) if (!stack.isEmpty()) uses.merge(new ItemStackKey(stack), 1, Integer::sum);
+        for (ItemStack stack : plan)
+            if (!stack.isEmpty())
+                uses.merge(new ItemStackKey(stack), 1, Integer::sum);
         int multiplier = maximum ? 64 : 1;
         for (var entry : uses.entrySet()) multiplier = (int) Math.min(multiplier,
                 Math.min(entry.getKey().getReadOnlyStack().getMaxStackSize(), available.get(entry.getKey()) / entry.getValue()));
         changingCraft = true;
         // Keep the old grid in a local escrow so a full inventory cannot lose ingredients during transfer.
         List<ItemStack> old = new ArrayList<>();
-        for (int i = 0; i < 9; i++) old.add(crafting.removeItemNoUpdate(i));
+        for (int i = 0; i < 9; i++)
+            old.add(crafting.removeItemNoUpdate(i));
         for (int i = 0; i < 9; i++) {
-            if (plan[i].isEmpty()) continue;
+            if (plan[i].isEmpty())
+                continue;
             int need = multiplier;
-            for (ItemStack stack : old) if (ItemStack.isSameItemSameComponents(stack, plan[i])) {
-                int taken = Math.min(need, stack.getCount()); stack.shrink(taken); need -= taken;
+            for (ItemStack stack : old) {
+                if (!ItemStack.isSameItemSameComponents(stack, plan[i]))
+                    continue;
+                int taken = Math.min(need, stack.getCount());
+                stack.shrink(taken);
+                need -= taken;
             }
             ItemStack extracted = withdraw(new ItemStackKey(plan[i]), need);
             int obtained = multiplier - need + extracted.getCount();
             crafting.setItem(i, plan[i].copyWithCount(obtained));
         }
-        for (ItemStack stack : old) giveBack(stack);
+        for (ItemStack stack : old)
+            giveBack(stack);
         changingCraft = false;
         slotsChanged(crafting);
         sendSnapshot();
     }
 
     private void giveBack(ItemStack stack) {
-        if (stack.isEmpty()) return;
+        if (stack.isEmpty())
+            return;
         player.getInventory().add(stack);
-        if (!stack.isEmpty()) deposit(stack);
-        if (!stack.isEmpty()) player.drop(stack, false);
+        if (!stack.isEmpty())
+            deposit(stack);
+        if (!stack.isEmpty())
+            player.drop(stack, false);
     }
 
     public void clearCrafting() {
         if (player.level().isClientSide()) return;
         changingCraft = true;
-        for (int i = 0; i < 9; i++) giveBack(crafting.removeItemNoUpdate(i));
+        for (int i = 0; i < 9; i++)
+            giveBack(crafting.removeItemNoUpdate(i));
         changingCraft = false;
         slotsChanged(crafting);
     }
 
     @Override
     public void slotsChanged(Container container) {
-        if (changingCraft || !(player instanceof ServerPlayer serverPlayer)) return;
+        if (changingCraft || !(player instanceof ServerPlayer serverPlayer))
+            return;
         CraftingInput input = crafting.asCraftInput();
         var recipe = player.level().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, player.level());
         ItemStack output = ItemStack.EMPTY;
         if (network() != null && recipe.isPresent() && result.setRecipeUsed(player.level(), serverPlayer, recipe.get())) {
             ItemStack assembled = recipe.get().value().assemble(input, player.registryAccess());
-            if (assembled.isItemEnabled(player.level().enabledFeatures())) output = assembled;
+            if (assembled.isItemEnabled(player.level().enabledFeatures()))
+                output = assembled;
         }
         result.setItem(0, output);
         setRemoteSlot(RESULT, output);
@@ -356,7 +407,8 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
     }
 
     public void sendSnapshot() {
-        if (!(player instanceof ServerPlayer serverPlayer)) return;
+        if (!(player instanceof ServerPlayer serverPlayer))
+            return;
         DimensionsNet net = network();
         TerminalStock.Snapshot snapshot = TerminalStock.snapshot(serverPlayer, net);
         List<TerminalStock.Entry> stock = snapshot.entries();
@@ -367,9 +419,9 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
         for (int part = 0; part < parts; part++) {
             CompoundTag tag = new CompoundTag();
             ListTag list = new ListTag();
-            for (int i = part * 32; i < Math.min(stock.size(), (part + 1) * 32); i++) list.add(TerminalData.entry(stock.get(i), player.registryAccess()));
+            for (int i = part * 32; i < Math.min(stock.size(), (part + 1) * 32); i++)
+                list.add(TerminalData.entry(stock.get(i), player.registryAccess()));
             tag.put("Stock", list);
-            tag.putString("Name", net == null ? "" : net.getNetworkName().getString());
             if (part == 0) {
                 ListTag sources = new ListTag();
                 snapshot.addresses().forEach((network, address) -> {
@@ -385,20 +437,27 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
                 orderPart.add(summaries.get(part - stockParts).save(player.registryAccess()));
                 tag.put("Orders", orderPart);
             }
-            if (acceptedSubmission != null) tag.putUUID("Accepted", acceptedSubmission);
+            if (acceptedSubmission != null)
+                tag.putUUID("Accepted", acceptedSubmission);
             TerminalPackets.send(serverPlayer, containerId, session, version, part, part == parts - 1, tag);
         }
     }
 
     public void receive(long revision, int part, boolean last, CompoundTag tag) {
-        if (revision <= clientRevision) return;
+        if (revision <= clientRevision)
+            return;
         if (part == 0) {
-            receiving.clear(); receivingOrders.clear(); receivingSourceAddresses.clear();
-            receivingRevision = revision; nextPart = 0;
+            receiving.clear();
+            receivingOrders.clear();
+            receivingSourceAddresses.clear();
+            receivingRevision = revision;
+            nextPart = 0;
         }
-        if (revision != receivingRevision || part != nextPart++) return;
+        if (revision != receivingRevision || part != nextPart++)
+            return;
         ListTag list = tag.getList("Stock", Tag.TAG_COMPOUND);
-        for (int i = 0; i < list.size(); i++) receiving.add(TerminalData.entry(list.getCompound(i), player.registryAccess()));
+        for (int i = 0; i < list.size(); i++)
+            receiving.add(TerminalData.entry(list.getCompound(i), player.registryAccess()));
         ListTag sources = tag.getList("Sources", Tag.TAG_COMPOUND);
         for (int i = 0; i < sources.size(); i++) {
             CompoundTag source = sources.getCompound(i);
@@ -409,10 +468,12 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
         for (int i = 0; i < orderTags.size(); i++)
             receivingOrders.add(TerminalOrderSummary.load(orderTags.getCompound(i), player.registryAccess()));
         if (last) {
-            clientStock = List.copyOf(receiving); clientRevision = revision;
-            clientOrders = List.copyOf(receivingOrders); clientNetworkName = tag.getString("Name");
+            clientStock = List.copyOf(receiving);
+            clientRevision = revision;
+            clientOrders = List.copyOf(receivingOrders);
             clientSourceAddresses = Map.copyOf(receivingSourceAddresses);
-            if (tag.hasUUID("Accepted")) acceptedSubmission = tag.getUUID("Accepted");
+            if (tag.hasUUID("Accepted"))
+                acceptedSubmission = tag.getUUID("Accepted");
         }
     }
 
