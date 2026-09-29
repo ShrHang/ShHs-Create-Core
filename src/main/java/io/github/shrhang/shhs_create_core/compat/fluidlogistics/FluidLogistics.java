@@ -3,6 +3,7 @@ package io.github.shrhang.shhs_create_core.compat.fluidlogistics;
 import com.wintercogs.beyonddimensions.api.storage.key.impl.FluidStackKey;
 import com.yision.fluidlogistics.api.packager.PackageResourceTypes;
 import com.yision.fluidlogistics.api.packager.ResourcePackagers;
+import com.yision.fluidlogistics.content.logistics.fluidPackager.repackager.FluidRepackagerBlockEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
@@ -13,6 +14,10 @@ public final class FluidLogistics {
         return ResourcePackagers.of(blockEntity)
                 .map(packager -> PackageResourceTypes.FLUID.equals(packager.resourceTypeId()))
                 .orElse(false);
+    }
+
+    public static boolean isFluidRepackager(BlockEntity blockEntity) {
+        return blockEntity instanceof FluidRepackagerBlockEntity;
     }
 
     public static ItemStack fluidDisplayKey(FluidStackKey key) {

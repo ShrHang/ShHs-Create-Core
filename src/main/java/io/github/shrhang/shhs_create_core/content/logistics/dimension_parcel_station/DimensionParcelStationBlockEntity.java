@@ -58,6 +58,7 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
 
     private DimensionsNet handlerNet;
     private StationItemHandler itemHandler;
+    private StationItemHandler repackagerItemHandler;
     private StationFluidHandler fluidHandler;
 
     public DimensionParcelStationBlockEntity(BlockPos pos, BlockState state) {
@@ -108,10 +109,17 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
 
     @Nullable
     public IItemHandlerModifiable getItemHandler(Direction side) {
-        if (side == null || (!allowItemInput && !allowItemOutput) || getNet() == null)
+        if (side == null || getNet() == null)
             return null;
         BlockEntity neighbor = level == null ? null : level.getBlockEntity(worldPosition.relative(side));
-        if (!(neighbor instanceof PackagerBlockEntity) || isFluidPackager(neighbor))
+        if (isFluidRepackager(neighbor)) {
+            if (!canAcceptMixedPackages() && !allowItemOutput)
+                return null;
+            ensureHandlers();
+            return repackagerItemHandler;
+        }
+        if ((!allowItemInput && !allowItemOutput) || !(neighbor instanceof PackagerBlockEntity)
+                || isFluidPackager(neighbor))
             return null;
         ensureHandlers();
         return itemHandler;
@@ -119,10 +127,16 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
 
     @Nullable
     public IFluidHandler getFluidHandler(Direction side) {
-        if (side == null || (!allowFluidInput && !allowFluidOutput) || getNet() == null)
+        if (side == null || getNet() == null)
             return null;
         BlockEntity neighbor = level == null ? null : level.getBlockEntity(worldPosition.relative(side));
-        if (!isFluidPackager(neighbor))
+        if (isFluidRepackager(neighbor)) {
+            if (!canAcceptMixedPackages())
+                return null;
+            ensureHandlers();
+            return fluidHandler;
+        }
+        if ((!allowFluidInput && !allowFluidOutput) || !isFluidPackager(neighbor))
             return null;
         ensureHandlers();
         return fluidHandler;
@@ -141,7 +155,18 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
                 FluidLogistics.isFluidPackager(blockEntity)).orElse(false);
     }
 
-    public boolean allowsOutputFor(BlockEntity packager) {
+    private static boolean isFluidRepackager(@Nullable BlockEntity blockEntity) {
+        return blockEntity != null && Mods.FLUIDLOGISTICS.runIfInstalled(() -> () ->
+                FluidLogistics.isFluidRepackager(blockEntity)).orElse(false);
+    }
+
+    private boolean canAcceptMixedPackages() {
+        return allowItemInput && allowFluidInput;
+    }
+
+    public boolean allowsWarehouseOutput(BlockEntity packager) {
+        if (isFluidRepackager(packager))
+            return false;
         return isFluidPackager(packager) ? allowFluidOutput
                 : packager instanceof PackagerBlockEntity && allowItemOutput;
     }
@@ -153,9 +178,12 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
         handlerNet = net;
         if (net == null) {
             itemHandler = null;
+            repackagerItemHandler = null;
             fluidHandler = null;
         } else {
-            itemHandler = new StationItemHandler(new ItemUnifiedStorageHandler(net.getUnifiedStorage()));
+            ItemUnifiedStorageHandler itemDelegate = new ItemUnifiedStorageHandler(net.getUnifiedStorage());
+            itemHandler = new StationItemHandler(itemDelegate, false);
+            repackagerItemHandler = new StationItemHandler(itemDelegate, true);
             fluidHandler = new StationFluidHandler(new FluidUnifiedStorageHandler(net.getUnifiedStorage()));
         }
     }
@@ -163,6 +191,7 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
     private void resetHandlers() {
         handlerNet = null;
         itemHandler = null;
+        repackagerItemHandler = null;
         fluidHandler = null;
     }
 
@@ -264,14 +293,20 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
 
     private final class StationItemHandler implements IItemHandlerModifiable {
         private final ItemUnifiedStorageHandler delegate;
+        private final boolean mixedPackagesOnly;
 
-        private StationItemHandler(ItemUnifiedStorageHandler delegate) {
+        private StationItemHandler(ItemUnifiedStorageHandler delegate, boolean mixedPackagesOnly) {
             this.delegate = delegate;
+            this.mixedPackagesOnly = mixedPackagesOnly;
+        }
+
+        private boolean allowsInput() {
+            return allowItemInput && (!mixedPackagesOnly || allowFluidInput);
         }
 
         @Override
         public int getSlots() {
-            return allowItemOutput ? delegate.getSlots() : allowItemInput ? 1 : 0;
+            return allowItemOutput ? delegate.getSlots() : allowsInput() ? 1 : 0;
         }
 
         @Override
@@ -281,13 +316,13 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
 
         @Override
         public void setStackInSlot(int slot, @NotNull ItemStack stack) {
-            if (allowItemInput)
+            if (allowsInput())
                 delegate.setStackInSlot(slot, stack);
         }
 
         @Override
         public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
-            return allowItemInput ? delegate.insertItem(slot, stack, simulate) : stack;
+            return allowsInput() ? delegate.insertItem(slot, stack, simulate) : stack;
         }
 
         @Override
@@ -297,12 +332,12 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
 
         @Override
         public int getSlotLimit(int slot) {
-            return allowItemInput ? delegate.getSlotLimit(slot) : 0;
+            return allowsInput() ? delegate.getSlotLimit(slot) : 0;
         }
 
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return allowItemInput && delegate.isItemValid(slot, stack);
+            return allowsInput() && delegate.isItemValid(slot, stack);
         }
     }
 

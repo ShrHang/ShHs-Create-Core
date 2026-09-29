@@ -25,7 +25,7 @@ public abstract class LogisticsManagerMixin {
         BlockPos targetPos = packager.targetInventory.getTarget().getConnectedPos();
         if (!(packager.getLevel().getBlockEntity(targetPos) instanceof DimensionParcelStationBlockEntity station))
             return;
-        if (!station.allowsOutputFor(packager)) {
+        if (!station.allowsWarehouseOutput(packager)) {
             cir.setReturnValue(null);
             return;
         }
