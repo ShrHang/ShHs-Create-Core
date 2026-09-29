@@ -3,7 +3,10 @@ package io.github.shrhang.shhs_create_core.content.logistics.terminal;
 final class DimensionLogisticsTerminalLayout {
     static final int LEFT_PANEL_WIDTH = 226;
     static final int RIGHT_PANEL_WIDTH = 192;
-    static final int WINDOW_WIDTH = LEFT_PANEL_WIDTH + RIGHT_PANEL_WIDTH;
+    // Negative values overlap the left panel; positive values add spacing.
+    static final int RIGHT_PANEL_OFFSET_X = -18;
+    static final int RIGHT_PANEL_X = LEFT_PANEL_WIDTH + RIGHT_PANEL_OFFSET_X;
+    static final int WINDOW_WIDTH = RIGHT_PANEL_X + RIGHT_PANEL_WIDTH;
     static final int LAYOUT_MARGIN = 12;
     static final int JEI_RESERVED_WIDTH = RIGHT_PANEL_WIDTH;
 
@@ -12,7 +15,6 @@ final class DimensionLogisticsTerminalLayout {
     static final int STOCK_FOOTER_HEIGHT = 80;
     static final int MAX_STOCK_BODY_SLICES = 17;
 
-    static final int RIGHT_PANEL_X = LEFT_PANEL_WIDTH;
     static final int COMPACT_RIGHT_PANEL_X = (LEFT_PANEL_WIDTH - RIGHT_PANEL_WIDTH) / 2;
     static final int HEADER_TEXTURE_HEIGHT = 16;
     static final int BACKGROUND_SLICE_HEIGHT = 16;

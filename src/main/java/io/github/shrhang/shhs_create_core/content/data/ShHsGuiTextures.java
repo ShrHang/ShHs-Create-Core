@@ -9,11 +9,11 @@ import net.minecraft.resources.ResourceLocation;
 public enum ShHsGuiTextures implements ScreenElement, TextureSheetSegment {
     // Dimension Logistics Terminal
     DIMENSION_LOGISTICS_TERMINAL_HEADER("create", "stock_keeper_categories", 32, 0, 192, 16),
-    DIMENSION_LOGISTICS_TERMINAL_BACKGROUND("create", "stock_keeper_categories", 32, 32, 192, 16),
-    DIMENSION_LOGISTICS_TERMINAL_ORDER("dimension_logistics_terminal", 256, 272, 32, 0, 192, 62),
-    DIMENSION_LOGISTICS_TERMINAL_CRAFT("dimension_logistics_terminal", 256, 272, 32, 64, 192, 72),
-    DIMENSION_LOGISTICS_TERMINAL_PLAYER("dimension_logistics_terminal", 256, 272, 32, 144, 192, 90),
-    DIMENSION_LOGISTICS_TERMINAL_BOTTOM("dimension_logistics_terminal", 256, 272, 32, 240, 192, 24),
+    DIMENSION_LOGISTICS_TERMINAL_ORDER("dimension_logistics_terminal", 256, 288, 32, 0, 192, 62),
+    DIMENSION_LOGISTICS_TERMINAL_CRAFT("dimension_logistics_terminal", 256, 288, 32, 64, 192, 72),
+    DIMENSION_LOGISTICS_TERMINAL_PLAYER("dimension_logistics_terminal", 256, 288, 32, 144, 192, 90),
+    DIMENSION_LOGISTICS_TERMINAL_BOTTOM("dimension_logistics_terminal", 256, 288, 32, 240, 192, 24),
+    DIMENSION_LOGISTICS_TERMINAL_BACKGROUND("dimension_logistics_terminal", 256, 288, 32, 272, 192, 16),
     ;
 
     public final ResourceLocation location;
@@ -75,6 +75,14 @@ public enum ShHsGuiTextures implements ScreenElement, TextureSheetSegment {
     @Override
     public void render(GuiGraphics graphics, int x, int y) {
         graphics.blit(location, x, y, startX, startY, width, height, textureWidth, textureHeight);
+    }
+
+    public int getTextureHeight() {
+        return textureHeight;
+    }
+
+    public int getTextureWidth() {
+        return textureWidth;
     }
 
     @Override

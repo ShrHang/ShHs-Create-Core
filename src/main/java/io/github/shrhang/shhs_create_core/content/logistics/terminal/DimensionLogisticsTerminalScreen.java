@@ -238,11 +238,11 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
 
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
+        if (rightPanelVisible()) renderRightPanel(graphics);
         if (leftPanelVisible()) {
             renderStockPanelBackground(graphics);
             renderStock(graphics, partialTick, mouseX, mouseY);
         }
-        if (rightPanelVisible()) renderRightPanel(graphics);
     }
 
     @Override protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {}
@@ -374,7 +374,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
              y < menu.bottomPanelY; y += background.getHeight()) {
             int h = Math.min(background.getHeight(), menu.bottomPanelY - y);
             graphics.blit(background.location, x, topPos + y, background.getWidth(), h,
-                    background.getStartX(), background.getStartY(), background.getWidth(), h, 256, 256);
+                    background.getStartX(), background.getStartY(), background.getWidth(), h, background.getTextureWidth(), background.getTextureHeight());
         }
         if (orderVisible) ShHsGuiTextures.DIMENSION_LOGISTICS_TERMINAL_ORDER.render(graphics, x, topPos + menu.orderPanelY);
         if (craftVisible) ShHsGuiTextures.DIMENSION_LOGISTICS_TERMINAL_CRAFT.render(graphics, x, topPos + menu.craftPanelY);
