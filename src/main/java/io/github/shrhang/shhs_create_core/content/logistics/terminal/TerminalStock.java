@@ -5,7 +5,10 @@ import com.simibubi.create.api.packager.InventoryIdentifier;
 import com.simibubi.create.content.logistics.packager.*;
 import com.simibubi.create.content.logistics.packagerLink.*;
 import com.wintercogs.beyonddimensions.api.dimensionnet.DimensionsNet;
+import com.wintercogs.beyonddimensions.api.storage.key.impl.FluidStackKey;
 import com.wintercogs.beyonddimensions.api.storage.key.impl.ItemStackKey;
+import io.github.shrhang.shhs_create_core.compat.Mods;
+import io.github.shrhang.shhs_create_core.compat.fluidlogistics.FluidLogistics;
 import io.github.shrhang.shhs_create_core.content.logistics.dimension_parcel_station.*;
 import net.minecraft.core.*;
 import net.minecraft.server.level.ServerPlayer;
@@ -33,8 +36,11 @@ public final class TerminalStock {
         if (level == null) return result;
         for (Direction direction : Direction.values()) {
             BlockPos pos = station.getBlockPos().relative(direction);
-            if (!level.isLoaded(pos) || !(level.getBlockEntity(pos) instanceof PackagerBlockEntity packager)
-                    || packager.getClass() != PackagerBlockEntity.class || packager.targetInventory == null
+            if (!level.isLoaded(pos) || !(level.getBlockEntity(pos) instanceof PackagerBlockEntity packager)) continue;
+            boolean supported = packager.getClass() == PackagerBlockEntity.class
+                    || Mods.FLUIDLOGISTICS.runIfInstalled(() -> () ->
+                    FluidLogistics.isFluidPackager(packager)).orElse(false);
+            if (!supported || packager.targetInventory == null
                     || !packager.targetInventory.getTarget().getConnectedPos().equals(station.getBlockPos())) continue;
             for (Direction side : Direction.values()) {
                 BlockPos linkPos = pos.relative(side);
@@ -94,6 +100,10 @@ public final class TerminalStock {
         for (var value : net.getUnifiedStorage().getStorage()) {
             if (value.key() instanceof ItemStackKey key && value.amount() > 0) {
                 result.add(new Entry(key.copyStackWithCount(1), value.amount(), null, true));
+            } else if (value.key() instanceof FluidStackKey key && value.amount() > 0) {
+                ItemStack display = Mods.FLUIDLOGISTICS.runIfInstalled(
+                        () -> () -> FluidLogistics.fluidDisplayKey(key)).orElse(ItemStack.EMPTY);
+                if (!display.isEmpty()) result.add(new Entry(display, value.amount(), null, false));
             }
         }
         for (Route route : routes.values()) {

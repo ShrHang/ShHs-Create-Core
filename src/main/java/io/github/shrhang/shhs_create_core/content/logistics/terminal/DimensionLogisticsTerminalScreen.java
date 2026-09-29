@@ -1,9 +1,12 @@
 package io.github.shrhang.shhs_create_core.content.logistics.terminal;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.simibubi.create.content.logistics.BigItemStack;
 import com.simibubi.create.content.trains.station.NoShadowFontWrapper;
 import com.simibubi.create.foundation.gui.AllGuiTextures;
 import com.wintercogs.beyonddimensions.api.storage.key.impl.ItemStackKey;
+import io.github.shrhang.shhs_create_core.compat.Mods;
+import io.github.shrhang.shhs_create_core.compat.fluidlogistics.terminal.FluidLogisticsTerminalClientCompat;
 import io.github.shrhang.shhs_create_core.content.data.ShHsGuiTextures;
 import net.createmod.catnip.animation.LerpedFloat;
 import net.createmod.catnip.animation.LerpedFloat.Chaser;
@@ -285,7 +288,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
                 TerminalStock.Entry entry = category.entries.get(index);
                 renderEntry(graphics, entry.stack(), entry.amount(),
                         Layout.STOCK_X + index % Layout.COLUMNS * Layout.CELL,
-                        itemY, entry.network() != null, !entry.requestable(), true);
+                        itemY, entry.network() != null, entry.network() != null && !entry.requestable(), true);
             }
         }
         graphics.pose().popPose();
@@ -408,7 +411,8 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
 
     private int numberWidth(String text) {
         int width = 0;
-        for (char c : text.toCharArray()) width += c == ' ' ? 4 : c == '.' ? 2 : c == 'm' ? 6 : 4;
+        for (char c : text.toCharArray())
+            width += c == ' ' ? 4 : c == '.' ? 2 : c == 'm' ? 6 : c == '+' ? 8 : 4;
         return width;
     }
 
@@ -442,6 +446,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
             if (c == '.') { width = 3; offset = 60; }
             else if (c == 'k') offset = 64;
             else if (c == 'm') { width = 7; offset = 70; }
+            else if (c == '+') { width = 9; offset = 84; }
             RenderSystem.enableBlend();
             graphics.blit(NUMBERS.location, x, 0, 0, NUMBERS.getStartX() + offset, NUMBERS.getStartY(),
                     width, NUMBERS.getHeight(), 256, 256);
@@ -450,9 +455,16 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         return x;
     }
 
-    private void renderItemCount(GuiGraphics graphics, long amount, int x, int y) {
+    private void renderItemCount(GuiGraphics graphics, ItemStack stack, long amount, boolean external, int x, int y) {
         if (amount <= 1) return;
-        String text = itemCountText(amount);
+        boolean infinite = external && amount >= BigItemStack.INF;
+        graphics.pose().pushPose();
+        graphics.pose().translate(x, y, 200);
+        boolean custom = Mods.FLUIDLOGISTICS.runIfInstalled(() -> () ->
+                FluidLogisticsTerminalClientCompat.renderAmount(graphics, stack, amount, infinite)).orElse(false);
+        graphics.pose().popPose();
+        if (custom) return;
+        String text = infinite ? "+" : itemCountText(amount);
         int offset = (int) Math.floor(-text.length() * 2.5);
         graphics.pose().pushPose();
         graphics.pose().translate(x + 14 + offset, y + 10, 200);
@@ -467,7 +479,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         graphics.renderItem(stack, x + 1, y + 1);
         if (external) graphics.fill(x, y, x + 4, y + 3, 0xff52bbd0);
         if (unavailable) graphics.fill(x, y, x + 18, y + 18, 0x88ad3030);
-        renderItemCount(graphics, amount, x, y);
+        renderItemCount(graphics, stack, amount, external, x, y);
     }
 
     private HoveredEntry hoveredStock(int mouseX, int mouseY) {
@@ -548,9 +560,9 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         HoveredEntry hovered = hoveredStock(mouseX, mouseY);
         if (hovered != null) {
             TerminalStock.Entry entry = hovered.entry();
-            List<Component> tooltip = new ArrayList<>(getTooltipFromItem(minecraft, entry.stack()));
+            List<Component> tooltip = stockTooltip(entry);
             tooltip.add(entry.network() == null ? TerminalData.text("local") : TerminalData.text("external", entry.network().toString().substring(0, 8)));
-            if (!entry.requestable()) tooltip.add(TerminalData.text("unavailable"));
+            if (entry.network() != null && !entry.requestable()) tooltip.add(TerminalData.text("unavailable"));
             graphics.renderComponentTooltip(font, tooltip, mouseX, mouseY);
             return;
         }
@@ -572,6 +584,15 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         }
         Component action = hoveredActionTooltip(mouseX, mouseY);
         if (action != null) graphics.renderTooltip(font, action, mouseX, mouseY);
+    }
+
+    private List<Component> stockTooltip(TerminalStock.Entry entry) {
+        List<Component> resource = Mods.FLUIDLOGISTICS.runIfInstalled(() -> () ->
+                FluidLogisticsTerminalClientCompat.inventoryTooltip(entry.stack(), entry.amount(),
+                        entry.network() != null && entry.amount() >= BigItemStack.INF,
+                        minecraft.options.advancedItemTooltips).orElse(List.of())).orElse(List.of());
+        return resource.isEmpty() ? new ArrayList<>(getTooltipFromItem(minecraft, entry.stack()))
+                : new ArrayList<>(resource);
     }
 
     private Component hoveredActionTooltip(double mouseX, double mouseY) {
@@ -612,6 +633,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         HoveredEntry hovered = hoveredStock((int) mouseX, (int) mouseY);
         if (hovered != null && (button == 0 || button == 1)) {
             TerminalStock.Entry entry = hovered.entry();
+            if (hovered.area() == HoveredArea.STOCK && entry.network() == null && !entry.requestable()) return true;
             TerminalData.Selection selection = new TerminalData.Selection(new ItemStackKey(entry.stack()), entry.network());
             if (hovered.area() == HoveredArea.STOCK && entry.network() == null) {
                 CompoundTag data = new CompoundTag();

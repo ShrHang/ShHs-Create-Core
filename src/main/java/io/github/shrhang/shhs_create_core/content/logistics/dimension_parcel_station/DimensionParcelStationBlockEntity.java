@@ -8,6 +8,8 @@ import com.wintercogs.beyonddimensions.common.block.entity.NetedBlockEntity;
 import io.github.shrhang.shhs_create_core.ShHsConfig;
 import io.github.shrhang.shhs_create_core.api.packager.VirtualInventoryIdentifier;
 import io.github.shrhang.shhs_create_core.api.packager.VirtualInventoryProvider;
+import io.github.shrhang.shhs_create_core.compat.Mods;
+import io.github.shrhang.shhs_create_core.compat.fluidlogistics.FluidLogistics;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsBlockEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -32,9 +34,6 @@ import org.jetbrains.annotations.Nullable;
 
 public class DimensionParcelStationBlockEntity extends NetedBlockEntity
         implements MenuProvider, VirtualInventoryProvider {
-    private static final String FLUID_PACKAGER_CLASS =
-            "com.yision.fluidlogistics.content.logistics.fluidPackager.FluidPackagerBlockEntity";
-
     private boolean allowItemInput = true;
     private boolean allowItemOutput = true;
     private boolean allowFluidInput = true;
@@ -138,7 +137,8 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
     }
 
     private static boolean isFluidPackager(@Nullable BlockEntity blockEntity) {
-        return blockEntity != null && FLUID_PACKAGER_CLASS.equals(blockEntity.getClass().getName());
+        return blockEntity != null && Mods.FLUIDLOGISTICS.runIfInstalled(() -> () ->
+                FluidLogistics.isFluidPackager(blockEntity)).orElse(false);
     }
 
     public boolean allowsOutputFor(BlockEntity packager) {

@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(value = LogisticsManager.class, priority = 900)
 public abstract class LogisticsManagerMixin {
     @Inject(method = "getInventoryIdentifierFromLink", at = @At("RETURN"), cancellable = true, remap = false)
-    private static void shhs_create_core$excludeInputOnlyStationsFromSourceGrouping(
+    private static void shhs_create_core$identifyDimensionNetworkInventory(
             LogisticallyLinkedBehaviour link, CallbackInfoReturnable<InventoryIdentifier> cir) {
         if (!(link.blockEntity instanceof PackagerLinkBlockEntity linkBlockEntity))
             return;
@@ -23,8 +23,15 @@ public abstract class LogisticsManagerMixin {
         if (packager == null || packager.getLevel() == null || packager.targetInventory == null)
             return;
         BlockPos targetPos = packager.targetInventory.getTarget().getConnectedPos();
-        if (packager.getLevel().getBlockEntity(targetPos) instanceof DimensionParcelStationBlockEntity station
-                && !station.allowsOutputFor(packager))
+        if (!(packager.getLevel().getBlockEntity(targetPos) instanceof DimensionParcelStationBlockEntity station))
+            return;
+        if (!station.allowsOutputFor(packager)) {
             cir.setReturnValue(null);
+            return;
+        }
+        // Keep FluidLogistics' native scan identity for its cache, but group every usable
+        // endpoint of the same dimension network as one logical warehouse inventory.
+        if (cir.getReturnValue() != null)
+            cir.setReturnValue(station.getVirtualInventoryIdentifier());
     }
 }

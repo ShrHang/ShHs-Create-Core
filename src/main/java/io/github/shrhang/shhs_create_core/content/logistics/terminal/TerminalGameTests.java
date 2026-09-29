@@ -5,6 +5,7 @@ import com.simibubi.create.content.logistics.box.PackageItem;
 import com.simibubi.create.content.logistics.packager.PackagerBlock;
 import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
 import com.wintercogs.beyonddimensions.api.dimensionnet.DimensionsNet;
+import com.wintercogs.beyonddimensions.api.storage.key.impl.FluidStackKey;
 import com.wintercogs.beyonddimensions.api.storage.key.impl.ItemStackKey;
 import io.github.shrhang.shhs_create_core.ShHsCreateCore;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsBlocks;
@@ -18,6 +19,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.*;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.level.material.Fluids;
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.gametest.*;
 
 import java.util.*;
@@ -100,6 +104,26 @@ public class TerminalGameTests {
                         && compact.orderY() + DimensionLogisticsTerminalLayout.ORDER_TEXTURE_HEIGHT <= compact.playerY()
                         && compact.craftY() + DimensionLogisticsTerminalLayout.CRAFT_TEXTURE_HEIGHT <= compact.playerY(),
                 "Compact layout keeps both switchable modules at fixed non-overlapping positions");
+        helper.succeed();
+    }
+
+    @GameTest(template = "terminal_empty", batch = "terminal")
+    public static void terminal_snapshot_exposes_dimension_fluids_as_read_only(GameTestHelper helper) {
+        if (!ModList.get().isLoaded("fluidlogistics")) {
+            helper.succeed();
+            return;
+        }
+        ServerPlayer player = player(helper);
+        DimensionsNet net = DimensionsNet.createNewNetForPlayer(player, 100000, 100);
+        helper.assertTrue(net != null, "Create primary network");
+        FluidStack water = new FluidStack(Fluids.WATER, 1);
+        net.getUnifiedStorage().insert(new FluidStackKey(water), 4_000, false);
+        TerminalStock.Entry entry = TerminalStock.snapshot(player, net).entries().stream()
+                .filter(candidate -> candidate.network() == null && !candidate.requestable()
+                        && candidate.stack().getHoverName().getString().equals(water.getHoverName().getString()))
+                .findFirst().orElse(null);
+        helper.assertTrue(entry != null && entry.amount() == 4_000,
+                "Dimension fluid appears as a read-only terminal entry");
         helper.succeed();
     }
 

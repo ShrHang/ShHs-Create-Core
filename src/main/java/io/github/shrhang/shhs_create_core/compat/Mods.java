@@ -11,7 +11,8 @@ import java.util.function.Supplier;
  * 这里不包含 {@link com.simibubi.create.compat.Mods} 中的模组。
  */
 public enum Mods {
-    CREATE_ENCHANTMENT_INDUSTRY;
+    CREATE_ENCHANTMENT_INDUSTRY,
+    FLUIDLOGISTICS;
 
     private final String id;
 

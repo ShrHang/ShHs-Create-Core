@@ -308,7 +308,7 @@ public final class TerminalOrders extends SavedData {
     }
 
     private static void migrateRequested(Order order) {
-        if (order.shipments.stream().allMatch(shipment -> !shipment.requested.isEmpty())) return;
+        if (order.shipments.stream().noneMatch(shipment -> shipment.requested.isEmpty())) return;
         for (Shipment shipment : order.shipments) {
             shipment.requested.clear();
             shipment.remaining.forEach(stack -> TerminalData.append(shipment.requested, stack, stack.getCount()));

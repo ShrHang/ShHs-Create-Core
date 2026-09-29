@@ -16,7 +16,6 @@
     "curios.common.data.CuriosEntityManagerMixin",
     "fluidlogistics.content.processing.cooling.BulkCoolingFanProcessingTypeMixin",
     "fluidlogistics.content.logistics.fluidPackager.FluidPackagerBlockMixin",
-    "fluidlogistics.content.logistics.fluidPackager.FluidPackagerBlockEntityMixin",
     "irons_spellbooks.capabilities.magic.PlayerRecastsMixin",
     "irons_spellbooks.util.TooltipsUtilsMixin",
     "l2hostility.content.capability.player.PlayerDifficultyAccessor",

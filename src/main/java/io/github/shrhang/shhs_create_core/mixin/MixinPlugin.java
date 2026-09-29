@@ -27,8 +27,7 @@ public class MixinPlugin implements IMixinConfigPlugin {
         if (mixinClassName.endsWith("FluidLogisticsJEIMixin")) {
             return isLoaded("fluidlogistics") && isLoaded("create_dragons_plus") && isLoaded("jei");
         }
-        if (mixinClassName.endsWith("FluidPackagerBlockEntityMixin")
-                || mixinClassName.endsWith("FluidPackagerBlockMixin")) {
+        if (mixinClassName.endsWith("FluidPackagerBlockMixin")) {
             return isLoaded("fluidlogistics") && isLoaded("beyonddimensions");
         }
         return true;
