@@ -17,6 +17,7 @@ import java.util.*;
 public final class TerminalStock {
     public record Entry(ItemStack stack, long amount, UUID network, boolean requestable) {}
     public record Route(UUID network, GlobalPos station, String address, IdentifiedInventory ignored) {}
+    public record Snapshot(List<Entry> entries, Map<UUID, String> addresses) {}
 
     private record CacheKey(int dimensionNet, UUID logisticsNet) {}
     private record Cached(long tick, InventorySummary summary) {}
@@ -60,6 +61,7 @@ public final class TerminalStock {
                 var ignored = new IdentifiedInventory(station.getVirtualInventoryIdentifier(), null);
                 Route route = new Route(network, pos, address, ignored);
                 Route old = routes.get(network);
+                // stations() is placement-ordered; only skip ahead when the older route cannot receive items.
                 if (old == null || old.address().isBlank() && !address.isBlank()) routes.put(network, route);
             }
         }
@@ -85,15 +87,16 @@ public final class TerminalStock {
         return result;
     }
 
-    public static List<Entry> snapshot(ServerPlayer player, DimensionsNet net) {
-        if (net == null) return List.of();
+    public static Snapshot snapshot(ServerPlayer player, DimensionsNet net) {
+        if (net == null) return new Snapshot(List.of(), Map.of());
+        Map<UUID, Route> routes = routes(player, net.getId());
         List<Entry> result = new ArrayList<>();
         for (var value : net.getUnifiedStorage().getStorage()) {
             if (value.key() instanceof ItemStackKey key && value.amount() > 0) {
                 result.add(new Entry(key.copyStackWithCount(1), value.amount(), null, true));
             }
         }
-        for (Route route : routes(player, net.getId()).values()) {
+        for (Route route : routes.values()) {
             for (var value : externalSummary(net.getId(), route, player.server.overworld().getGameTime(), false).getStacks()) {
                 if (value.count > 0)
                     result.add(new Entry(value.stack.copyWithCount(1), value.count, route.network(), !route.address().isBlank()));
@@ -101,6 +104,8 @@ public final class TerminalStock {
         }
         result.sort(Comparator.comparing((Entry e) -> e.network() != null)
                 .thenComparing(e -> e.stack().getDescriptionId()).thenComparing(e -> String.valueOf(e.network())));
-        return result;
+        Map<UUID, String> addresses = new LinkedHashMap<>();
+        routes.values().forEach(route -> addresses.put(route.network(), route.address()));
+        return new Snapshot(List.copyOf(result), Map.copyOf(addresses));
     }
 }

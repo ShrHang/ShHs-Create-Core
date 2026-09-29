@@ -75,6 +75,10 @@ public class ShHsLang {
         REGISTRATE.addRawLang(key("text", "terminal.amount"), "Amount: %s");
         REGISTRATE.addRawLang(key("text", "terminal.local"), "Source: dimension network");
         REGISTRATE.addRawLang(key("text", "terminal.external"), "Source: logistics network %s");
+        REGISTRATE.addRawLang(key("text", "terminal.dimension_category"), "Dimension network #%s");
+        REGISTRATE.addRawLang(key("text", "terminal.storage_category"), "Logistics network %s");
+        REGISTRATE.addRawLang(key("text", "terminal.storage_category_address"), "Logistics network %s · %s");
+        REGISTRATE.addRawLang(key("text", "terminal.address_value"), "Receiving address: %s");
         REGISTRATE.addRawLang(key("text", "terminal.unavailable"), "Route unavailable or address unset");
         REGISTRATE.addRawLang(key("text", "terminal.missing_materials"), "Missing materials in your inventory and dimension network.");
         REGISTRATE.addRawLang(key("text", "terminal.submit_failed"), "Unable to submit: check stock, route, permissions and packager capacity.");

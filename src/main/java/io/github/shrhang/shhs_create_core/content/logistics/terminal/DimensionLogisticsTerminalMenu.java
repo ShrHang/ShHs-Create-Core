@@ -1,6 +1,7 @@
 package io.github.shrhang.shhs_create_core.content.logistics.terminal;
 
 import com.wintercogs.beyonddimensions.api.dimensionnet.DimensionsNet;
+import com.wintercogs.beyonddimensions.api.storage.key.KeyAmount;
 import com.wintercogs.beyonddimensions.api.storage.key.impl.ItemStackKey;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsMenuTypes;
 import net.minecraft.nbt.*;
@@ -38,6 +39,7 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
     private final ResultContainer result = new ResultContainer();
     public List<TerminalStock.Entry> clientStock = List.of();
     public List<TerminalOrderSummary> clientOrders = List.of();
+    public Map<UUID, String> clientSourceAddresses = Map.of();
     public String clientNetworkName = "";
     public UUID acceptedSubmission;
     public long clientRevision = -1;
@@ -45,6 +47,7 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
     private int nextPart;
     private final List<TerminalStock.Entry> receiving = new ArrayList<>();
     private final List<TerminalOrderSummary> receivingOrders = new ArrayList<>();
+    private final Map<UUID, String> receivingSourceAddresses = new HashMap<>();
     private long revision;
     private int ticks;
     private boolean changingCraft;
@@ -66,17 +69,15 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
         windowHeight = layout.windowHeight();
         rightPanelX = compactLayout ? DimensionLogisticsTerminalLayout.COMPACT_RIGHT_PANEL_X
                 : DimensionLogisticsTerminalLayout.RIGHT_PANEL_X;
-        bottomPanelY = windowHeight - DimensionLogisticsTerminalLayout.BOTTOM_TEXTURE_HEIGHT;
-        playerPanelY = bottomPanelY - DimensionLogisticsTerminalLayout.PLAYER_TEXTURE_HEIGHT;
-        int optionalHeight = Math.max(0,
-                playerPanelY - DimensionLogisticsTerminalLayout.HEADER_TEXTURE_HEIGHT);
-        modulesCanShare = optionalHeight >= DimensionLogisticsTerminalLayout.ORDER_TEXTURE_HEIGHT
-                + DimensionLogisticsTerminalLayout.CRAFT_TEXTURE_HEIGHT;
-        orderCanShow = optionalHeight >= DimensionLogisticsTerminalLayout.ORDER_TEXTURE_HEIGHT;
-        craftCanShow = optionalHeight >= DimensionLogisticsTerminalLayout.CRAFT_TEXTURE_HEIGHT;
-        orderPanelY = DimensionLogisticsTerminalLayout.HEADER_TEXTURE_HEIGHT;
-        craftPanelY = orderPanelY + (modulesCanShare
-                ? DimensionLogisticsTerminalLayout.ORDER_TEXTURE_HEIGHT : 0);
+        DimensionLogisticsTerminalLayout.RightPanels panels =
+                DimensionLogisticsTerminalLayout.rightPanels(windowHeight);
+        bottomPanelY = panels.bottomY();
+        playerPanelY = panels.playerY();
+        orderPanelY = panels.orderY();
+        craftPanelY = panels.craftY();
+        modulesCanShare = panels.modulesCanShare();
+        orderCanShow = panels.orderCanShow();
+        craftCanShow = panels.craftCanShow();
         addSlot(new ResultSlot(player, crafting, result, 0,
                 rightPanelX + DimensionLogisticsTerminalLayout.CRAFT_RESULT_X,
                 craftPanelY + DimensionLogisticsTerminalLayout.CRAFT_RESULT_Y) {
@@ -161,7 +162,7 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
         ItemStackKey key = new ItemStackKey(template);
         long stored = net.getUnifiedStorage().getStorage().stream()
                 .filter(entry -> entry.key() instanceof ItemStackKey itemKey && itemKey.equals(key))
-                .mapToLong(entry -> entry.amount()).sum();
+                .mapToLong(KeyAmount::amount).sum();
         if (stored <= 0) return;
 
         if (quickMove) {
@@ -182,9 +183,7 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
                 setCarried(carried.isEmpty() ? ItemStack.EMPTY : carried);
             } else {
                 depositAmount(carried, carried.getCount());
-                setCarried(carried.isEmpty()
-                        ? withdrawLocal(key, (int) Math.min(stored, template.getMaxStackSize()))
-                        : carried);
+                setCarried(carried.isEmpty() ? ItemStack.EMPTY : carried);
             }
         }
         broadcastChanges();
@@ -359,7 +358,8 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
     public void sendSnapshot() {
         if (!(player instanceof ServerPlayer serverPlayer)) return;
         DimensionsNet net = network();
-        List<TerminalStock.Entry> stock = TerminalStock.snapshot(serverPlayer, net);
+        TerminalStock.Snapshot snapshot = TerminalStock.snapshot(serverPlayer, net);
+        List<TerminalStock.Entry> stock = snapshot.entries();
         long version = ++revision;
         List<TerminalOrderSummary> summaries = TerminalOrders.get(serverPlayer.server).summaries(serverPlayer);
         int stockParts = Math.max(1, (stock.size() + 31) / 32);
@@ -370,6 +370,16 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
             for (int i = part * 32; i < Math.min(stock.size(), (part + 1) * 32); i++) list.add(TerminalData.entry(stock.get(i), player.registryAccess()));
             tag.put("Stock", list);
             tag.putString("Name", net == null ? "" : net.getNetworkName().getString());
+            if (part == 0) {
+                ListTag sources = new ListTag();
+                snapshot.addresses().forEach((network, address) -> {
+                    CompoundTag source = new CompoundTag();
+                    source.putUUID("Network", network);
+                    source.putString("Address", address);
+                    sources.add(source);
+                });
+                tag.put("Sources", sources);
+            }
             if (part >= stockParts) {
                 ListTag orderPart = new ListTag();
                 orderPart.add(summaries.get(part - stockParts).save(player.registryAccess()));
@@ -382,16 +392,26 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
 
     public void receive(long revision, int part, boolean last, CompoundTag tag) {
         if (revision <= clientRevision) return;
-        if (part == 0) { receiving.clear(); receivingOrders.clear(); receivingRevision = revision; nextPart = 0; }
+        if (part == 0) {
+            receiving.clear(); receivingOrders.clear(); receivingSourceAddresses.clear();
+            receivingRevision = revision; nextPart = 0;
+        }
         if (revision != receivingRevision || part != nextPart++) return;
         ListTag list = tag.getList("Stock", Tag.TAG_COMPOUND);
         for (int i = 0; i < list.size(); i++) receiving.add(TerminalData.entry(list.getCompound(i), player.registryAccess()));
+        ListTag sources = tag.getList("Sources", Tag.TAG_COMPOUND);
+        for (int i = 0; i < sources.size(); i++) {
+            CompoundTag source = sources.getCompound(i);
+            if (source.hasUUID("Network"))
+                receivingSourceAddresses.put(source.getUUID("Network"), source.getString("Address"));
+        }
         ListTag orderTags = tag.getList("Orders", Tag.TAG_COMPOUND);
         for (int i = 0; i < orderTags.size(); i++)
             receivingOrders.add(TerminalOrderSummary.load(orderTags.getCompound(i), player.registryAccess()));
         if (last) {
             clientStock = List.copyOf(receiving); clientRevision = revision;
             clientOrders = List.copyOf(receivingOrders); clientNetworkName = tag.getString("Name");
+            clientSourceAddresses = Map.copyOf(receivingSourceAddresses);
             if (tag.hasUUID("Accepted")) acceptedSubmission = tag.getUUID("Accepted");
         }
     }

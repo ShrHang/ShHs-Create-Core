@@ -28,10 +28,12 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
     private static final AllGuiTextures STOCK_SLOT = AllGuiTextures.STOCK_KEEPER_REQUEST_SLOT;
     private static final AllGuiTextures STOCK_SEARCH = AllGuiTextures.STOCK_KEEPER_REQUEST_SEARCH;
     private static final AllGuiTextures SEND_HOVER = AllGuiTextures.STOCK_KEEPER_REQUEST_SEND_HOVER;
+    private static final AllGuiTextures CATEGORY_SHOWN = AllGuiTextures.STOCK_KEEPER_CATEGORY_SHOWN;
+    private static final AllGuiTextures CATEGORY_HIDDEN = AllGuiTextures.STOCK_KEEPER_CATEGORY_HIDDEN;
     private static final AllGuiTextures NUMBERS = AllGuiTextures.NUMBERS;
 
     private static final class Layout {
-        static final int COLUMNS = 9, CELL = 20, STOCK_X = 24, STOCK_Y = 37, STOCK_WIDTH = 180, BASKET_SIZE = 9;
+        static final int COLUMNS = 9, CELL = 20, STOCK_X = 24, CATEGORY_Y = 33, STOCK_WIDTH = 180, BASKET_SIZE = 9;
         static final int SEARCH_X = 71, SEARCH_Y = 22, SEARCH_WIDTH = 100, SEARCH_HEIGHT = 9;
         static final int DEPOSIT_X = 21, DEPOSIT_Y = 38, DEPOSIT_WIDTH = 194;
         static final int LEFT_MOUSE_X = 16, LEFT_MOUSE_WIDTH = 199, BASKET_MOUSE_HEIGHT = 29;
@@ -48,8 +50,9 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
     }
 
     private final LinkedHashMap<TerminalData.Selection, Integer> basket = new LinkedHashMap<>();
+    private final Set<UUID> collapsedCategories = new HashSet<>();
     private final LerpedFloat itemScroll = LerpedFloat.linear().startWithValue(0);
-    private List<TerminalStock.Entry> displayedItems = List.of();
+    private List<StockCategory> displayedCategories = List.of();
     private EditBox searchBox;
     private int basketOffset, orderIndex;
     private final int windowHeight;
@@ -64,7 +67,8 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         super(menu, inventory, title);
         compactLayout = menu.compactLayout;
         windowHeight = menu.windowHeight;
-        orderVisible = craftVisible = menu.modulesCanShare;
+        orderVisible = menu.orderCanShow;
+        craftVisible = menu.modulesCanShare;
         imageWidth = compactLayout ? DimensionLogisticsTerminalLayout.LEFT_PANEL_WIDTH : DimensionLogisticsTerminalLayout.WINDOW_WIDTH;
         imageHeight = windowHeight;
     }
@@ -93,15 +97,46 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
 
     private void refreshSearchResults() {
         String query = lastSearch.toLowerCase(Locale.ROOT).strip();
-        displayedItems = menu.clientStock.stream().filter(entry -> query.isEmpty()
-                || entry.stack().getHoverName().getString().toLowerCase(Locale.ROOT).contains(query)
-                || BuiltInRegistries.ITEM.getKey(entry.stack().getItem()).toString().contains(query)).toList();
+        Map<UUID, List<TerminalStock.Entry>> grouped = new HashMap<>();
+        for (TerminalStock.Entry entry : menu.clientStock) {
+            if (!query.isEmpty()
+                    && !entry.stack().getHoverName().getString().toLowerCase(Locale.ROOT).contains(query)
+                    && !BuiltInRegistries.ITEM.getKey(entry.stack().getItem()).toString().contains(query)) continue;
+            grouped.computeIfAbsent(entry.network(), ignored -> new ArrayList<>()).add(entry);
+        }
+        List<UUID> sources = new ArrayList<>(grouped.keySet());
+        sources.sort(Comparator.nullsFirst(Comparator.naturalOrder()));
+        List<StockCategory> categories = new ArrayList<>(sources.size());
+        for (UUID source : sources) {
+            String address = source == null ? "" : menu.clientSourceAddresses.getOrDefault(source, "");
+            Component name = source == null ? TerminalData.text("dimension_category", menu.netId)
+                    : address.isBlank() ? TerminalData.text("storage_category", shortNetwork(source))
+                    : TerminalData.text("storage_category_address", shortNetwork(source), address);
+            categories.add(new StockCategory(source, name, address, List.copyOf(grouped.get(source))));
+        }
+        displayedCategories = List.copyOf(categories);
+        layoutCategories();
         clampItemScroll();
+    }
+
+    private void layoutCategories() {
+        int y = 0;
+        for (StockCategory category : displayedCategories) {
+            category.y = y;
+            y += Layout.CELL;
+            if (!collapsedCategories.contains(category.network))
+                y += Mth.ceil(category.entries.size() / (float) Layout.COLUMNS) * Layout.CELL;
+        }
     }
 
     private int getMaxScroll() {
         int visibleHeight = windowHeight - 84;
-        int totalRows = 2 + Mth.ceil(displayedItems.size() / (float) Layout.COLUMNS);
+        int totalRows = 2;
+        for (StockCategory category : displayedCategories) {
+            totalRows++;
+            if (!collapsedCategories.contains(category.network))
+                totalRows += Mth.ceil(category.entries.size() / (float) Layout.COLUMNS);
+        }
         return Math.max(0, (int) ((totalRows * Layout.CELL - visibleHeight + 50) / (float) Layout.CELL));
     }
 
@@ -235,17 +270,41 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
             graphics.drawString(font, message, leftPos + DimensionLogisticsTerminalLayout.LEFT_PANEL_WIDTH / 2
                     - font.width(message) / 2, searchBox.getY(), Layout.TEXT_COLOR, false);
         }
-        for (int index = 0; index < displayedItems.size(); index++) {
-            int itemY = Layout.STOCK_Y + index / Layout.COLUMNS * Layout.CELL;
-            float shownY = itemY - scroll * Layout.CELL;
-            if (shownY < 0) continue;
-            if (shownY > windowHeight - 72) break;
-            TerminalStock.Entry entry = displayedItems.get(index);
-            renderEntry(graphics, entry.stack(), entry.amount(), Layout.STOCK_X + index % Layout.COLUMNS * Layout.CELL,
-                    itemY, entry.network() != null, !entry.requestable(), true);
+        for (StockCategory category : displayedCategories) {
+            int categoryY = Layout.CATEGORY_Y + category.y;
+            AllGuiTextures categoryTexture = collapsedCategories.contains(category.network) ? CATEGORY_HIDDEN : CATEGORY_SHOWN;
+            categoryTexture.render(graphics, leftPos + Layout.STOCK_X, topPos + categoryY + 6);
+            drawCategoryName(graphics, category.name, leftPos + Layout.STOCK_X + 9, topPos + categoryY + 7,
+                    Layout.STOCK_WIDTH - 9);
+            if (collapsedCategories.contains(category.network)) continue;
+            for (int index = 0; index < category.entries.size(); index++) {
+                int itemY = categoryY + Layout.CELL + index / Layout.COLUMNS * Layout.CELL;
+                float shownY = itemY - scroll * Layout.CELL;
+                if (shownY < 0) continue;
+                if (shownY > windowHeight - 72) break;
+                TerminalStock.Entry entry = category.entries.get(index);
+                renderEntry(graphics, entry.stack(), entry.amount(),
+                        Layout.STOCK_X + index % Layout.COLUMNS * Layout.CELL,
+                        itemY, entry.network() != null, !entry.requestable(), true);
+            }
         }
         graphics.pose().popPose();
         graphics.disableScissor();
+    }
+
+    private void drawCategoryName(GuiGraphics graphics, Component name, int x, int y, int width) {
+        Component fitted = name;
+        if (font.width(name) > width) {
+            String ellipsis = "…";
+            fitted = Component.literal(font.plainSubstrByWidth(name.getString(),
+                    Math.max(0, width - font.width(ellipsis))) + ellipsis);
+        }
+        graphics.drawString(font, fitted, x + 1, y + 1, 0x4a2d31, false);
+        graphics.drawString(font, fitted, x, y, 0xf8f8ec, false);
+    }
+
+    private String shortNetwork(UUID network) {
+        return network.toString().substring(0, 8);
     }
 
     private List<Map.Entry<TerminalData.Selection, Integer>> basketEntries() { return new ArrayList<>(basket.entrySet()); }
@@ -349,8 +408,15 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
 
     private int numberWidth(String text) {
         int width = 0;
-        for (char c : text.toCharArray()) width += c == '.' ? 2 : c == 'm' ? 6 : 4;
+        for (char c : text.toCharArray()) width += c == ' ' ? 4 : c == '.' ? 2 : c == 'm' ? 6 : 4;
         return width;
+    }
+
+    private String itemCountText(long count) {
+        if (count >= 1_000_000) return count / 1_000_000 + "m";
+        if (count >= 10_000) return count / 1_000 + "k";
+        if (count >= 1_000) return count / 1_000 + "." + count % 1_000 / 100 + "k";
+        return count >= 100 ? Long.toString(count) : " " + count;
     }
 
     private void renderProgressCount(GuiGraphics graphics, long delivered, long requested, int x, int y) {
@@ -368,6 +434,10 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
 
     private int drawNumberText(GuiGraphics graphics, String text, int x) {
         for (char c : text.toCharArray()) {
+            if (c == ' ') {
+                x += 4;
+                continue;
+            }
             int offset = (c - '0') * 6, width = NUMBERS.getWidth();
             if (c == '.') { width = 3; offset = 60; }
             else if (c == 'k') offset = 64;
@@ -380,6 +450,16 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         return x;
     }
 
+    private void renderItemCount(GuiGraphics graphics, long amount, int x, int y) {
+        if (amount <= 1) return;
+        String text = itemCountText(amount);
+        int offset = (int) Math.floor(-text.length() * 2.5);
+        graphics.pose().pushPose();
+        graphics.pose().translate(x + 14 + offset, y + 10, 200);
+        drawNumberText(graphics, text, 0);
+        graphics.pose().popPose();
+    }
+
     private void renderEntry(GuiGraphics graphics, ItemStack stack, long amount, int x, int y,
                              boolean external, boolean unavailable, boolean renderSlot) {
         x += leftPos; y += topPos;
@@ -387,13 +467,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         graphics.renderItem(stack, x + 1, y + 1);
         if (external) graphics.fill(x, y, x + 4, y + 3, 0xff52bbd0);
         if (unavailable) graphics.fill(x, y, x + 18, y + 18, 0x88ad3030);
-        String count = amount >= 1_000_000 ? String.format(Locale.ROOT, "%.1fm", amount / 1_000_000d)
-                : amount >= 10_000 ? amount / 1_000 + "k" : Long.toString(amount);
-        graphics.pose().pushPose();
-        graphics.pose().translate(x + 18, y + 12, 200);
-        graphics.pose().scale(.65f, .65f, 1);
-        graphics.drawString(font, count, -font.width(count), 0, 0xffffff, true);
-        graphics.pose().popPose();
+        renderItemCount(graphics, amount, x, y);
     }
 
     private HoveredEntry hoveredStock(int mouseX, int mouseY) {
@@ -401,9 +475,17 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         int x = mouseX - leftPos - Layout.STOCK_X, y = mouseY - topPos;
         if (x < 0 || x >= Layout.STOCK_WIDTH) return null;
         if (y >= 16 && y <= windowHeight - Layout.FOOTER_HEIGHT && itemScroll.settled()) {
-            int row = Mth.floor((y - Layout.STOCK_Y) / (float) Layout.CELL + itemScroll.getChaseTarget());
-            int index = row * Layout.COLUMNS + x / Layout.CELL;
-            return index >= 0 && index < displayedItems.size() ? new HoveredEntry(displayedItems.get(index), HoveredArea.STOCK) : null;
+            float contentY = y - Layout.CATEGORY_Y + itemScroll.getChaseTarget() * Layout.CELL;
+            for (StockCategory category : displayedCategories) {
+                if (collapsedCategories.contains(category.network)) continue;
+                int rows = Mth.ceil(category.entries.size() / (float) Layout.COLUMNS);
+                float itemsY = category.y + Layout.CELL;
+                if (contentY < itemsY || contentY >= itemsY + rows * Layout.CELL) continue;
+                int row = Mth.floor((contentY - itemsY) / Layout.CELL);
+                int index = row * Layout.COLUMNS + x / Layout.CELL;
+                if (index < category.entries.size())
+                    return new HoveredEntry(category.entries.get(index), HoveredArea.STOCK);
+            }
         }
         int selectedY = basketY() - topPos;
         if (y >= selectedY && y < selectedY + Layout.CELL) {
@@ -416,6 +498,17 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
                         value.getValue(), value.getKey().network(), stock != null && stock.requestable()), HoveredArea.BASKET);
             }
         }
+        return null;
+    }
+
+    private StockCategory hoveredCategory(double mouseX, double mouseY) {
+        if (!leftPanelVisible() || !itemScroll.settled()
+                || !insideLeft(mouseX, mouseY, Layout.STOCK_X, 16,
+                Layout.STOCK_WIDTH, windowHeight - Layout.FOOTER_HEIGHT - 16)) return null;
+        float contentY = (float) mouseY - topPos - Layout.CATEGORY_Y
+                + itemScroll.getChaseTarget() * Layout.CELL;
+        for (StockCategory category : displayedCategories)
+            if (contentY >= category.y && contentY < category.y + Layout.CELL) return category;
         return null;
     }
 
@@ -456,9 +549,16 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         if (hovered != null) {
             TerminalStock.Entry entry = hovered.entry();
             List<Component> tooltip = new ArrayList<>(getTooltipFromItem(minecraft, entry.stack()));
-            tooltip.add(TerminalData.text("amount", entry.amount()));
             tooltip.add(entry.network() == null ? TerminalData.text("local") : TerminalData.text("external", entry.network().toString().substring(0, 8)));
             if (!entry.requestable()) tooltip.add(TerminalData.text("unavailable"));
+            graphics.renderComponentTooltip(font, tooltip, mouseX, mouseY);
+            return;
+        }
+        StockCategory category = hoveredCategory(mouseX, mouseY);
+        if (category != null && category.network != null && hasShiftDown()) {
+            List<Component> tooltip = new ArrayList<>();
+            tooltip.add(TerminalData.text("external", category.network.toString()));
+            if (!category.address.isBlank()) tooltip.add(TerminalData.text("address_value", category.address));
             graphics.renderComponentTooltip(font, tooltip, mouseX, mouseY);
             return;
         }
@@ -508,6 +608,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         if (button == 0 && handleOrderAction(mouseX, mouseY)) return true;
         if (leftPanelVisible() && button == 0 && isCollectHovered(mouseX, mouseY) && validBasket()) { submitSelection(); return true; }
         if (leftPanelVisible() && button == 0 && beginScrollbarDrag(mouseX, mouseY)) return true;
+        if (button == 0 && handleCategoryToggle(mouseX, mouseY)) return true;
         HoveredEntry hovered = hoveredStock((int) mouseX, (int) mouseY);
         if (hovered != null && (button == 0 || button == 1)) {
             TerminalStock.Entry entry = hovered.entry();
@@ -527,6 +628,15 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         }
         if (handleDeposit(mouseX, mouseY)) return true;
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    private boolean handleCategoryToggle(double mouseX, double mouseY) {
+        StockCategory category = hoveredCategory(mouseX, mouseY);
+        if (category == null) return false;
+        if (!collapsedCategories.add(category.network)) collapsedCategories.remove(category.network);
+        layoutCategories();
+        clampItemScroll();
+        return true;
     }
 
     private boolean handleModuleToggle(double mouseX, double mouseY) {
@@ -645,4 +755,18 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
 
     private enum HoveredArea { STOCK, BASKET }
     private record HoveredEntry(TerminalStock.Entry entry, HoveredArea area) {}
+    private static final class StockCategory {
+        private final UUID network;
+        private final Component name;
+        private final String address;
+        private final List<TerminalStock.Entry> entries;
+        private int y;
+
+        private StockCategory(UUID network, Component name, String address, List<TerminalStock.Entry> entries) {
+            this.network = network;
+            this.name = name;
+            this.address = address;
+            this.entries = entries;
+        }
+    }
 }

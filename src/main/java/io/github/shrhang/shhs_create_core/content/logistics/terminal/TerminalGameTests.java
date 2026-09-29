@@ -48,7 +48,9 @@ public class TerminalGameTests {
         DimensionsNet net = DimensionsNet.createNewNetForPlayer(player, 100000, 100);
         helper.assertTrue(net != null, "Create primary network");
         ItemStack iron = new ItemStack(Items.IRON_INGOT);
-        net.getUnifiedStorage().insert(new ItemStackKey(iron), 130, false);
+        if (net != null) {
+            net.getUnifiedStorage().insert(new ItemStackKey(iron), 130, false);
+        }
         DimensionLogisticsTerminalMenu menu = new DimensionLogisticsTerminalMenu(
                 7, player.getInventory(), net.getId(), UUID.randomUUID());
         menu.clickLocal(iron, 0, false);
@@ -61,15 +63,43 @@ public class TerminalGameTests {
                 "Right click deposits one matching carried item");
         menu.setCarried(new ItemStack(Items.DIAMOND, 5));
         menu.clickLocal(iron, 0, false);
-        helper.assertTrue(menu.getCarried().is(Items.IRON_INGOT) && menu.getCarried().getCount() == 64,
-                "Different cursor stack is deposited before swapping");
+        helper.assertTrue(menu.getCarried().isEmpty()
+                        && net.getUnifiedStorage().getStackByKey(new ItemStackKey(iron)).amount() == 67,
+                "Left click with a different cursor stack only deposits it");
         helper.assertTrue(net.getUnifiedStorage().getStackByKey(new ItemStackKey(new ItemStack(Items.DIAMOND))).amount() == 5,
-                "Swapped cursor items enter the dimension network");
+                "Left-clicked cursor items enter the dimension network");
+        menu.setCarried(new ItemStack(Items.EMERALD, 4));
+        menu.clickLocal(iron, 1, false);
+        helper.assertTrue(menu.getCarried().isEmpty()
+                        && net.getUnifiedStorage().getStackByKey(new ItemStackKey(iron)).amount() == 67
+                        && net.getUnifiedStorage().getStackByKey(new ItemStackKey(new ItemStack(Items.EMERALD))).amount() == 4,
+                "Right click with a different cursor stack only deposits it");
         player.getInventory().clearContent();
         menu.setCarried(ItemStack.EMPTY);
         menu.clickLocal(iron, 0, true);
-        helper.assertTrue(player.getInventory().countItem(Items.IRON_INGOT) == 3,
-                "Shift click transfers only the remaining local stock");
+        helper.assertTrue(player.getInventory().countItem(Items.IRON_INGOT) == 64
+                        && net.getUnifiedStorage().getStackByKey(new ItemStackKey(iron)).amount() == 3,
+                "Shift click transfers one maximum stack of the remaining local stock");
+
+        DimensionLogisticsTerminalLayout.RightPanels full =
+                DimensionLogisticsTerminalLayout.rightPanels(276);
+        int[] fullGaps = {
+                full.orderY() - DimensionLogisticsTerminalLayout.HEADER_TEXTURE_HEIGHT,
+                full.craftY() - full.orderY() - DimensionLogisticsTerminalLayout.ORDER_TEXTURE_HEIGHT,
+                full.playerY() - full.craftY() - DimensionLogisticsTerminalLayout.CRAFT_TEXTURE_HEIGHT,
+                full.bottomY() - full.playerY() - DimensionLogisticsTerminalLayout.PLAYER_TEXTURE_HEIGHT
+        };
+        helper.assertTrue(full.modulesCanShare()
+                        && Arrays.stream(fullGaps).max().orElseThrow()
+                        - Arrays.stream(fullGaps).min().orElseThrow() <= 1,
+                "Expanded layout distributes all four module gaps evenly");
+
+        DimensionLogisticsTerminalLayout.RightPanels compact =
+                DimensionLogisticsTerminalLayout.rightPanels(256);
+        helper.assertTrue(!compact.modulesCanShare() && compact.orderCanShow() && compact.craftCanShow()
+                        && compact.orderY() + DimensionLogisticsTerminalLayout.ORDER_TEXTURE_HEIGHT <= compact.playerY()
+                        && compact.craftY() + DimensionLogisticsTerminalLayout.CRAFT_TEXTURE_HEIGHT <= compact.playerY(),
+                "Compact layout keeps both switchable modules at fixed non-overlapping positions");
         helper.succeed();
     }
 

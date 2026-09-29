@@ -38,9 +38,50 @@ final class DimensionLogisticsTerminalLayout {
     private DimensionLogisticsTerminalLayout() {}
 
     static int windowHeight(int screenHeight) {
-        int appropriate = Math.max(STOCK_HEADER_HEIGHT + STOCK_FOOTER_HEIGHT, screenHeight - 10);
+        int minimum = STOCK_HEADER_HEIGHT + STOCK_BODY_HEIGHT + STOCK_FOOTER_HEIGHT;
+        int appropriate = Math.max(minimum, screenHeight - 10);
         appropriate -= Math.floorMod(appropriate - STOCK_HEADER_HEIGHT - STOCK_FOOTER_HEIGHT, STOCK_BODY_HEIGHT);
         return Math.min(appropriate, STOCK_HEADER_HEIGHT + STOCK_FOOTER_HEIGHT
                 + STOCK_BODY_HEIGHT * MAX_STOCK_BODY_SLICES);
     }
+
+    static RightPanels rightPanels(int windowHeight) {
+        int bottomY = windowHeight - BOTTOM_TEXTURE_HEIGHT;
+        int baseHeight = HEADER_TEXTURE_HEIGHT + PLAYER_TEXTURE_HEIGHT + BOTTOM_TEXTURE_HEIGHT;
+        boolean orderCanShow = windowHeight >= baseHeight + ORDER_TEXTURE_HEIGHT;
+        boolean craftCanShow = windowHeight >= baseHeight + CRAFT_TEXTURE_HEIGHT;
+        boolean modulesCanShare = windowHeight >= baseHeight + ORDER_TEXTURE_HEIGHT + CRAFT_TEXTURE_HEIGHT;
+
+        if (modulesCanShare) {
+            int free = windowHeight - baseHeight - ORDER_TEXTURE_HEIGHT - CRAFT_TEXTURE_HEIGHT;
+            int orderY = HEADER_TEXTURE_HEIGHT + gap(free, 4, 0);
+            int craftY = orderY + ORDER_TEXTURE_HEIGHT + gap(free, 4, 1);
+            int playerY = craftY + CRAFT_TEXTURE_HEIGHT + gap(free, 4, 2);
+            return new RightPanels(orderY, craftY, playerY, bottomY,
+                    true, true, true);
+        }
+
+        int optionalHeight = craftCanShow ? CRAFT_TEXTURE_HEIGHT
+                : orderCanShow ? ORDER_TEXTURE_HEIGHT : 0;
+        if (optionalHeight == 0) {
+            int free = Math.max(0, windowHeight - baseHeight);
+            int playerY = HEADER_TEXTURE_HEIGHT + gap(free, 2, 0);
+            return new RightPanels(HEADER_TEXTURE_HEIGHT, HEADER_TEXTURE_HEIGHT,
+                    playerY, bottomY, false, false, false);
+        }
+
+        int free = windowHeight - baseHeight - optionalHeight;
+        int optionalY = HEADER_TEXTURE_HEIGHT + gap(free, 3, 0);
+        int orderY = optionalY + (optionalHeight - ORDER_TEXTURE_HEIGHT) / 2;
+        int playerY = optionalY + optionalHeight + gap(free, 3, 1);
+        return new RightPanels(orderY, optionalY, playerY, bottomY,
+                false, orderCanShow, craftCanShow);
+    }
+
+    private static int gap(int free, int gapCount, int index) {
+        return free / gapCount + (index < free % gapCount ? 1 : 0);
+    }
+
+    record RightPanels(int orderY, int craftY, int playerY, int bottomY,
+                       boolean modulesCanShare, boolean orderCanShow, boolean craftCanShow) {}
 }
