@@ -11,6 +11,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -26,6 +27,7 @@ import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.loading.FMLEnvironment;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -67,6 +69,18 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
     private boolean changingCraft;
     private boolean clientPlayerSlotsActive = true;
     private boolean clientCraftSlotsActive = true;
+
+    static void open(ServerPlayer player, @Nullable DimensionsNet net) {
+        int netId = net == null ? -1 : net.getId();
+        UUID session = UUID.randomUUID();
+        player.openMenu(new SimpleMenuProvider((id, inventory, ignored) ->
+                        new DimensionLogisticsTerminalMenu(id, inventory, netId, session),
+                        TerminalData.text("title")),
+                buffer -> {
+                    buffer.writeInt(netId);
+                    buffer.writeUUID(session);
+                });
+    }
 
     public DimensionLogisticsTerminalMenu(int id, Inventory inventory, RegistryFriendlyByteBuf buffer) {
         this(id, inventory, buffer.readInt(), buffer.readUUID());

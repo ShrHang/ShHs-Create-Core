@@ -10,7 +10,9 @@ import static io.github.shrhang.shhs_create_core.content.data.ShHsLang.CATEGORY_
 import static io.github.shrhang.shhs_create_core.content.data.ShHsLang.key;
 
 public enum ShHsKeys {
-    OPEN_PORTABLE_STOCK_TICKER("open_portable_stock_ticker", "Open Portable Stock Ticker", GLFW.GLFW_KEY_B);
+    OPEN_PORTABLE_STOCK_TICKER("open_portable_stock_ticker", "Open Portable Stock Ticker", GLFW.GLFW_KEY_B),
+    OPEN_DIMENSION_LOGISTICS_TERMINAL(
+            "open_dimension_logistics_terminal", "Open Dimension Logistics Terminal", GLFW.GLFW_KEY_H);
 
     private final KeyMapping keybind;
     private final String langKey;

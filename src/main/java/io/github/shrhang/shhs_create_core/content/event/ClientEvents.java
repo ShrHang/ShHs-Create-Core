@@ -1,14 +1,16 @@
 package io.github.shrhang.shhs_create_core.content.event;
 
+import io.github.shrhang.shhs_create_core.content.fluid.sprayer.SprayerOutlineHandler;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.OpenPortableStockTickerPacket;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerClientData;
-import io.github.shrhang.shhs_create_core.content.fluid.sprayer.SprayerOutlineHandler;
+import io.github.shrhang.shhs_create_core.content.logistics.terminal.OpenDimensionLogisticsTerminalPacket;
 import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.PacketDistributor;
 
+import static io.github.shrhang.shhs_create_core.content.registries.ShHsKeys.OPEN_DIMENSION_LOGISTICS_TERMINAL;
 import static io.github.shrhang.shhs_create_core.content.registries.ShHsKeys.OPEN_PORTABLE_STOCK_TICKER;
 
 public class ClientEvents {
@@ -40,6 +42,9 @@ public class ClientEvents {
 
         while (OPEN_PORTABLE_STOCK_TICKER.getKeybind().consumeClick()) {
             PacketDistributor.sendToServer(OpenPortableStockTickerPacket.INSTANCE);
+        }
+        while (OPEN_DIMENSION_LOGISTICS_TERMINAL.getKeybind().consumeClick()) {
+            PacketDistributor.sendToServer(OpenDimensionLogisticsTerminalPacket.INSTANCE);
         }
     }
 }

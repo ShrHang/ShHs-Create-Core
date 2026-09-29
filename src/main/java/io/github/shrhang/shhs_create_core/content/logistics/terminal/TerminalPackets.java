@@ -35,6 +35,9 @@ public final class TerminalPackets {
     }
 
     public static void register(PayloadRegistrar registrar) {
+        registrar.playToServer(OpenDimensionLogisticsTerminalPacket.TYPE,
+                OpenDimensionLogisticsTerminalPacket.STREAM_CODEC,
+                OpenDimensionLogisticsTerminalPacket::handle);
         registrar.playToServer(Action.TYPE, Action.CODEC, TerminalPackets::handle);
         registrar.playToClient(Snapshot.TYPE, Snapshot.CODEC, TerminalPackets::handleSnapshot);
     }
