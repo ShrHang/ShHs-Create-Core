@@ -11,6 +11,7 @@ import com.simibubi.create.content.logistics.packagerLink.LogisticsManager;
 import com.simibubi.create.content.logistics.stockTicker.PackageOrderWithCrafts;
 import com.wintercogs.beyonddimensions.api.dimensionnet.DimensionsNet;
 import com.wintercogs.beyonddimensions.api.storage.key.impl.ItemStackKey;
+import com.wintercogs.beyonddimensions.common.block.entity.NetedBlockEntity;
 import io.github.shrhang.shhs_create_core.content.logistics.dimension_parcel_station.DimensionParcelStationBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -195,11 +196,13 @@ public final class TerminalOrders extends SavedData {
             return null;
         int id = PackageItem.getOrderId(box);
         for (Order order : orders.values()) for (Shipment shipment : order.shipments) {
-            if (shipment.id != id || !shipment.station.equals(GlobalPos.of(level.dimension(), target))
-                    || !shipment.address.equals(PackageItem.getAddress(box)))
+            if (shipment.id != id || !shipment.address.equals(PackageItem.getAddress(box)))
                 continue;
-            if (!(level.getBlockEntity(target) instanceof DimensionParcelStationBlockEntity station)
-                    || !station.isAllowed(DimensionParcelStationBlockEntity.Channel.ITEM_INPUT))
+            if (!(level.getBlockEntity(target) instanceof NetedBlockEntity targetBlock)
+                    || targetBlock.getNetId() != order.netId || targetBlock.getNet() == null)
+                return false;
+            if (targetBlock instanceof DimensionParcelStationBlockEntity station
+                    && !station.isAllowed(DimensionParcelStationBlockEntity.Channel.ITEM_INPUT))
                 return false;
             String fragment = PackageItem.getLinkIndex(box) + ":" + PackageItem.getIndex(box);
             if (shipment.received.contains(fragment))
