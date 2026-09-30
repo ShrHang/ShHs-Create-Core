@@ -12,6 +12,8 @@ import com.simibubi.create.content.logistics.stockTicker.PackageOrderWithCrafts;
 import com.wintercogs.beyonddimensions.api.dimensionnet.DimensionsNet;
 import com.wintercogs.beyonddimensions.api.storage.key.impl.ItemStackKey;
 import com.wintercogs.beyonddimensions.common.block.entity.NetedBlockEntity;
+import io.github.shrhang.shhs_create_core.compat.Mods;
+import io.github.shrhang.shhs_create_core.compat.fluidlogistics.terminal.FluidLogisticsTerminalOrderCompat;
 import io.github.shrhang.shhs_create_core.content.logistics.dimension_parcel_station.DimensionParcelStationBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -58,6 +60,7 @@ public final class TerminalOrders extends SavedData {
         final int netId;
         boolean ended;
         final List<ItemStack> held = new ArrayList<>();
+        final List<TerminalPackageEntry> heldResources = new ArrayList<>();
         final List<ItemStack> packages = new ArrayList<>();
         private final List<Shipment> shipments = new ArrayList<>();
 
@@ -72,7 +75,7 @@ public final class TerminalOrders extends SavedData {
         }
 
         boolean visible() {
-            return !ready() || !held.isEmpty() || !packages.isEmpty();
+            return !ready() || !held.isEmpty() || !heldResources.isEmpty() || !packages.isEmpty();
         }
     }
 
@@ -201,23 +204,25 @@ public final class TerminalOrders extends SavedData {
             if (!(level.getBlockEntity(target) instanceof NetedBlockEntity targetBlock)
                     || targetBlock.getNetId() != order.netId || targetBlock.getNet() == null)
                 return false;
-            if (targetBlock instanceof DimensionParcelStationBlockEntity station
-                    && !station.isAllowed(DimensionParcelStationBlockEntity.Channel.ITEM_INPUT))
+            List<TerminalPackageEntry> contents = packageContents(box);
+            if (contents.isEmpty())
                 return false;
+            if (targetBlock instanceof DimensionParcelStationBlockEntity station) {
+                boolean hasItems = contents.stream().anyMatch(entry -> !entry.isResource());
+                boolean hasResources = contents.stream().anyMatch(TerminalPackageEntry::isResource);
+                if (hasItems && !station.isAllowed(DimensionParcelStationBlockEntity.Channel.ITEM_INPUT)
+                        || hasResources && !station.isAllowed(DimensionParcelStationBlockEntity.Channel.FLUID_INPUT))
+                    return false;
+            }
             String fragment = PackageItem.getLinkIndex(box) + ":" + PackageItem.getIndex(box);
             if (shipment.received.contains(fragment))
                 return false;
-            List<ItemStack> contents = new ArrayList<>();
-            var handler = PackageItem.getContents(box);
-            for (int i = 0; i < handler.getSlots(); i++)
-                if (!handler.getStackInSlot(i).isEmpty())
-                    contents.add(handler.getStackInSlot(i).copy());
             List<ItemStack> remaining = shipment.remaining.stream().map(ItemStack::copy)
                     .collect(Collectors.toCollection(ArrayList::new));
-            for (ItemStack stack : contents) {
-                int need = stack.getCount();
+            for (TerminalPackageEntry entry : contents) {
+                int need = entry.amount();
                 for (ItemStack expected : remaining) {
-                    if (!ItemStack.isSameItemSameComponents(stack, expected))
+                    if (!matches(entry, expected))
                         continue;
                     int used = Math.min(need, expected.getCount());
                     expected.shrink(used);
@@ -231,19 +236,68 @@ public final class TerminalOrders extends SavedData {
             shipment.remaining.clear();
             remaining.stream().filter(s -> !s.isEmpty()).forEach(shipment.remaining::add);
             shipment.received.add(fragment);
-            for (ItemStack stack : contents) {
-                long held = stack.getCount();
+            for (TerminalPackageEntry entry : contents) {
+                long held = entry.amount();
                 if (order.ended) {
                     DimensionsNet original = DimensionsNet.getNetFromId(order.netId);
                     if (original != null)
-                        held = original.getUnifiedStorage().insert(new ItemStackKey(stack), held, false).amount();
+                        held = insert(original, entry);
                 }
-                TerminalData.append(order.held, stack, held);
+                if (entry.isResource())
+                    appendResource(order.heldResources, entry, held);
+                else
+                    TerminalData.append(order.held, entry.key(), held);
             }
             setDirty();
             return true;
         }
         return null;
+    }
+
+    private static List<TerminalPackageEntry> packageContents(ItemStack box) {
+        var resources = Mods.FLUIDLOGISTICS.runIfInstalled(() -> () ->
+                FluidLogisticsTerminalOrderCompat.inspect(box));
+        if (resources.isPresent())
+            return resources.get();
+        List<TerminalPackageEntry> contents = new ArrayList<>();
+        var handler = PackageItem.getContents(box);
+        for (int i = 0; i < handler.getSlots(); i++) {
+            ItemStack stack = handler.getStackInSlot(i);
+            if (!stack.isEmpty())
+                contents.add(new TerminalPackageEntry(stack, stack.getCount(), null));
+        }
+        return List.copyOf(contents);
+    }
+
+    private static boolean matches(TerminalPackageEntry entry, ItemStack expected) {
+        if (!entry.isResource())
+            return ItemStack.isSameItemSameComponents(entry.key(), expected);
+        return Mods.FLUIDLOGISTICS.runIfInstalled(() -> () ->
+                FluidLogisticsTerminalOrderCompat.matches(entry, expected)).orElse(false);
+    }
+
+    private static long insert(DimensionsNet net, TerminalPackageEntry entry) {
+        if (!entry.isResource())
+            return net.getUnifiedStorage().insert(new ItemStackKey(entry.key()), entry.amount(), false).amount();
+        return Mods.FLUIDLOGISTICS.runIfInstalled(() -> () ->
+                FluidLogisticsTerminalOrderCompat.insert(net, entry)).orElse((long) entry.amount());
+    }
+
+    private static void appendResource(List<TerminalPackageEntry> resources,
+                                       TerminalPackageEntry entry, long amount) {
+        if (amount <= 0)
+            return;
+        int added = Math.toIntExact(amount);
+        for (int i = 0; i < resources.size(); i++) {
+            TerminalPackageEntry existing = resources.get(i);
+            if (!existing.resourceType().equals(entry.resourceType())
+                    || !ItemStack.isSameItemSameComponents(existing.key(), entry.key()))
+                continue;
+            resources.set(i, new TerminalPackageEntry(existing.key(),
+                    Math.addExact(existing.amount(), added), existing.resourceType()));
+            return;
+        }
+        resources.add(new TerminalPackageEntry(entry.key(), added, entry.resourceType()));
     }
 
     public void claim(ServerPlayer player, UUID id, boolean endWaiting) {
@@ -280,6 +334,16 @@ public final class TerminalOrders extends SavedData {
         order.held.removeIf(ItemStack::isEmpty);
         while (!order.held.isEmpty())
             order.packages.add(PackageItem.containing(takePackageContents(order.held)));
+        Iterator<TerminalPackageEntry> resources = order.heldResources.iterator();
+        while (resources.hasNext()) {
+            TerminalPackageEntry resource = resources.next();
+            List<ItemStack> packages = Mods.FLUIDLOGISTICS.runIfInstalled(() -> () ->
+                    FluidLogisticsTerminalOrderCompat.createPackages(resource)).orElse(List.of());
+            if (packages.isEmpty())
+                continue;
+            order.packages.addAll(packages);
+            resources.remove();
+        }
     }
 
     private static ItemStackHandler takePackageContents(List<ItemStack> pending) {
@@ -331,6 +395,9 @@ public final class TerminalOrders extends SavedData {
             packages++;
             takePackageContents(pending);
         }
+        for (TerminalPackageEntry resource : order.heldResources)
+            packages += Mods.FLUIDLOGISTICS.runIfInstalled(() -> () ->
+                    FluidLogisticsTerminalOrderCompat.createPackages(resource).size()).orElse(0);
         return packages;
     }
 
@@ -345,6 +412,15 @@ public final class TerminalOrders extends SavedData {
             Order order = new Order(t.getUUID("Id"), t.getUUID("Owner"), t.getInt("Net"));
             order.ended = t.getBoolean("Ended");
             order.held.addAll(TerminalData.stacks(t.getList("Held", Tag.TAG_COMPOUND), registries));
+            ListTag heldResources = t.getList("HeldResources", Tag.TAG_COMPOUND);
+            for (int j = 0; j < heldResources.size(); j++) {
+                CompoundTag resource = heldResources.getCompound(j);
+                ItemStack key = ItemStack.parseOptional(registries, resource.getCompound("Key"));
+                ResourceLocation type = ResourceLocation.tryParse(resource.getString("Type"));
+                int amount = resource.getInt("Amount");
+                if (!key.isEmpty() && type != null && amount > 0)
+                    order.heldResources.add(new TerminalPackageEntry(key, amount, type));
+            }
             order.packages.addAll(TerminalData.stacks(t.getList("Packages", Tag.TAG_COMPOUND), registries));
             ListTag shipments = t.getList("Shipments", Tag.TAG_COMPOUND);
             for (int j = 0; j < shipments.size(); j++) {
@@ -405,6 +481,15 @@ public final class TerminalOrders extends SavedData {
             t.putInt("Net", order.netId);
             t.putBoolean("Ended", order.ended);
             t.put("Held", TerminalData.stacks(order.held, registries));
+            ListTag heldResources = new ListTag();
+            for (TerminalPackageEntry entry : order.heldResources) {
+                CompoundTag resource = new CompoundTag();
+                resource.put("Key", entry.key().save(registries));
+                resource.putString("Type", entry.resourceType().toString());
+                resource.putInt("Amount", entry.amount());
+                heldResources.add(resource);
+            }
+            t.put("HeldResources", heldResources);
             t.put("Packages", TerminalData.stacks(order.packages, registries));
             ListTag shipments = new ListTag();
             for (Shipment shipment : order.shipments) {

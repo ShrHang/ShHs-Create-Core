@@ -2,7 +2,6 @@ package io.github.shrhang.shhs_create_core.mixin.fluidlogistics.content.logistic
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import com.yision.fluidlogistics.content.logistics.fluidPackager.FluidPackagerBlock;
 import io.github.shrhang.shhs_create_core.content.logistics.dimension_parcel_station.DimensionParcelStationBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -10,9 +9,12 @@ import net.neoforged.neoforge.capabilities.BlockCapability;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.fluids.capability.templates.EmptyFluidHandler;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 
-@Mixin(value = FluidPackagerBlock.class, remap = false)
+@Pseudo
+@Mixin(targets = "com.yision.fluidlogistics.content.logistics.fluidPackager.FluidPackagerBlock",
+        remap = false)
 public abstract class FluidPackagerBlockMixin {
     @WrapOperation(method = "getStateForPlacement",
             at = @At(value = "INVOKE",

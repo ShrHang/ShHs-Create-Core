@@ -16,8 +16,9 @@
     "curios.common.data.CuriosEntityManagerMixin",
     "fluidlogistics.content.processing.cooling.BulkCoolingFanProcessingTypeMixin",
     "fluidlogistics.content.logistics.fluidPackager.FluidPackagerBlockMixin",
+    "fluidlogistics.content.logistics.fluidPackager.FluidPackagerBlockEntityMixin",
+    "fluidlogistics.content.logistics.fluidPackager.FluidRepackagerBlockEntityMixin",
     "irons_spellbooks.capabilities.magic.PlayerRecastsMixin",
-    "irons_spellbooks.util.TooltipsUtilsMixin",
     "l2hostility.content.capability.player.PlayerDifficultyAccessor",
     "minecraft.server.level.ServerLevelMixin",
     "minecraft.world.entity.monster.DrownedMixin",
@@ -28,6 +29,7 @@
     "fluidlogistics.compat.jei.FluidLogisticsJEIMixin",
     "irons_spellbooks.gui.overlays.InscriptionTableScreenMixin",
     "irons_spellbooks.gui.overlays.SpellWheelOverlayMixin",
+    "irons_spellbooks.util.TooltipsUtilsMixin",
     "minecraft.client.renderer.LevelRendererMixin",
     "minecraft.client.renderer.SkullBlockRendererMixin"
   ],

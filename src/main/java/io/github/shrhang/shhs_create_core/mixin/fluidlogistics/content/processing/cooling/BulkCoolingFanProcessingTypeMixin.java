@@ -19,7 +19,8 @@ import java.util.List;
 import java.util.Optional;
 
 @Pseudo
-@Mixin(targets = "com.yision.fluidlogistics.content.processing.cooling.BulkCoolingFanProcessingType", remap = false)
+@Mixin(targets = "com.yision.fluidlogistics.content.processing.cooling.BulkCoolingFanProcessingType",
+        remap = false)
 public abstract class BulkCoolingFanProcessingTypeMixin {
     @Inject(method = "canProcess", at = @At("RETURN"), cancellable = true)
     private void shhsc_c$canProcessFreezing(ItemStack stack, Level level, CallbackInfoReturnable<Boolean> cir) {

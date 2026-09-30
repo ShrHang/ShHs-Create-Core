@@ -21,13 +21,21 @@ public class MixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        if (mixinClassName.endsWith("CreateRecipeCategoryMixin")) {
+            return isLoaded("jei");
+        }
+        if (mixinClassName.endsWith("CuriosEntityManagerMixin")) {
+            return isLoaded("curios");
+        }
         if (mixinClassName.endsWith("BulkCoolingFanProcessingTypeMixin")) {
             return isLoaded("fluidlogistics") && isLoaded("create_dragons_plus");
         }
         if (mixinClassName.endsWith("FluidLogisticsJEIMixin")) {
             return isLoaded("fluidlogistics") && isLoaded("create_dragons_plus") && isLoaded("jei");
         }
-        if (mixinClassName.endsWith("FluidPackagerBlockMixin")) {
+        if (mixinClassName.endsWith("FluidPackagerBlockMixin")
+                || mixinClassName.endsWith("FluidPackagerBlockEntityMixin")
+                || mixinClassName.endsWith("FluidRepackagerBlockEntityMixin")) {
             return isLoaded("fluidlogistics") && isLoaded("beyonddimensions");
         }
         return true;
