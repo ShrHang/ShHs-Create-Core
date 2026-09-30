@@ -1,21 +1,31 @@
 package io.github.shrhang.shhs_create_core.content.logistics.terminal;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.simibubi.create.AllSoundEvents;
+import com.simibubi.create.compat.jei.CreateJEI;
 import com.simibubi.create.content.logistics.BigItemStack;
+import com.simibubi.create.content.logistics.stockTicker.StockKeeperRequestScreen.SearchSyncMode;
 import com.simibubi.create.content.trains.station.NoShadowFontWrapper;
 import com.simibubi.create.foundation.gui.AllGuiTextures;
+import com.simibubi.create.foundation.utility.CreateLang;
+import com.simibubi.create.infrastructure.config.AllConfigs;
 import com.wintercogs.beyonddimensions.api.storage.key.impl.ItemStackKey;
 import io.github.shrhang.shhs_create_core.compat.Mods;
 import io.github.shrhang.shhs_create_core.compat.fluidlogistics.terminal.FluidLogisticsTerminalClientCompat;
 import io.github.shrhang.shhs_create_core.content.data.ShHsGuiTextures;
+import mezz.jei.api.runtime.IIngredientFilter;
 import net.createmod.catnip.animation.LerpedFloat;
 import net.createmod.catnip.animation.LerpedFloat.Chaser;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.Rect2i;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
@@ -45,6 +55,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
     private static final class Layout {
         static final int COLUMNS = 9, CELL = 20, STOCK_X = 24, CATEGORY_Y = 33, STOCK_WIDTH = 180, BASKET_SIZE = 9;
         static final int SEARCH_X = 71, SEARCH_Y = 22, SEARCH_WIDTH = 100, SEARCH_HEIGHT = 9;
+        static final int JEI_SYNC_X = 25, BESIDE_SEARCH_BUTTON_Y = 18, JEI_SYNC_SIZE = 15;
         static final int DEPOSIT_X = 21, DEPOSIT_Y = 38, DEPOSIT_WIDTH = 194;
         static final int LEFT_MOUSE_X = 16, LEFT_MOUSE_WIDTH = 199, BASKET_MOUSE_HEIGHT = 29;
         static final int FOOTER_HEIGHT = 80, BASKET_FROM_BOTTOM = 72, SCROLL_TOP = 15, SCROLL_TRIM = 92;
@@ -72,6 +83,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
     private UUID selectedOrder;
     private long seenRevision = -1;
     private String lastSearch = "";
+    private String previousJEISearchText = "";
 
     public DimensionLogisticsTerminalScreen(DimensionLogisticsTerminalMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -97,8 +109,10 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
             lastSearch = value;
             itemScroll.startWithValue(0);
             refreshSearchResults();
+            syncJEI(false);
         });
         addWidget(searchBox);
+        syncJEI(true);
         refreshSearchResults();
         refreshState();
     }
@@ -164,6 +178,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
             basket.acknowledge(menu.snapshots.current().acceptedSubmission());
             refreshSearchResults();
         }
+        if (shouldSyncFromJEI()) syncJEI(true);
         itemScroll.tickChaser();
         if (Math.abs(itemScroll.getValue() - itemScroll.getChaseTarget()) < 1 / 16f)
             itemScroll.setValue(itemScroll.getChaseTarget());
@@ -245,6 +260,9 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
             graphics.drawString(font, message, leftPos + DimensionLogisticsTerminalLayout.LEFT_PANEL_WIDTH / 2
                     - font.width(message) / 2, searchBox.getY(), Layout.TEXT_COLOR, false);
         }
+        if (isJeiLoaded())
+            AllConfigs.client().syncRecipeViewerSearch.get().buttonTexture.render(graphics,
+                    leftPos + Layout.JEI_SYNC_X, topPos + Layout.BESIDE_SEARCH_BUTTON_Y);
         for (StockCategory category : displayedCategories) {
             int categoryY = Layout.CATEGORY_Y + category.y;
             AllGuiTextures categoryTexture = collapsedCategories.contains(category.network) ? CATEGORY_HIDDEN : CATEGORY_SHOWN;
@@ -529,6 +547,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
 
     private void renderCustomTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
         if (!menu.getCarried().isEmpty()) return;
+        if (renderJeiSyncTooltip(graphics, mouseX, mouseY)) return;
         HoveredEntry hovered = hoveredStock(mouseX, mouseY);
         if (hovered != null) {
             TerminalStock.Entry entry = hovered.entry();
@@ -556,6 +575,21 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         }
         Component action = hoveredActionTooltip(mouseX, mouseY);
         if (action != null) graphics.renderTooltip(font, action, mouseX, mouseY);
+    }
+
+    private boolean renderJeiSyncTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+        if (!leftPanelVisible() || itemScroll.getValue(0) >= 1
+                || !isJeiLoaded()
+                || !insideLeft(mouseX, mouseY, Layout.JEI_SYNC_X, Layout.BESIDE_SEARCH_BUTTON_Y,
+                Layout.JEI_SYNC_SIZE, Layout.JEI_SYNC_SIZE)) return false;
+        SearchSyncMode mode = AllConfigs.client().syncRecipeViewerSearch.get();
+        String key = "gui.stock_keeper.jei_sync." + mode.getSerializedName();
+        graphics.renderComponentTooltip(font, List.of(
+                CreateLang.translate(key).component(),
+                CreateLang.translate(key + ".description").style(ChatFormatting.GRAY).component(),
+                CreateLang.translate("gui.stock_keeper.click_to_cycle")
+                        .style(ChatFormatting.DARK_GRAY).style(ChatFormatting.ITALIC).component()), mouseX, mouseY);
+        return true;
     }
 
     private List<Component> stockTooltip(TerminalStock.Entry entry) {
@@ -596,6 +630,15 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         }
         if (leftPanelVisible() && button == 1 && searchBox.isMouseOver(mouseX, mouseY)) {
             searchBox.setValue(""); searchBox.setFocused(true); itemScroll.startWithValue(0); return true;
+        }
+        if (leftPanelVisible() && button == 0 && itemScroll.getChaseTarget() == 0
+                && isJeiLoaded()
+                && insideLeft(mouseX, mouseY, Layout.JEI_SYNC_X, Layout.BESIDE_SEARCH_BUTTON_Y,
+                Layout.JEI_SYNC_SIZE, Layout.JEI_SYNC_SIZE)) {
+            SearchSyncMode.cycleConfig();
+            syncJEI(false);
+            playUiSound(SoundEvents.UI_BUTTON_CLICK.value(), 1, 1);
+            return true;
         }
         if (button == 0 && handleModuleToggle(mouseX, mouseY)) return true;
         if (button == 0 && handleOrderAction(mouseX, mouseY)) return true;
@@ -699,14 +742,18 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
             int direction = (int) Math.signum(dy);
             if (mouseY >= basketY() - 4 && mouseY <= basketY() - 4 + Layout.BASKET_MOUSE_HEIGHT) {
                 HoveredEntry hovered = hoveredStock((int) mouseX, (int) mouseY);
-                if (hasControlDown() && hovered != null && hovered.entry().network() != null) {
+                if (hovered != null && hovered.area() == HoveredArea.BASKET
+                        && hovered.entry().network() != null) {
                     TerminalStock.Entry entry = hovered.entry();
-                    basket.change(new TerminalData.Selection(new ItemStackKey(entry.stack()), entry.network()), direction);
+                    TerminalData.Selection selection = new TerminalData.Selection(new ItemStackKey(entry.stack()), entry.network());
+                    int transfer = Mth.ceil(Math.abs(dy)) * (hasControlDown() ? 10 : 1);
+                    if (basket.change(selection, dy < 0 ? -transfer : transfer))
+                        playUiSound(AllSoundEvents.SCROLL_VALUE.getMainEvent(), 0.25f, 1.2f);
                 } else basketOffset = Math.clamp(basketOffset - direction, 0, Math.max(0, basket.size() - Layout.BASKET_SIZE));
                 return true;
             }
-            float target = Mth.clamp(itemScroll.getChaseTarget() + (float) Math.ceil(Math.abs(dy))
-                    * (float) -Math.signum(dy), 0, getMaxScroll());
+            int directionRows = (int) (Math.ceil(Math.abs(dy)) * -Math.signum(dy));
+            float target = Mth.clamp(Math.round(itemScroll.getChaseTarget() + directionRows), 0, getMaxScroll());
             itemScroll.chase(target, 0.5, Chaser.EXP);
             return true;
         }
@@ -727,6 +774,34 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         if (key == 257 && hasShiftDown() && leftPanelVisible() && basket.valid()) { basket.submit(menu); return true; }
         if (searchBox.isFocused() && key != 256) return searchBox.keyPressed(key, scan, modifiers) || searchBox.canConsumeInput();
         return super.keyPressed(key, scan, modifiers);
+    }
+
+    private boolean shouldSyncFromJEI() {
+        return isJeiLoaded()
+                && CreateJEI.runtime != null
+                && CreateJEI.runtime.getIngredientListOverlay().hasKeyboardFocus()
+                && !previousJEISearchText.equals(CreateJEI.runtime.getIngredientFilter().getFilterText());
+    }
+
+    private void syncJEI(boolean fromJei) {
+        if (!isJeiLoaded() || CreateJEI.runtime == null) return;
+        SearchSyncMode mode = AllConfigs.client().syncRecipeViewerSearch.get();
+        if (mode == SearchSyncMode.NONE) return;
+        IIngredientFilter filter = CreateJEI.runtime.getIngredientFilter();
+        if (mode.isBothOr(SearchSyncMode.SYNC_FROM_JEI) && fromJei) {
+            previousJEISearchText = filter.getFilterText();
+            searchBox.setValue(previousJEISearchText);
+        } else if (mode.isBothOr(SearchSyncMode.SYNC_FROM_STOCK_KEEPER) && !fromJei) {
+            filter.setFilterText(searchBox.getValue());
+        }
+    }
+
+    private boolean isJeiLoaded() {
+        return com.simibubi.create.compat.Mods.JEI.isLoaded();
+    }
+
+    private void playUiSound(SoundEvent sound, float volume, float pitch) {
+        minecraft.getSoundManager().play(SimpleSoundInstance.forUI(sound, pitch, volume * 0.25f));
     }
 
     private enum HoveredArea { STOCK, BASKET }

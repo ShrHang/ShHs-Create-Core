@@ -60,18 +60,19 @@ final class TerminalBasket {
         return true;
     }
 
-    void change(TerminalData.Selection key, int delta) {
-        if (key.network() == null) return;
+    boolean change(TerminalData.Selection key, int delta) {
+        if (key.network() == null) return false;
         TerminalStock.Entry stock = lookup(key);
         int old = basket.getOrDefault(key, 0);
         if (delta > 0 && (stock == null || !stock.requestable()
-                || basket.size() >= TerminalData.MAX_ORDER_LINES && old == 0)) return;
+                || basket.size() >= TerminalData.MAX_ORDER_LINES && old == 0)) return false;
         long max = stock == null ? old : stock.amount();
         int total = basket.values().stream().mapToInt(Integer::intValue).sum();
         long upper = Math.clamp((long) TerminalData.MAX_ITEMS - total + old, 0L, max);
         int amount = (int) Math.clamp((long) old + delta, 0L, upper);
         if (amount == 0) basket.remove(key); else basket.put(key, amount);
         submission = null;
+        return amount != old;
     }
 
 }
