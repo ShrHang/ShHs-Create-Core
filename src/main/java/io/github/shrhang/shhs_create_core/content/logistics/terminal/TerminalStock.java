@@ -15,6 +15,8 @@ import io.github.shrhang.shhs_create_core.compat.Mods;
 import io.github.shrhang.shhs_create_core.compat.fluidlogistics.FluidLogistics;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -43,6 +45,14 @@ public final class TerminalStock {
     private static final Map<CacheKey, Cached> CACHE = new HashMap<>();
 
     private TerminalStock() {
+    }
+
+    public static void init() {
+        NeoForge.EVENT_BUS.addListener(TerminalStock::onServerStopped);
+    }
+
+    private static void onServerStopped(ServerStoppedEvent event) {
+        clearCache();
     }
 
     static void clearCache() {
