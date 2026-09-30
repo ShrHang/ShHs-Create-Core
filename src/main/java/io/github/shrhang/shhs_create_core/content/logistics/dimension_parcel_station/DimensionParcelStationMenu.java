@@ -1,8 +1,7 @@
 package io.github.shrhang.shhs_create_core.content.logistics.dimension_parcel_station;
 
 import com.simibubi.create.Create;
-import io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalPackets;
-import io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalStock;
+import io.github.shrhang.shhs_create_core.content.logistics.LogisticsPackets;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsMenuTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -58,7 +57,7 @@ public class DimensionParcelStationMenu extends AbstractContainerMenu {
         if (!(player.level().getBlockEntity(pos) instanceof DimensionParcelStationBlockEntity station))
             return;
         ListTag routes = new ListTag();
-        for (UUID network : TerminalStock.connectedNetworks(station)) {
+        for (UUID network : DimensionParcelStationRouting.connectedNetworks(station)) {
             if (!Create.LOGISTICS.mayInteract(network, player))
                 continue;
             CompoundTag route = new CompoundTag();
@@ -68,7 +67,7 @@ public class DimensionParcelStationMenu extends AbstractContainerMenu {
         }
         CompoundTag tag = new CompoundTag();
         tag.put("Routes", routes);
-        TerminalPackets.send(player, containerId, session, 0, 0, true, tag);
+        LogisticsPackets.send(player, containerId, session, 0, 0, true, tag);
     }
 
     public void receiveRoutes(UUID session, CompoundTag tag) {

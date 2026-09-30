@@ -3,7 +3,7 @@ package io.github.shrhang.shhs_create_core.content.event;
 import io.github.shrhang.shhs_create_core.content.fluid.sprayer.SprayerOutlineHandler;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.OpenPortableStockTickerPacket;
 import io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerClientData;
-import io.github.shrhang.shhs_create_core.content.logistics.terminal.OpenDimensionLogisticsTerminalPacket;
+import io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalPackets;
 import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
@@ -44,7 +44,7 @@ public class ClientEvents {
             PacketDistributor.sendToServer(OpenPortableStockTickerPacket.INSTANCE);
         }
         while (OPEN_DIMENSION_LOGISTICS_TERMINAL.getKeybind().consumeClick()) {
-            PacketDistributor.sendToServer(OpenDimensionLogisticsTerminalPacket.INSTANCE);
+            PacketDistributor.sendToServer(TerminalPackets.Open.INSTANCE);
         }
     }
 }

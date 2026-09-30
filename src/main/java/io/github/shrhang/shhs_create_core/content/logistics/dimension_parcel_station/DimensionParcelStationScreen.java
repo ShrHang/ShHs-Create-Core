@@ -1,12 +1,9 @@
 package io.github.shrhang.shhs_create_core.content.logistics.dimension_parcel_station;
 
-import io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalData;
-import io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalPackets;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.fml.ModList;
@@ -48,19 +45,19 @@ public class DimensionParcelStationScreen extends AbstractContainerScreen<Dimens
             selectedNetwork = null;
             updateRoute();
         }).bounds(leftPos + 12, y, 236, 20).build());
-        address = new EditBox(font, leftPos + 12, y + 27, 168, 18, TerminalData.text("address"));
+        address = new EditBox(font, leftPos + 12, y + 27, 168, 18, text("address"));
         address.setMaxLength(64);
         addRenderableWidget(address);
-        saveAddress = addRenderableWidget(Button.builder(TerminalData.text("save"), ignored -> {
+        saveAddress = addRenderableWidget(Button.builder(text("save"), ignored -> {
             if (selectedNetwork == null)
                 return;
-            CompoundTag data = new CompoundTag();
-            data.putUUID("Network", selectedNetwork);
-            data.putString("Address", address.getValue());
-            PacketDistributor.sendToServer(new TerminalPackets.Action(
-                    menu.containerId, menu.session, TerminalPackets.ADDRESS, data));
+            DimensionParcelStationPackets.requestAddress(menu, selectedNetwork, address.getValue());
         }).bounds(leftPos + 185, y + 26, 63, 20).build());
         updateRoute();
+    }
+
+    private static Component text(String key, Object... args) {
+        return Component.translatable("text.shhs_create_core.terminal." + key, args);
     }
 
     private void updateRoute() {
@@ -70,7 +67,7 @@ public class DimensionParcelStationScreen extends AbstractContainerScreen<Dimens
         address.setEditable(saveAddress.active);
         if (count == 0) {
             selectedNetwork = null;
-            networkButton.setMessage(TerminalData.text("no_routes"));
+            networkButton.setMessage(text("no_routes"));
             return;
         }
         routeIndex = Math.floorMod(routeIndex, count);
@@ -80,12 +77,12 @@ public class DimensionParcelStationScreen extends AbstractContainerScreen<Dimens
             address.setValue(route.getString("Address"));
             selectedNetwork = network;
         }
-        networkButton.setMessage(TerminalData.text(
+        networkButton.setMessage(text(
                 "route", routeIndex + 1, count, network.toString().substring(0, 8)));
     }
 
     private void addToggle(DimensionParcelStationBlockEntity.Channel channel, int x, int y) {
-        Button button = Button.builder(label(channel), ignored -> PacketDistributor.sendToServer(new DimensionParcelStationTogglePacket(
+        Button button = Button.builder(label(channel), ignored -> PacketDistributor.sendToServer(new DimensionParcelStationPackets.Toggle(
                 menu.getPos(), channel.ordinal())))
                 .bounds(x, y, 90, 20)
                 .build();
@@ -125,7 +122,7 @@ public class DimensionParcelStationScreen extends AbstractContainerScreen<Dimens
                 : Component.translatable("text.shhs_create_core.dimension_parcel_station.network_status",
                 menu.getNetId(), menu.getStationCount());
         graphics.drawString(font, network, 10, 28, 0xd7e7ee, false);
-        graphics.drawString(font, TerminalData.text("address_hint"), 12, imageHeight - 38, 0xd7e7ee, false);
+        graphics.drawString(font, text("address_hint"), 12, imageHeight - 38, 0xd7e7ee, false);
         if (!menu.mayConfigure())
             graphics.drawString(font, Component.translatable(
                     "text.shhs_create_core.dimension_parcel_station.read_only"), 10,

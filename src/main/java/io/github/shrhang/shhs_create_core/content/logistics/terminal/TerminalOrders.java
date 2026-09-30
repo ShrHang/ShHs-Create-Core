@@ -1,5 +1,7 @@
 package io.github.shrhang.shhs_create_core.content.logistics.terminal;
 
+import io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalOrderStore.Order;
+import io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalOrderStore.Shipment;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.simibubi.create.content.logistics.BigItemStack;
@@ -15,101 +17,45 @@ import com.wintercogs.beyonddimensions.common.block.entity.NetedBlockEntity;
 import io.github.shrhang.shhs_create_core.compat.Mods;
 import io.github.shrhang.shhs_create_core.compat.fluidlogistics.terminal.FluidLogisticsTerminalOrderCompat;
 import io.github.shrhang.shhs_create_core.content.logistics.dimension_parcel_station.DimensionParcelStationBlockEntity;
+import io.github.shrhang.shhs_create_core.content.logistics.dimension_parcel_station.DimensionParcelStationRouting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.GlobalPos;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
-import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.saveddata.SavedData;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/** Real items live here after submission, never in a Screen or a menu instance. */
-public final class TerminalOrders extends SavedData {
-    private static final Factory<TerminalOrders> FACTORY = new Factory<>(TerminalOrders::new, TerminalOrders::load);
-    private final Map<UUID, Order> orders = new LinkedHashMap<>();
-    private int nextLogisticsId = Integer.MIN_VALUE;
+/** Order submission, delivery and collection over persistent server state. */
+public final class TerminalOrders {
+    private final TerminalOrderStore store;
+
+    TerminalOrders(TerminalOrderStore store) {
+        this.store = store;
+    }
 
     public static TerminalOrders get(MinecraftServer server) {
-        return server.overworld().getDataStorage().computeIfAbsent(FACTORY, "ShHsTerminalOrders");
-    }
-
-    private static final class Order {
-        final UUID id;
-        final UUID owner;
-        final int netId;
-        boolean ended;
-        final List<ItemStack> held = new ArrayList<>();
-        final List<TerminalPackageEntry> heldResources = new ArrayList<>();
-        final List<ItemStack> packages = new ArrayList<>();
-        private final List<Shipment> shipments = new ArrayList<>();
-
-        Order(UUID id, UUID owner, int netId) {
-            this.id = id;
-            this.owner = owner;
-            this.netId = netId;
-        }
-
-        boolean ready() {
-            return ended || shipments.stream().allMatch(shipment -> shipment.remaining.isEmpty());
-        }
-
-        boolean visible() {
-            return !ready() || !held.isEmpty() || !heldResources.isEmpty() || !packages.isEmpty();
-        }
-    }
-
-    private static final class Shipment {
-        int id;
-        UUID network;
-        GlobalPos station;
-        String address;
-        final List<ItemStack> requested = new ArrayList<>();
-        final List<ItemStack> remaining = new ArrayList<>();
-        final Set<String> received = new HashSet<>();
-    }
-
-    private int allocateId() {
-        Set<Integer> used = new HashSet<>();
-        orders.values().forEach(order -> order.shipments.forEach(shipment -> used.add(shipment.id)));
-        while (nextLogisticsId == -1 || used.contains(nextLogisticsId))
-            nextLogisticsId++;
-        return nextLogisticsId++;
-    }
-
-    private List<Order> forPlayer(UUID player) {
-        return orders.values().stream().filter(o -> o.owner.equals(player) && o.visible()).toList();
+        return TerminalOrderStore.get(server).service;
     }
 
     public boolean ownsLogisticsId(int id) {
-        return orders.values().stream().anyMatch(order -> order.shipments.stream().anyMatch(shipment -> shipment.id == id));
+        return store.orders.values().stream().anyMatch(order -> order.shipments.stream().anyMatch(shipment -> shipment.id == id));
     }
 
     public boolean submit(ServerPlayer player, DimensionsNet net, UUID submission, List<TerminalStock.Entry> entries) {
-        if (orders.containsKey(submission))
-            return orders.get(submission).owner.equals(player.getUUID());
+        if (store.orders.containsKey(submission))
+            return store.orders.get(submission).owner.equals(player.getUUID());
         if (entries.isEmpty() || entries.size() > TerminalData.MAX_ORDER_LINES
-                || forPlayer(player.getUUID()).size() >= TerminalData.MAX_ACTIVE_ORDERS)
+                || store.forPlayer(player.getUUID()).size() >= TerminalData.MAX_ACTIVE_ORDERS)
             return false;
         Map<TerminalData.Selection, Long> demand = new LinkedHashMap<>();
         long total = 0;
@@ -122,7 +68,7 @@ public final class TerminalOrders extends SavedData {
                 return false;
             demand.merge(new TerminalData.Selection(new ItemStackKey(entry.stack()), entry.network()), entry.amount(), Long::sum);
         }
-        var routes = TerminalStock.routes(player, net.getId());
+        var routes = DimensionParcelStationRouting.routes(player, net.getId());
         Map<UUID, List<BigItemStack>> external = new LinkedHashMap<>();
         for (var entry : demand.entrySet()) {
             var selection = entry.getKey();
@@ -158,7 +104,7 @@ public final class TerminalOrders extends SavedData {
                 if (totals.getOrDefault(new ItemStackKey(stack.stack), 0L) != stack.count)
                     return false;
             Shipment shipment = new Shipment();
-            shipment.id = allocateId();
+            shipment.id = store.allocateId();
             shipment.network = route.network();
             shipment.station = route.station();
             shipment.address = route.address();
@@ -173,8 +119,8 @@ public final class TerminalOrders extends SavedData {
                         r.finalLink(), r.packageCounter(), shipment.id, r.context()));
             }
         }
-        orders.put(order.id, order);
-        setDirty();
+        store.orders.put(order.id, order);
+        store.setDirty();
         // Create's convenience method stops after 100 boxes. Drain this bounded request explicitly instead.
         for (var batch : planned.asMap().entrySet()) {
             PackagerBlockEntity packager = batch.getKey();
@@ -198,7 +144,7 @@ public final class TerminalOrders extends SavedData {
         if (!PackageItem.hasOrderData(box))
             return null;
         int id = PackageItem.getOrderId(box);
-        for (Order order : orders.values()) for (Shipment shipment : order.shipments) {
+        for (Order order : store.orders.values()) for (Shipment shipment : order.shipments) {
             if (shipment.id != id || !shipment.address.equals(PackageItem.getAddress(box)))
                 continue;
             if (!(level.getBlockEntity(target) instanceof NetedBlockEntity targetBlock)
@@ -248,7 +194,7 @@ public final class TerminalOrders extends SavedData {
                 else
                     TerminalData.append(order.held, entry.key(), held);
             }
-            setDirty();
+            store.setDirty();
             return true;
         }
         return null;
@@ -301,7 +247,7 @@ public final class TerminalOrders extends SavedData {
     }
 
     public void claim(ServerPlayer player, UUID id, boolean endWaiting) {
-        Order order = orders.get(id);
+        Order order = store.orders.get(id);
         if (order == null || !order.owner.equals(player.getUUID()))
             return;
         if (endWaiting)
@@ -317,16 +263,16 @@ public final class TerminalOrders extends SavedData {
                 iterator.remove();
         }
         player.containerMenu.broadcastChanges();
-        setDirty();
+        store.setDirty();
     }
 
     public void claimReady(ServerPlayer player) {
-        forPlayer(player.getUUID()).stream().filter(Order::ready).map(order -> order.id).toList()
+        store.forPlayer(player.getUUID()).stream().filter(Order::ready).map(order -> order.id).toList()
                 .forEach(id -> claim(player, id, false));
     }
 
     public void endIncomplete(ServerPlayer player) {
-        forPlayer(player.getUUID()).stream().filter(order -> !order.ready()).map(order -> order.id).toList()
+        store.forPlayer(player.getUUID()).stream().filter(order -> !order.ready()).map(order -> order.id).toList()
                 .forEach(id -> claim(player, id, true));
     }
 
@@ -366,7 +312,7 @@ public final class TerminalOrders extends SavedData {
 
     public List<TerminalOrderSummary> summaries(ServerPlayer player) {
         List<TerminalOrderSummary> result = new ArrayList<>();
-        for (Order order : forPlayer(player.getUUID())) {
+        for (Order order : store.forPlayer(player.getUUID())) {
             Map<TerminalData.Selection, Long> requested = new LinkedHashMap<>();
             Map<TerminalData.Selection, Long> remaining = new HashMap<>();
             for (Shipment shipment : order.shipments) {
@@ -401,115 +347,4 @@ public final class TerminalOrders extends SavedData {
         return packages;
     }
 
-    private static TerminalOrders load(CompoundTag tag, HolderLookup.Provider registries) {
-        TerminalOrders data = new TerminalOrders();
-        data.nextLogisticsId = tag.contains("NextId") ? tag.getInt("NextId") : Integer.MIN_VALUE;
-        ListTag list = tag.getList("Orders", Tag.TAG_COMPOUND);
-        for (int i = 0; i < list.size(); i++) {
-            CompoundTag t = list.getCompound(i);
-            if (!t.hasUUID("Id") || !t.hasUUID("Owner"))
-                continue;
-            Order order = new Order(t.getUUID("Id"), t.getUUID("Owner"), t.getInt("Net"));
-            order.ended = t.getBoolean("Ended");
-            order.held.addAll(TerminalData.stacks(t.getList("Held", Tag.TAG_COMPOUND), registries));
-            ListTag heldResources = t.getList("HeldResources", Tag.TAG_COMPOUND);
-            for (int j = 0; j < heldResources.size(); j++) {
-                CompoundTag resource = heldResources.getCompound(j);
-                ItemStack key = ItemStack.parseOptional(registries, resource.getCompound("Key"));
-                ResourceLocation type = ResourceLocation.tryParse(resource.getString("Type"));
-                int amount = resource.getInt("Amount");
-                if (!key.isEmpty() && type != null && amount > 0)
-                    order.heldResources.add(new TerminalPackageEntry(key, amount, type));
-            }
-            order.packages.addAll(TerminalData.stacks(t.getList("Packages", Tag.TAG_COMPOUND), registries));
-            ListTag shipments = t.getList("Shipments", Tag.TAG_COMPOUND);
-            for (int j = 0; j < shipments.size(); j++) {
-                CompoundTag s = shipments.getCompound(j);
-                Shipment shipment = new Shipment();
-                shipment.id = s.getInt("Id");
-                shipment.network = s.getUUID("Network");
-                shipment.station = GlobalPos.of(ResourceKey.create(Registries.DIMENSION,
-                        ResourceLocation.parse(s.getString("Dimension"))), BlockPos.of(s.getLong("Pos")));
-                shipment.address = s.getString("Address");
-                shipment.requested.addAll(TerminalData.stacks(s.getList("Requested", Tag.TAG_COMPOUND), registries));
-                shipment.remaining.addAll(TerminalData.stacks(s.getList("Remaining", Tag.TAG_COMPOUND), registries));
-                for (Tag fragment : s.getList("Received", Tag.TAG_STRING))
-                    shipment.received.add(fragment.getAsString());
-                order.shipments.add(shipment);
-            }
-            migrateRequested(order);
-            data.orders.put(order.id, order);
-        }
-        return data;
-    }
-
-    private static void migrateRequested(Order order) {
-        if (order.shipments.stream().noneMatch(shipment -> shipment.requested.isEmpty()))
-            return;
-        for (Shipment shipment : order.shipments) {
-            shipment.requested.clear();
-            shipment.remaining.forEach(stack -> TerminalData.append(shipment.requested, stack, stack.getCount()));
-        }
-        if (order.shipments.isEmpty())
-            return;
-        // Old saves did not retain the originating network for delivered items. Assign them
-        // deterministically to a matching shipment, falling back to the first shipment.
-        List<ItemStack> delivered = order.held.stream().map(ItemStack::copy)
-                .collect(Collectors.toCollection(ArrayList::new));
-        for (ItemStack box : order.packages) {
-            var contents = PackageItem.getContents(box);
-            for (int i = 0; i < contents.getSlots(); i++)
-                if (!contents.getStackInSlot(i).isEmpty())
-                    delivered.add(contents.getStackInSlot(i).copy());
-        }
-        for (ItemStack stack : delivered) {
-            Shipment target = order.shipments.stream().filter(shipment -> shipment.requested.stream()
-                    .anyMatch(expected -> ItemStack.isSameItemSameComponents(expected, stack)))
-                    .findFirst().orElse(order.shipments.getFirst());
-            TerminalData.append(target.requested, stack, stack.getCount());
-        }
-    }
-
-    @Override
-    public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
-        tag.putInt("NextId", nextLogisticsId);
-        ListTag list = new ListTag();
-        for (Order order : orders.values()) {
-            CompoundTag t = new CompoundTag();
-            t.putUUID("Id", order.id);
-            t.putUUID("Owner", order.owner);
-            t.putInt("Net", order.netId);
-            t.putBoolean("Ended", order.ended);
-            t.put("Held", TerminalData.stacks(order.held, registries));
-            ListTag heldResources = new ListTag();
-            for (TerminalPackageEntry entry : order.heldResources) {
-                CompoundTag resource = new CompoundTag();
-                resource.put("Key", entry.key().save(registries));
-                resource.putString("Type", entry.resourceType().toString());
-                resource.putInt("Amount", entry.amount());
-                heldResources.add(resource);
-            }
-            t.put("HeldResources", heldResources);
-            t.put("Packages", TerminalData.stacks(order.packages, registries));
-            ListTag shipments = new ListTag();
-            for (Shipment shipment : order.shipments) {
-                CompoundTag s = new CompoundTag();
-                s.putInt("Id", shipment.id);
-                s.putUUID("Network", shipment.network);
-                s.putString("Dimension", shipment.station.dimension().location().toString());
-                s.putLong("Pos", shipment.station.pos().asLong());
-                s.putString("Address", shipment.address);
-                s.put("Requested", TerminalData.stacks(shipment.requested, registries));
-                s.put("Remaining", TerminalData.stacks(shipment.remaining, registries));
-                ListTag fragments = new ListTag();
-                shipment.received.stream().sorted().forEach(fragment -> fragments.add(StringTag.valueOf(fragment)));
-                s.put("Received", fragments);
-                shipments.add(s);
-            }
-            t.put("Shipments", shipments);
-            list.add(t);
-        }
-        tag.put("Orders", list);
-        return tag;
-    }
 }

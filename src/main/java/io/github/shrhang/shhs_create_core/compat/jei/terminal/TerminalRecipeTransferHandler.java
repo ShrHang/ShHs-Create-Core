@@ -6,7 +6,6 @@ import mezz.jei.api.constants.RecipeTypes;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.transfer.*;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.crafting.*;
@@ -30,8 +29,7 @@ public final class TerminalRecipeTransferHandler implements IRecipeTransferHandl
         if (TerminalCrafting.plan(recipe.value(), menu.availableForCrafting()) == null)
             return helpers.createUserErrorWithTooltip(TerminalData.text("missing_materials"));
         if (doTransfer) {
-            CompoundTag tag = new CompoundTag(); tag.putString("Recipe", recipe.id().toString()); tag.putBoolean("Max", maxTransfer);
-            TerminalPackets.request(menu, TerminalPackets.FILL, tag);
+            TerminalPackets.requestFill(menu, recipe.id(), maxTransfer);
         }
         return null;
     }

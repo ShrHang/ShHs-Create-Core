@@ -15,8 +15,6 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
@@ -26,11 +24,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -63,7 +59,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         static final int ORDER_ITEM_X = 16, ORDER_ITEM_Y = 34, ORDER_ITEM_STEP = 18;
     }
 
-    private final LinkedHashMap<TerminalData.Selection, Integer> basket = new LinkedHashMap<>();
+    private final TerminalBasket basket;
     private final Set<UUID> collapsedCategories = new HashSet<>();
     private final LerpedFloat itemScroll = LerpedFloat.linear().startWithValue(0);
     private List<StockCategory> displayedCategories = List.of();
@@ -73,12 +69,13 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
     private final boolean compactLayout;
     private boolean rightPanelTab, scrollHandleActive;
     private boolean orderVisible, craftVisible;
-    private UUID submission, selectedOrder;
+    private UUID selectedOrder;
     private long seenRevision = -1;
     private String lastSearch = "";
 
     public DimensionLogisticsTerminalScreen(DimensionLogisticsTerminalMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
+        basket = new TerminalBasket(() -> menu.snapshots.current().stock());
         compactLayout = menu.compactLayout;
         windowHeight = menu.windowHeight;
         orderVisible = menu.orderCanShow;
@@ -112,7 +109,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
     private void refreshSearchResults() {
         String query = lastSearch.toLowerCase(Locale.ROOT).strip();
         Map<UUID, List<TerminalStock.Entry>> grouped = new HashMap<>();
-        for (TerminalStock.Entry entry : menu.clientStock) {
+        for (TerminalStock.Entry entry : menu.snapshots.current().stock()) {
             if (!query.isEmpty()
                     && !entry.stack().getHoverName().getString().toLowerCase(Locale.ROOT).contains(query)
                     && !BuiltInRegistries.ITEM.getKey(entry.stack().getItem()).toString().contains(query)) continue;
@@ -122,7 +119,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         sources.sort(Comparator.nullsFirst(Comparator.naturalOrder()));
         List<StockCategory> categories = new ArrayList<>(sources.size());
         for (UUID source : sources) {
-            String address = source == null ? "" : menu.clientSourceAddresses.getOrDefault(source, "");
+            String address = source == null ? "" : menu.snapshots.current().addresses().getOrDefault(source, "");
             Component name = source == null ? TerminalData.text("dimension_category", menu.netId)
                     : address.isBlank() ? TerminalData.text("storage_category", shortNetwork(source))
                     : TerminalData.text("storage_category_address", shortNetwork(source), address);
@@ -162,12 +159,9 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
     @Override
     protected void containerTick() {
         super.containerTick();
-        if (menu.clientRevision != seenRevision) {
-            seenRevision = menu.clientRevision;
-            if (submission != null && submission.equals(menu.acceptedSubmission)) {
-                basket.clear();
-                submission = null;
-            }
+        if (menu.snapshots.current().revision() != seenRevision) {
+            seenRevision = menu.snapshots.current().revision();
+            basket.acknowledge(menu.snapshots.current().acceptedSubmission());
             refreshSearchResults();
         }
         itemScroll.tickChaser();
@@ -177,16 +171,16 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
     }
 
     private TerminalOrderSummary currentOrder() {
-        if (menu.clientOrders.isEmpty()) {
+        if (menu.snapshots.current().orders().isEmpty()) {
             selectedOrder = null;
             orderIndex = 0;
             return null;
         }
         if (selectedOrder != null)
-            for (int i = 0; i < menu.clientOrders.size(); i++)
-                if (menu.clientOrders.get(i).id().equals(selectedOrder)) { orderIndex = i; break; }
-        orderIndex = Math.clamp(orderIndex, 0, menu.clientOrders.size() - 1);
-        TerminalOrderSummary order = menu.clientOrders.get(orderIndex);
+            for (int i = 0; i < menu.snapshots.current().orders().size(); i++)
+                if (menu.snapshots.current().orders().get(i).id().equals(selectedOrder)) { orderIndex = i; break; }
+        orderIndex = Math.clamp(orderIndex, 0, menu.snapshots.current().orders().size() - 1);
+        TerminalOrderSummary order = menu.snapshots.current().orders().get(orderIndex);
         selectedOrder = order.id();
         return order;
     }
@@ -197,43 +191,10 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         menu.setClientSlotActivity(rightPanelVisible(), rightPanelVisible() && craftVisible);
     }
 
-    private TerminalStock.Entry lookup(TerminalData.Selection selection) {
-        for (TerminalStock.Entry entry : menu.clientStock)
-            if (Objects.equals(entry.network(), selection.network()) && selection.key().equals(new ItemStackKey(entry.stack())))
-                return entry;
-        return null;
-    }
-
-    private boolean validBasket() {
-        if (basket.isEmpty() || basket.size() > TerminalData.MAX_ORDER_LINES) return false;
-        for (var selected : basket.entrySet()) {
-            TerminalStock.Entry entry = lookup(selected.getKey());
-            if (selected.getKey().network() == null || entry == null || !entry.requestable()
-                    || selected.getValue() > entry.amount()) return false;
-        }
-        return true;
-    }
-
-    private void submitSelection() {
-        if (!validBasket()) return;
-        if (submission == null) submission = UUID.randomUUID();
-        CompoundTag data = new CompoundTag();
-        data.putUUID("Submission", submission);
-        ListTag list = new ListTag();
-        basket.forEach((selection, amount) -> list.add(TerminalData.entry(new TerminalStock.Entry(
-                selection.key().copyStackWithCount(1), amount, selection.network(), true), menu.player.registryAccess())));
-        data.put("Items", list);
-        TerminalPackets.request(menu, TerminalPackets.SUBMIT, data);
-    }
-
     private void requestOrderAction(int operation, boolean needsCurrent) {
-        CompoundTag data = new CompoundTag();
-        if (needsCurrent) {
-            TerminalOrderSummary order = currentOrder();
-            if (order == null) return;
-            data.putUUID("Order", order.id());
-        }
-        TerminalPackets.request(menu, operation, data);
+        TerminalOrderSummary order = needsCurrent ? currentOrder() : null;
+        if (needsCurrent && order == null) return;
+        TerminalPackets.requestOrder(menu, operation, order == null ? null : order.id());
     }
 
     @Override
@@ -321,7 +282,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         return network.toString().substring(0, 8);
     }
 
-    private List<Map.Entry<TerminalData.Selection, Integer>> basketEntries() { return new ArrayList<>(basket.entrySet()); }
+    private List<Map.Entry<TerminalData.Selection, Integer>> basketEntries() { return basket.entries(); }
     private int basketY() { return topPos + windowHeight - Layout.BASKET_FROM_BOTTOM; }
 
     private void renderBasket(GuiGraphics graphics) {
@@ -329,7 +290,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         basketOffset = Math.clamp(basketOffset, 0, Math.max(0, entries.size() - Layout.BASKET_SIZE));
         for (int slot = 0; slot < Layout.BASKET_SIZE && slot + basketOffset < entries.size(); slot++) {
             var value = entries.get(slot + basketOffset);
-            TerminalStock.Entry stock = lookup(value.getKey());
+            TerminalStock.Entry stock = basket.lookup(value.getKey());
             renderEntry(graphics, value.getKey().key().copyStackWithCount(1), value.getValue(),
                     Layout.STOCK_X + slot * Layout.CELL, basketY() - topPos, true,
                     stock == null || !stock.requestable() || stock.amount() < value.getValue(), false);
@@ -358,7 +319,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
     }
 
     private void renderCollectButton(GuiGraphics graphics, int mouseX, int mouseY) {
-        boolean active = validBasket();
+        boolean active = basket.valid();
         if (active && isCollectHovered(mouseX, mouseY)) SEND_HOVER.render(graphics,
                 leftPos + Layout.SEND_TEXTURE_X, topPos + windowHeight - Layout.SEND_TEXTURE_FROM_BOTTOM);
         Component label = TerminalData.text("collect");
@@ -389,7 +350,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
             drawFitted(graphics, TerminalData.text("no_orders"), x + Layout.INFO_X, y + Layout.INFO_Y, Layout.INFO_WIDTH);
             return;
         }
-        Component status = TerminalData.text("order_status", orderIndex + 1, menu.clientOrders.size(),
+        Component status = TerminalData.text("order_status", orderIndex + 1, menu.snapshots.current().orders().size(),
                 TerminalData.text(order.ready() ? "ready_short" : "waiting_short"), order.packages());
         drawFitted(graphics, status, x + Layout.INFO_X, y + Layout.INFO_Y, Layout.INFO_WIDTH);
         for (int i = 0; i < Math.min(TerminalData.MAX_ORDER_LINES, order.lines().size()); i++) {
@@ -516,7 +477,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
             int index = basketOffset + x / Layout.CELL;
             if (index < list.size()) {
                 var value = list.get(index);
-                TerminalStock.Entry stock = lookup(value.getKey());
+                TerminalStock.Entry stock = basket.lookup(value.getKey());
                 return new HoveredEntry(new TerminalStock.Entry(value.getKey().key().copyStackWithCount(1),
                         value.getValue(), value.getKey().network(), stock != null && stock.requestable()), HoveredArea.BASKET);
             }
@@ -638,7 +599,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         }
         if (button == 0 && handleModuleToggle(mouseX, mouseY)) return true;
         if (button == 0 && handleOrderAction(mouseX, mouseY)) return true;
-        if (leftPanelVisible() && button == 0 && isCollectHovered(mouseX, mouseY) && validBasket()) { submitSelection(); return true; }
+        if (leftPanelVisible() && button == 0 && isCollectHovered(mouseX, mouseY) && basket.valid()) { basket.submit(menu); return true; }
         if (leftPanelVisible() && button == 0 && beginScrollbarDrag(mouseX, mouseY)) return true;
         if (button == 0 && handleCategoryToggle(mouseX, mouseY)) return true;
         HoveredEntry hovered = hoveredStock((int) mouseX, (int) mouseY);
@@ -647,15 +608,11 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
             if (hovered.area() == HoveredArea.STOCK && entry.network() == null && !entry.requestable()) return true;
             TerminalData.Selection selection = new TerminalData.Selection(new ItemStackKey(entry.stack()), entry.network());
             if (hovered.area() == HoveredArea.STOCK && entry.network() == null) {
-                CompoundTag data = new CompoundTag();
-                data.put("Stack", entry.stack().save(menu.player.registryAccess()));
-                data.putInt("Button", button);
-                data.putBoolean("QuickMove", hasShiftDown());
-                TerminalPackets.request(menu, TerminalPackets.LOCAL_CLICK, data);
+                TerminalPackets.requestLocalClick(menu, entry.stack(), button, hasShiftDown());
             } else if (entry.network() != null) {
                 int delta = hasShiftDown() ? entry.stack().getMaxStackSize() : 1;
                 if (hovered.area() == HoveredArea.BASKET || button == 1) delta = -delta;
-                change(selection, delta);
+                basket.change(selection, delta);
             }
             return true;
         }
@@ -698,15 +655,15 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
     }
 
     private void navigateOrder(int direction) {
-        if (menu.clientOrders.isEmpty()) return;
-        orderIndex = Math.floorMod(orderIndex + direction, menu.clientOrders.size());
-        selectedOrder = menu.clientOrders.get(orderIndex).id();
+        if (menu.snapshots.current().orders().isEmpty()) return;
+        orderIndex = Math.floorMod(orderIndex + direction, menu.snapshots.current().orders().size());
+        selectedOrder = menu.snapshots.current().orders().get(orderIndex).id();
     }
 
     private boolean handleDeposit(double mouseX, double mouseY) {
         if (!leftPanelVisible() || menu.getCarried().isEmpty() || !insideLeft(mouseX, mouseY, Layout.DEPOSIT_X,
                 Layout.DEPOSIT_Y, Layout.DEPOSIT_WIDTH, windowHeight - Layout.DEPOSIT_Y - 93)) return false;
-        TerminalPackets.request(menu, TerminalPackets.DEPOSIT, new CompoundTag());
+        TerminalPackets.requestDeposit(menu);
         return true;
     }
 
@@ -735,20 +692,6 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
                 && my >= topPos + y && my < topPos + y + height;
     }
 
-    private void change(TerminalData.Selection key, int delta) {
-        if (key.network() == null) return;
-        TerminalStock.Entry stock = lookup(key);
-        int old = basket.getOrDefault(key, 0);
-        if (delta > 0 && (stock == null || !stock.requestable()
-                || basket.size() >= TerminalData.MAX_ORDER_LINES && old == 0)) return;
-        long max = stock == null ? old : stock.amount();
-        int total = basket.values().stream().mapToInt(Integer::intValue).sum();
-        long upper = Math.clamp((long) TerminalData.MAX_ITEMS - total + old, 0L, max);
-        int amount = (int) Math.clamp((long) old + delta, 0L, upper);
-        if (amount == 0) basket.remove(key); else basket.put(key, amount);
-        submission = null;
-    }
-
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double dx, double dy) {
         if (leftPanelVisible() && mouseX >= leftPos + Layout.LEFT_MOUSE_X
@@ -758,7 +701,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
                 HoveredEntry hovered = hoveredStock((int) mouseX, (int) mouseY);
                 if (hasControlDown() && hovered != null && hovered.entry().network() != null) {
                     TerminalStock.Entry entry = hovered.entry();
-                    change(new TerminalData.Selection(new ItemStackKey(entry.stack()), entry.network()), direction);
+                    basket.change(new TerminalData.Selection(new ItemStackKey(entry.stack()), entry.network()), direction);
                 } else basketOffset = Math.clamp(basketOffset - direction, 0, Math.max(0, basket.size() - Layout.BASKET_SIZE));
                 return true;
             }
@@ -781,7 +724,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
     }
 
     @Override public boolean keyPressed(int key, int scan, int modifiers) {
-        if (key == 257 && hasShiftDown() && leftPanelVisible() && validBasket()) { submitSelection(); return true; }
+        if (key == 257 && hasShiftDown() && leftPanelVisible() && basket.valid()) { basket.submit(menu); return true; }
         if (searchBox.isFocused() && key != 256) return searchBox.keyPressed(key, scan, modifiers) || searchBox.canConsumeInput();
         return super.keyPressed(key, scan, modifiers);
     }

@@ -1,17 +1,11 @@
 package io.github.shrhang.shhs_create_core.content.logistics.dimension_parcel_station;
 
 import com.simibubi.create.Create;
-import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
-import com.wintercogs.beyonddimensions.api.capability.helper.unordered.FluidUnifiedStorageHandler;
-import com.wintercogs.beyonddimensions.api.capability.helper.unordered.ItemUnifiedStorageHandler;
 import com.wintercogs.beyonddimensions.api.dimensionnet.DimensionsNet;
 import com.wintercogs.beyonddimensions.common.block.entity.NetedBlockEntity;
 import io.github.shrhang.shhs_create_core.ShHsConfig;
 import io.github.shrhang.shhs_create_core.api.packager.VirtualInventoryIdentifier;
 import io.github.shrhang.shhs_create_core.api.packager.VirtualInventoryProvider;
-import io.github.shrhang.shhs_create_core.compat.Mods;
-import io.github.shrhang.shhs_create_core.compat.fluidlogistics.FluidLogistics;
-import io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalStock;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsBlockEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -26,11 +20,9 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import org.jetbrains.annotations.NotNull;
@@ -48,10 +40,7 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
     private boolean allowFluidOutput = true;
     private final Map<UUID, String> receiveAddresses = new HashMap<>();
 
-    private DimensionsNet handlerNet;
-    private StationItemHandler itemHandler;
-    private StationItemHandler repackagerItemHandler;
-    private StationFluidHandler fluidHandler;
+    private final DimensionParcelStationAccess access = new DimensionParcelStationAccess(this);
 
     public String getReceiveAddress(UUID network) {
         return receiveAddresses.getOrDefault(network, "");
@@ -59,7 +48,7 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
 
     public void setReceiveAddress(UUID network, String address, Player player) {
         if (!mayConfigure(player) || address.length() > 64
-                || !TerminalStock.connectedNetworks(this).contains(network)
+                || !DimensionParcelStationRouting.connectedNetworks(this).contains(network)
                 || !Create.LOGISTICS.mayInteract(network, player))
             return;
         address = address.strip();
@@ -90,7 +79,7 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
                 .tryReserve(serverLevel.getServer(), pos, netId))
             return false;
         super.setNetId(netId);
-        resetHandlers();
+        access.resetHandlers();
         level.invalidateCapabilities(worldPosition);
         sendBlockUpdated();
         return getNetId() == netId;
@@ -103,7 +92,7 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
                 DimensionParcelStationBindingIndex.get(serverLevel.getServer())
                         .release(GlobalPos.of(serverLevel.dimension(), worldPosition));
             super.setNetId(id);
-            resetHandlers();
+            access.resetHandlers();
             if (level != null) {
                 level.invalidateCapabilities(worldPosition);
                 sendBlockUpdated();
@@ -122,94 +111,24 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
 
     @Nullable
     public IItemHandlerModifiable getItemHandler(Direction side) {
-        if (side == null)
-            return null;
-        DimensionsNet net = getNet();
-        if (net == null)
-            return null;
-        BlockEntity neighbor = adjacentBlockEntity(side);
-        if (isFluidRepackager(neighbor)) {
-            if (!canAcceptMixedPackages() && !allowItemOutput)
-                return null;
-            ensureHandlers(net);
-            return repackagerItemHandler;
-        }
-        if ((!allowItemInput && !allowItemOutput) || !(neighbor instanceof PackagerBlockEntity)
-                || isFluidPackager(neighbor))
-            return null;
-        ensureHandlers(net);
-        return itemHandler;
+        return access.getItemHandler(side);
     }
 
     @Nullable
     public IFluidHandler getFluidHandler(Direction side) {
-        if (side == null)
-            return null;
-        DimensionsNet net = getNet();
-        if (net == null)
-            return null;
-        BlockEntity neighbor = adjacentBlockEntity(side);
-        if (isFluidRepackager(neighbor)) {
-            if (!canAcceptMixedPackages())
-                return null;
-            ensureHandlers(net);
-            return fluidHandler;
-        }
-        if ((!allowFluidInput && !allowFluidOutput) || !isFluidPackager(neighbor))
-            return null;
-        ensureHandlers(net);
-        return fluidHandler;
-    }
-
-    @Nullable
-    private BlockEntity adjacentBlockEntity(Direction side) {
-        return level == null ? null : level.getBlockEntity(worldPosition.relative(side));
+        return access.getFluidHandler(side);
     }
 
     public boolean isItemPackagerPlacementTarget() {
-        return getNetId() >= 0 && (allowItemInput || allowItemOutput);
+        return access.isItemPackagerPlacementTarget();
     }
 
     public boolean isFluidPackagerPlacementTarget() {
-        return getNetId() >= 0 && (allowFluidInput || allowFluidOutput);
-    }
-
-    private static boolean isFluidPackager(@Nullable BlockEntity blockEntity) {
-        return blockEntity != null && Mods.FLUIDLOGISTICS.runIfInstalled(() -> () ->
-                FluidLogistics.isFluidPackager(blockEntity)).orElse(false);
-    }
-
-    private static boolean isFluidRepackager(@Nullable BlockEntity blockEntity) {
-        return blockEntity != null && Mods.FLUIDLOGISTICS.runIfInstalled(() -> () ->
-                FluidLogistics.isFluidRepackager(blockEntity)).orElse(false);
-    }
-
-    private boolean canAcceptMixedPackages() {
-        return allowItemInput && allowFluidInput;
+        return access.isFluidPackagerPlacementTarget();
     }
 
     public boolean allowsWarehouseOutput(BlockEntity packager) {
-        if (isFluidRepackager(packager))
-            return false;
-        return isFluidPackager(packager) ? allowFluidOutput
-                : packager instanceof PackagerBlockEntity && allowItemOutput;
-    }
-
-    private void ensureHandlers(DimensionsNet net) {
-        if (net == handlerNet)
-            return;
-        handlerNet = net;
-        ItemUnifiedStorageHandler itemDelegate = new ItemUnifiedStorageHandler(net.getUnifiedStorage());
-        itemHandler = new StationItemHandler(itemDelegate, false);
-        repackagerItemHandler = new StationItemHandler(itemDelegate, true);
-        fluidHandler = new StationFluidHandler(new FluidUnifiedStorageHandler(net.getUnifiedStorage()));
-    }
-
-    private void resetHandlers() {
-        handlerNet = null;
-        itemHandler = null;
-        repackagerItemHandler = null;
-        fluidHandler = null;
+        return access.allowsWarehouseOutput(packager);
     }
 
     public boolean mayConfigure(Player player) {
@@ -271,7 +190,7 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
         allowItemOutput = !tag.contains("AllowItemOutput") || tag.getBoolean("AllowItemOutput");
         allowFluidInput = !tag.contains("AllowFluidInput") || tag.getBoolean("AllowFluidInput");
         allowFluidOutput = !tag.contains("AllowFluidOutput") || tag.getBoolean("AllowFluidOutput");
-        resetHandlers();
+        access.resetHandlers();
     }
 
     @Override
@@ -306,99 +225,6 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
         ITEM_OUTPUT,
         FLUID_INPUT,
         FLUID_OUTPUT
-    }
-
-    private final class StationItemHandler implements IItemHandlerModifiable {
-        private final ItemUnifiedStorageHandler delegate;
-        private final boolean mixedPackagesOnly;
-
-        private StationItemHandler(ItemUnifiedStorageHandler delegate, boolean mixedPackagesOnly) {
-            this.delegate = delegate;
-            this.mixedPackagesOnly = mixedPackagesOnly;
-        }
-
-        private boolean allowsInput() {
-            return allowItemInput && (!mixedPackagesOnly || allowFluidInput);
-        }
-
-        @Override
-        public int getSlots() {
-            return allowItemOutput ? delegate.getSlots() : allowsInput() ? 1 : 0;
-        }
-
-        @Override
-        public @NotNull ItemStack getStackInSlot(int slot) {
-            return allowItemOutput ? delegate.getStackInSlot(slot) : ItemStack.EMPTY;
-        }
-
-        @Override
-        public void setStackInSlot(int slot, @NotNull ItemStack stack) {
-            if (allowsInput())
-                delegate.setStackInSlot(slot, stack);
-        }
-
-        @Override
-        public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
-            return allowsInput() ? delegate.insertItem(slot, stack, simulate) : stack;
-        }
-
-        @Override
-        public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return allowItemOutput ? delegate.extractItem(slot, amount, simulate) : ItemStack.EMPTY;
-        }
-
-        @Override
-        public int getSlotLimit(int slot) {
-            return allowsInput() ? delegate.getSlotLimit(slot) : 0;
-        }
-
-        @Override
-        public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return allowsInput() && delegate.isItemValid(slot, stack);
-        }
-    }
-
-    private final class StationFluidHandler implements IFluidHandler {
-        private final FluidUnifiedStorageHandler delegate;
-
-        private StationFluidHandler(FluidUnifiedStorageHandler delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public int getTanks() {
-            return allowFluidOutput ? delegate.getTanks() : allowFluidInput ? 1 : 0;
-        }
-
-        @Override
-        public @NotNull FluidStack getFluidInTank(int tank) {
-            return allowFluidOutput ? delegate.getFluidInTank(tank) : FluidStack.EMPTY;
-        }
-
-        @Override
-        public int getTankCapacity(int tank) {
-            return allowFluidInput ? delegate.getTankCapacity(tank) : 0;
-        }
-
-        @Override
-        public boolean isFluidValid(int tank, @NotNull FluidStack stack) {
-            return allowFluidInput && delegate.isFluidValid(tank, stack);
-        }
-
-        @Override
-        public int fill(FluidStack resource, FluidAction action) {
-            return allowFluidInput ? delegate.fill(resource, action) : 0;
-        }
-
-        @Override
-        public @NotNull FluidStack drain(FluidStack resource, FluidAction action) {
-            return allowFluidOutput ? delegate.drain(resource, action) : FluidStack.EMPTY;
-        }
-
-        @Override
-        public @NotNull FluidStack drain(int maxDrain, FluidAction action) {
-            return allowFluidOutput ? delegate.drain(maxDrain, action) : FluidStack.EMPTY;
-        }
     }
 
     private record DimensionParcelStationInventoryIdentifier(int netId) implements VirtualInventoryIdentifier {

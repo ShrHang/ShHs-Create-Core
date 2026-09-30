@@ -1,8 +1,8 @@
 package io.github.shrhang.shhs_create_core.content.logistics.terminal;
 
+import com.wintercogs.beyonddimensions.api.dimensionnet.DimensionsNet;
 import io.github.shrhang.shhs_create_core.ShHsCreateCore;
-import io.github.shrhang.shhs_create_core.content.logistics.dimension_parcel_station.DimensionParcelStationBlockEntity;
-import io.github.shrhang.shhs_create_core.content.logistics.dimension_parcel_station.DimensionParcelStationMenu;
+import io.github.shrhang.shhs_create_core.content.logistics.LogisticsPackets.Action;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -18,7 +18,6 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 public final class TerminalPackets {
@@ -26,7 +25,6 @@ public final class TerminalPackets {
     public static final int SUBMIT = 1;
     public static final int END = 3;
     public static final int FILL = 5;
-    public static final int ADDRESS = 6;
     public static final int LOCAL_CLICK = 7;
     public static final int CLAIM_READY = 8;
     public static final int END_INCOMPLETE = 9;
@@ -35,82 +33,52 @@ public final class TerminalPackets {
     }
 
     public static void register(PayloadRegistrar registrar) {
-        registrar.playToServer(OpenDimensionLogisticsTerminalPacket.TYPE,
-                OpenDimensionLogisticsTerminalPacket.STREAM_CODEC,
-                OpenDimensionLogisticsTerminalPacket::handle);
-        registrar.playToServer(Action.TYPE, Action.CODEC, TerminalPackets::handle);
-        registrar.playToClient(Snapshot.TYPE, Snapshot.CODEC, TerminalPackets::handleSnapshot);
+        registrar.playToServer(Open.TYPE,
+                Open.STREAM_CODEC,
+                Open::handle);
     }
 
-    public record Action(int menu, UUID session, int operation, CompoundTag data) implements CustomPacketPayload {
-        public static final Type<Action> TYPE = new Type<>(ShHsCreateCore.rl("terminal_action"));
-        public static final StreamCodec<RegistryFriendlyByteBuf, Action> CODEC = new StreamCodec<>() {
-            public Action decode(RegistryFriendlyByteBuf buffer) {
-                return new Action(buffer.readVarInt(), buffer.readUUID(), buffer.readVarInt(),
-                        Objects.requireNonNull(buffer.readNbt()));
-            }
-
-            public void encode(RegistryFriendlyByteBuf buffer, Action value) {
-                buffer.writeVarInt(value.menu);
-                buffer.writeUUID(value.session);
-                buffer.writeVarInt(value.operation);
-                buffer.writeNbt(value.data);
-            }
-        };
-
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
-        }
-    }
-
-    public record Snapshot(int menu, UUID session, long revision, int part, boolean last, CompoundTag data) implements CustomPacketPayload {
-        public static final Type<Snapshot> TYPE = new Type<>(ShHsCreateCore.rl("terminal_snapshot"));
-        public static final StreamCodec<RegistryFriendlyByteBuf, Snapshot> CODEC = new StreamCodec<>() {
-            public Snapshot decode(RegistryFriendlyByteBuf buffer) {
-                return new Snapshot(buffer.readVarInt(), buffer.readUUID(), buffer.readVarLong(), buffer.readVarInt(),
-                        buffer.readBoolean(), Objects.requireNonNull(buffer.readNbt()));
-            }
-
-            public void encode(RegistryFriendlyByteBuf buffer, Snapshot value) {
-                buffer.writeVarInt(value.menu);
-                buffer.writeUUID(value.session);
-                buffer.writeVarLong(value.revision);
-                buffer.writeVarInt(value.part);
-                buffer.writeBoolean(value.last);
-                buffer.writeNbt(value.data);
-            }
-        };
-
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
-        }
-    }
-
-    public static void send(ServerPlayer player, int menu, UUID session, long revision, int part, boolean last, CompoundTag tag) {
-        PacketDistributor.sendToPlayer(player, new Snapshot(menu, session, revision, part, last, tag));
-    }
-
-    public static void request(DimensionLogisticsTerminalMenu menu, int action, CompoundTag data) {
+    private static void request(DimensionLogisticsTerminalMenu menu, int action, CompoundTag data) {
         PacketDistributor.sendToServer(new Action(menu.containerId, menu.session, action, data));
     }
 
-    private static void handle(Action packet, IPayloadContext context) {
-        if (!(context.player() instanceof ServerPlayer player)
-                || player.containerMenu.containerId != packet.menu())
-            return;
-        if (packet.operation() == ADDRESS && player.containerMenu instanceof DimensionParcelStationMenu menu) {
-            if (!menu.stillValid(player) || !menu.session.equals(packet.session())
-                    || !packet.data().hasUUID("Network"))
-                return;
-            if (player.level().getBlockEntity(menu.getPos()) instanceof DimensionParcelStationBlockEntity station) {
-                station.setReceiveAddress(packet.data().getUUID("Network"), packet.data().getString("Address"), player);
-                menu.sendRoutes(player);
-            }
-            return;
-        }
-        if (!(player.containerMenu instanceof DimensionLogisticsTerminalMenu menu)
-                || !menu.session.equals(packet.session()) || !menu.stillValid(player))
-            return;
+    public static void requestFill(DimensionLogisticsTerminalMenu menu, ResourceLocation recipe, boolean maximum) {
+        CompoundTag data = new CompoundTag();
+        data.putString("Recipe", recipe.toString());
+        data.putBoolean("Max", maximum);
+        request(menu, FILL, data);
+    }
+
+    static void requestLocalClick(DimensionLogisticsTerminalMenu menu, ItemStack stack, int button, boolean quickMove) {
+        CompoundTag data = new CompoundTag();
+        data.put("Stack", stack.save(menu.player.registryAccess()));
+        data.putInt("Button", button);
+        data.putBoolean("QuickMove", quickMove);
+        request(menu, LOCAL_CLICK, data);
+    }
+
+    static void requestSubmit(DimensionLogisticsTerminalMenu menu, UUID submission,
+                              List<TerminalStock.Entry> entries) {
+        CompoundTag data = new CompoundTag();
+        data.putUUID("Submission", submission);
+        ListTag items = new ListTag();
+        entries.forEach(entry -> items.add(TerminalData.entry(entry, menu.player.registryAccess())));
+        data.put("Items", items);
+        request(menu, SUBMIT, data);
+    }
+
+    static void requestOrder(DimensionLogisticsTerminalMenu menu, int operation, UUID order) {
+        CompoundTag data = new CompoundTag();
+        if (order != null)
+            data.putUUID("Order", order);
+        request(menu, operation, data);
+    }
+
+    static void requestDeposit(DimensionLogisticsTerminalMenu menu) {
+        request(menu, DEPOSIT, new CompoundTag());
+    }
+
+    public static void handle(Action packet, ServerPlayer player, DimensionLogisticsTerminalMenu menu) {
         CompoundTag data = packet.data();
         switch (packet.operation()) {
             case DEPOSIT -> menu.depositCursor();
@@ -150,13 +118,28 @@ public final class TerminalPackets {
         menu.sendSnapshot();
     }
 
-    private static void handleSnapshot(Snapshot packet, IPayloadContext context) {
-        var current = context.player().containerMenu;
-        if (current.containerId != packet.menu())
-            return;
-        if (current instanceof DimensionLogisticsTerminalMenu menu && menu.session.equals(packet.session()))
-            menu.receive(packet.revision(), packet.part(), packet.last(), packet.data());
-        else if (current instanceof DimensionParcelStationMenu menu)
-            menu.receiveRoutes(packet.session(), packet.data());
+    public static final class Open implements CustomPacketPayload {
+        public static final Open INSTANCE =
+                new Open();
+        public static final Type<Open> TYPE =
+                new Type<>(ShHsCreateCore.rl("open_dimension_logistics_terminal"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, Open> STREAM_CODEC =
+                StreamCodec.unit(INSTANCE);
+
+        private Open() {
+        }
+
+        public static void handle(Open packet, IPayloadContext context) {
+            if (!(context.player() instanceof ServerPlayer player))
+                return;
+            DimensionsNet net = DimensionsNet.getPrimaryNetFromPlayer(player);
+            if (net != null)
+                DimensionLogisticsTerminalMenu.open(player, net);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
     }
 }

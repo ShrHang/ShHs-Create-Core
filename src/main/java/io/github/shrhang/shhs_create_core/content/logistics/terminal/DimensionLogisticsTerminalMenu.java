@@ -1,12 +1,9 @@
 package io.github.shrhang.shhs_create_core.content.logistics.terminal;
 
 import com.wintercogs.beyonddimensions.api.dimensionnet.DimensionsNet;
-import com.wintercogs.beyonddimensions.api.storage.key.KeyAmount;
 import com.wintercogs.beyonddimensions.api.storage.key.impl.ItemStackKey;
 import io.github.shrhang.shhs_create_core.content.registries.ShHsMenuTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.resources.ResourceLocation;
@@ -31,7 +28,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -53,18 +49,10 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
     public final boolean orderCanShow;
     public final boolean craftCanShow;
     public final CraftingContainer crafting = new TransientCraftingContainer(this, 3, 3);
+    private final TerminalInventorySession storage;
+    final TerminalSnapshotSync snapshots = new TerminalSnapshotSync();
     private final ResultContainer result = new ResultContainer();
-    public List<TerminalStock.Entry> clientStock = List.of();
-    public List<TerminalOrderSummary> clientOrders = List.of();
-    public Map<UUID, String> clientSourceAddresses = Map.of();
     public UUID acceptedSubmission;
-    public long clientRevision = -1;
-    private long receivingRevision = -1;
-    private int nextPart;
-    private final List<TerminalStock.Entry> receiving = new ArrayList<>();
-    private final List<TerminalOrderSummary> receivingOrders = new ArrayList<>();
-    private final Map<UUID, String> receivingSourceAddresses = new HashMap<>();
-    private long revision;
     private int ticks;
     private boolean changingCraft;
     private boolean clientPlayerSlotsActive = true;
@@ -91,6 +79,7 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
         this.player = inventory.player;
         this.netId = netId;
         this.session = session;
+        storage = new TerminalInventorySession(player, netId);
         DimensionLogisticsTerminalClientLayout.Snapshot layout = FMLEnvironment.dist == Dist.CLIENT
                 ? DimensionLogisticsTerminalClientLayout.create()
                 : new DimensionLogisticsTerminalClientLayout.Snapshot(false,
@@ -125,7 +114,7 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
                 super.onTake(player, stack);
                 for (int i = 0; i < 9; i++) {
                     if (!crafting.getItem(i).isEmpty() || templates.get(i).isEmpty()) continue;
-                    ItemStack refill = withdraw(new ItemStackKey(templates.get(i)), 1);
+                    ItemStack refill = storage.withdraw(new ItemStackKey(templates.get(i)), 1);
                     if (!refill.isEmpty()) crafting.setItem(i, refill);
                 }
                 changingCraft = false;
@@ -170,22 +159,23 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
         return clientCraftSlotsActive;
     }
 
-    public DimensionsNet network() {
-        if (player.level().isClientSide())
-            return null;
-        DimensionsNet primary = DimensionsNet.getPrimaryNetFromPlayer(player);
-        return primary != null && primary.getId() == netId && primary.getPlayers().contains(player.getUUID()) ? primary : null;
-    }
-
     @Override
     public boolean stillValid(Player player) {
         return player.isAlive();
     }
 
+    public DimensionsNet network() {
+        return storage.network();
+    }
+
+    public Map<ItemStackKey, Long> availableForCrafting() {
+        return storage.availableForCrafting(snapshots.current().stock(), crafting);
+    }
+
     public void depositCursor() {
         if (player.level().isClientSide() || getCarried().isEmpty()) return;
         ItemStack stack = getCarried();
-        deposit(stack);
+        storage.deposit(stack);
         setCarried(stack.isEmpty() ? ItemStack.EMPTY : stack);
         broadcastChanges();
     }
@@ -195,103 +185,31 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
         DimensionsNet net = network();
         if (net == null) return;
         ItemStackKey key = new ItemStackKey(template);
-        long stored = net.getUnifiedStorage().getStorage().stream()
-                .filter(entry -> entry.key() instanceof ItemStackKey itemKey && itemKey.equals(key))
-                .mapToLong(KeyAmount::amount).sum();
+        long stored = storage.stored(key);
         if (stored <= 0) return;
 
         if (quickMove) {
-            int count = Math.min((int) Math.min(stored, template.getMaxStackSize()), inventorySpace(template));
-            ItemStack extracted = withdrawLocal(key, count);
+            int count = Math.min((int) Math.min(stored, template.getMaxStackSize()), storage.inventorySpace(template));
+            ItemStack extracted = storage.withdrawLocal(key, count);
             if (!extracted.isEmpty()) {
                 player.getInventory().add(extracted);
-                if (!extracted.isEmpty()) deposit(extracted);
+                if (!extracted.isEmpty()) storage.deposit(extracted);
             }
         } else {
             ItemStack carried = getCarried();
             if (carried.isEmpty()) {
                 int maximum = (int) Math.min(stored, template.getMaxStackSize());
                 int count = button == 1 ? (maximum + 1) / 2 : maximum;
-                setCarried(withdrawLocal(key, count));
+                setCarried(storage.withdrawLocal(key, count));
             } else if (ItemStack.isSameItemSameComponents(carried, template)) {
-                depositAmount(carried, button == 1 ? 1 : carried.getCount());
+                storage.depositAmount(carried, button == 1 ? 1 : carried.getCount());
                 setCarried(carried.isEmpty() ? ItemStack.EMPTY : carried);
             } else {
-                depositAmount(carried, carried.getCount());
+                storage.depositAmount(carried, carried.getCount());
                 setCarried(carried.isEmpty() ? ItemStack.EMPTY : carried);
             }
         }
         broadcastChanges();
-    }
-
-    private int inventorySpace(ItemStack template) {
-        int space = 0;
-        for (ItemStack current : player.getInventory().items) {
-            if (current.isEmpty()) space += template.getMaxStackSize();
-            else if (ItemStack.isSameItemSameComponents(current, template))
-                space += Math.max(0, current.getMaxStackSize() - current.getCount());
-            if (space >= template.getMaxStackSize()) return template.getMaxStackSize();
-        }
-        return space;
-    }
-
-    private void depositAmount(ItemStack stack, int count) {
-        if (count <= 0 || stack.isEmpty()) return;
-        DimensionsNet net = network();
-        if (net == null) return;
-        int offered = Math.min(count, stack.getCount());
-        long remainder = net.getUnifiedStorage().insert(new ItemStackKey(stack), offered, false).amount();
-        stack.shrink(offered - (int) remainder);
-    }
-
-    private void deposit(ItemStack stack) {
-        DimensionsNet net = network();
-        if (net == null || stack.isEmpty()) return;
-        stack.setCount((int) net.getUnifiedStorage().insert(new ItemStackKey(stack), stack.getCount(), false).amount());
-    }
-
-    private ItemStack withdraw(ItemStackKey key, int count) {
-        if (count <= 0) return ItemStack.EMPTY;
-        int obtained = 0;
-        DimensionsNet net = network();
-        if (net != null) obtained = (int) net.getUnifiedStorage().extract(key, count, false, false).amount();
-        for (int i = 0; i < 36 && obtained < count; i++) {
-            ItemStack stack = player.getInventory().getItem(i);
-            if (!ItemStack.isSameItemSameComponents(stack, key.getReadOnlyStack())) continue;
-            int removed = Math.min(count - obtained, stack.getCount());
-            stack.shrink(removed); obtained += removed;
-        }
-        return obtained == 0 ? ItemStack.EMPTY : key.copyStackWithCount(obtained);
-    }
-
-    private ItemStack withdrawLocal(ItemStackKey key, int count) {
-        DimensionsNet net = network();
-        if (count <= 0 || net == null)
-            return ItemStack.EMPTY;
-        int obtained = (int) net.getUnifiedStorage().extract(key, count, false, false).amount();
-        return obtained == 0 ? ItemStack.EMPTY : key.copyStackWithCount(obtained);
-    }
-
-    public Map<ItemStackKey, Long> availableForCrafting() {
-        Map<ItemStackKey, Long> pool = new LinkedHashMap<>();
-        if (player.level().isClientSide()) {
-            for (var entry : clientStock)
-                if (entry.network() == null)
-                    pool.merge(new ItemStackKey(entry.stack()), entry.amount(), Long::sum);
-        } else {
-            DimensionsNet net = network();
-            if (net != null)
-                for (var entry : net.getUnifiedStorage().getStorage())
-                    if (entry.key() instanceof ItemStackKey key)
-                        pool.merge(key, entry.amount(), Long::sum);
-        }
-        for (ItemStack stack : player.getInventory().items)
-            if (!stack.isEmpty())
-                pool.merge(new ItemStackKey(stack), (long) stack.getCount(), Long::sum);
-        for (ItemStack stack : crafting.getItems())
-            if (!stack.isEmpty())
-                pool.merge(new ItemStackKey(stack), (long) stack.getCount(), Long::sum);
-        return pool;
     }
 
     public void fillRecipe(ResourceLocation recipeId, boolean maximum) {
@@ -328,32 +246,22 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
                 stack.shrink(taken);
                 need -= taken;
             }
-            ItemStack extracted = withdraw(new ItemStackKey(plan[i]), need);
+            ItemStack extracted = storage.withdraw(new ItemStackKey(plan[i]), need);
             int obtained = multiplier - need + extracted.getCount();
             crafting.setItem(i, plan[i].copyWithCount(obtained));
         }
         for (ItemStack stack : old)
-            giveBack(stack);
+            storage.giveBack(stack);
         changingCraft = false;
         slotsChanged(crafting);
         sendSnapshot();
-    }
-
-    private void giveBack(ItemStack stack) {
-        if (stack.isEmpty())
-            return;
-        player.getInventory().add(stack);
-        if (!stack.isEmpty())
-            deposit(stack);
-        if (!stack.isEmpty())
-            player.drop(stack, false);
     }
 
     public void clearCrafting() {
         if (player.level().isClientSide()) return;
         changingCraft = true;
         for (int i = 0; i < 9; i++)
-            giveBack(crafting.removeItemNoUpdate(i));
+            storage.giveBack(crafting.removeItemNoUpdate(i));
         changingCraft = false;
         slotsChanged(crafting);
     }
@@ -385,13 +293,13 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
             if (network() == null) return ItemStack.EMPTY;
             for (int crafts = 0; crafts < 64 && slot.hasItem(); crafts++) {
                 ItemStack output = slot.getItem().copy();
-                if (!ItemStack.isSameItemSameComponents(original, output) || !fitsPlayer(output)) break;
+                if (!ItemStack.isSameItemSameComponents(original, output) || !storage.fitsPlayer(output)) break;
                 ItemStack taken = slot.remove(output.getCount());
                 slot.onTake(player, taken);
                 player.getInventory().add(taken);
             }
         } else if (index >= PLAYER_START) {
-            deposit(slot.getItem()); slot.setChanged();
+            storage.deposit(slot.getItem()); slot.setChanged();
         } else {
             ItemStack stack = slot.getItem();
             if (!moveItemStackTo(stack, PLAYER_START, PLAYER_END, false)) return ItemStack.EMPTY;
@@ -399,16 +307,6 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
         }
         broadcastChanges();
         return ItemStack.EMPTY; // Do not repeat vanilla quick-move while automatic refill keeps the slot occupied.
-    }
-
-    private boolean fitsPlayer(ItemStack stack) {
-        int remaining = stack.getCount();
-        for (ItemStack current : player.getInventory().items) {
-            if (current.isEmpty()) remaining -= stack.getMaxStackSize();
-            else if (ItemStack.isSameItemSameComponents(current, stack)) remaining -= Math.max(0, current.getMaxStackSize() - current.getCount());
-            if (remaining <= 0) return true;
-        }
-        return false;
     }
 
     @Override
@@ -421,74 +319,11 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
     }
 
     public void sendSnapshot() {
-        if (!(player instanceof ServerPlayer serverPlayer))
-            return;
-        DimensionsNet net = network();
-        TerminalStock.Snapshot snapshot = TerminalStock.snapshot(serverPlayer, net);
-        List<TerminalStock.Entry> stock = snapshot.entries();
-        long version = ++revision;
-        List<TerminalOrderSummary> summaries = TerminalOrders.get(serverPlayer.server).summaries(serverPlayer);
-        int stockParts = Math.max(1, (stock.size() + 31) / 32);
-        int parts = stockParts + summaries.size();
-        for (int part = 0; part < parts; part++) {
-            CompoundTag tag = new CompoundTag();
-            ListTag list = new ListTag();
-            for (int i = part * 32; i < Math.min(stock.size(), (part + 1) * 32); i++)
-                list.add(TerminalData.entry(stock.get(i), player.registryAccess()));
-            tag.put("Stock", list);
-            if (part == 0) {
-                ListTag sources = new ListTag();
-                snapshot.addresses().forEach((network, address) -> {
-                    CompoundTag source = new CompoundTag();
-                    source.putUUID("Network", network);
-                    source.putString("Address", address);
-                    sources.add(source);
-                });
-                tag.put("Sources", sources);
-            }
-            if (part >= stockParts) {
-                ListTag orderPart = new ListTag();
-                orderPart.add(summaries.get(part - stockParts).save(player.registryAccess()));
-                tag.put("Orders", orderPart);
-            }
-            if (acceptedSubmission != null)
-                tag.putUUID("Accepted", acceptedSubmission);
-            TerminalPackets.send(serverPlayer, containerId, session, version, part, part == parts - 1, tag);
-        }
+        snapshots.send(this);
     }
 
     public void receive(long revision, int part, boolean last, CompoundTag tag) {
-        if (revision <= clientRevision)
-            return;
-        if (part == 0) {
-            receiving.clear();
-            receivingOrders.clear();
-            receivingSourceAddresses.clear();
-            receivingRevision = revision;
-            nextPart = 0;
-        }
-        if (revision != receivingRevision || part != nextPart++)
-            return;
-        ListTag list = tag.getList("Stock", Tag.TAG_COMPOUND);
-        for (int i = 0; i < list.size(); i++)
-            receiving.add(TerminalData.entry(list.getCompound(i), player.registryAccess()));
-        ListTag sources = tag.getList("Sources", Tag.TAG_COMPOUND);
-        for (int i = 0; i < sources.size(); i++) {
-            CompoundTag source = sources.getCompound(i);
-            if (source.hasUUID("Network"))
-                receivingSourceAddresses.put(source.getUUID("Network"), source.getString("Address"));
-        }
-        ListTag orderTags = tag.getList("Orders", Tag.TAG_COMPOUND);
-        for (int i = 0; i < orderTags.size(); i++)
-            receivingOrders.add(TerminalOrderSummary.load(orderTags.getCompound(i), player.registryAccess()));
-        if (last) {
-            clientStock = List.copyOf(receiving);
-            clientRevision = revision;
-            clientOrders = List.copyOf(receivingOrders);
-            clientSourceAddresses = Map.copyOf(receivingSourceAddresses);
-            if (tag.hasUUID("Accepted"))
-                acceptedSubmission = tag.getUUID("Accepted");
-        }
+        snapshots.receive(player.registryAccess(), revision, part, last, tag);
     }
 
     @Override
