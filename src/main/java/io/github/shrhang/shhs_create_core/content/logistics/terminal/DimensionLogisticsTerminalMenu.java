@@ -49,7 +49,7 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
     public final boolean orderCanShow;
     public final boolean craftCanShow;
     public final CraftingContainer crafting = new TransientCraftingContainer(this, 3, 3);
-    private final TerminalInventorySession storage;
+    private final TerminalInventory storage;
     final TerminalSnapshotSync snapshots = new TerminalSnapshotSync();
     private final ResultContainer result = new ResultContainer();
     public UUID acceptedSubmission;
@@ -79,7 +79,7 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
         this.player = inventory.player;
         this.netId = netId;
         this.session = session;
-        storage = new TerminalInventorySession(player, netId);
+        storage = new TerminalInventory(player, netId);
         DimensionLogisticsTerminalClientLayout.Snapshot layout = FMLEnvironment.dist == Dist.CLIENT
                 ? DimensionLogisticsTerminalClientLayout.create()
                 : new DimensionLogisticsTerminalClientLayout.Snapshot(false,
@@ -218,7 +218,7 @@ public class DimensionLogisticsTerminalMenu extends AbstractContainerMenu {
         if (holder == null || !(holder.value() instanceof CraftingRecipe recipe))
             return;
         Map<ItemStackKey, Long> available = availableForCrafting();
-        ItemStack[] plan = TerminalCrafting.plan(recipe, available);
+        ItemStack[] plan = TerminalInventory.plan(recipe, available);
         if (plan == null) {
             player.displayClientMessage(TerminalData.text("missing_materials"), true);
             return;

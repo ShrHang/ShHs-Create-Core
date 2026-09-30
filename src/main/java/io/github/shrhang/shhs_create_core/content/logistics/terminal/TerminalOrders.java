@@ -150,12 +150,12 @@ public final class TerminalOrders {
             if (!(level.getBlockEntity(target) instanceof NetedBlockEntity targetBlock)
                     || targetBlock.getNetId() != order.netId || targetBlock.getNet() == null)
                 return false;
-            List<TerminalPackageEntry> contents = packageContents(box);
+            List<TerminalData.PackageEntry> contents = packageContents(box);
             if (contents.isEmpty())
                 return false;
             if (targetBlock instanceof DimensionParcelStationBlockEntity station) {
                 boolean hasItems = contents.stream().anyMatch(entry -> !entry.isResource());
-                boolean hasResources = contents.stream().anyMatch(TerminalPackageEntry::isResource);
+                boolean hasResources = contents.stream().anyMatch(TerminalData.PackageEntry::isResource);
                 if (hasItems && !station.isAllowed(DimensionParcelStationBlockEntity.Channel.ITEM_INPUT)
                         || hasResources && !station.isAllowed(DimensionParcelStationBlockEntity.Channel.FLUID_INPUT))
                     return false;
@@ -165,7 +165,7 @@ public final class TerminalOrders {
                 return false;
             List<ItemStack> remaining = shipment.remaining.stream().map(ItemStack::copy)
                     .collect(Collectors.toCollection(ArrayList::new));
-            for (TerminalPackageEntry entry : contents) {
+            for (TerminalData.PackageEntry entry : contents) {
                 int need = entry.amount();
                 for (ItemStack expected : remaining) {
                     if (!matches(entry, expected))
@@ -182,7 +182,7 @@ public final class TerminalOrders {
             shipment.remaining.clear();
             remaining.stream().filter(s -> !s.isEmpty()).forEach(shipment.remaining::add);
             shipment.received.add(fragment);
-            for (TerminalPackageEntry entry : contents) {
+            for (TerminalData.PackageEntry entry : contents) {
                 long held = entry.amount();
                 if (order.ended) {
                     DimensionsNet original = DimensionsNet.getNetFromId(order.netId);
@@ -200,50 +200,50 @@ public final class TerminalOrders {
         return null;
     }
 
-    private static List<TerminalPackageEntry> packageContents(ItemStack box) {
+    private static List<TerminalData.PackageEntry> packageContents(ItemStack box) {
         var resources = Mods.FLUIDLOGISTICS.runIfInstalled(() -> () ->
                 FluidLogisticsTerminalOrderCompat.inspect(box));
         if (resources.isPresent())
             return resources.get();
-        List<TerminalPackageEntry> contents = new ArrayList<>();
+        List<TerminalData.PackageEntry> contents = new ArrayList<>();
         var handler = PackageItem.getContents(box);
         for (int i = 0; i < handler.getSlots(); i++) {
             ItemStack stack = handler.getStackInSlot(i);
             if (!stack.isEmpty())
-                contents.add(new TerminalPackageEntry(stack, stack.getCount(), null));
+                contents.add(new TerminalData.PackageEntry(stack, stack.getCount(), null));
         }
         return List.copyOf(contents);
     }
 
-    private static boolean matches(TerminalPackageEntry entry, ItemStack expected) {
+    private static boolean matches(TerminalData.PackageEntry entry, ItemStack expected) {
         if (!entry.isResource())
             return ItemStack.isSameItemSameComponents(entry.key(), expected);
         return Mods.FLUIDLOGISTICS.runIfInstalled(() -> () ->
                 FluidLogisticsTerminalOrderCompat.matches(entry, expected)).orElse(false);
     }
 
-    private static long insert(DimensionsNet net, TerminalPackageEntry entry) {
+    private static long insert(DimensionsNet net, TerminalData.PackageEntry entry) {
         if (!entry.isResource())
             return net.getUnifiedStorage().insert(new ItemStackKey(entry.key()), entry.amount(), false).amount();
         return Mods.FLUIDLOGISTICS.runIfInstalled(() -> () ->
                 FluidLogisticsTerminalOrderCompat.insert(net, entry)).orElse((long) entry.amount());
     }
 
-    private static void appendResource(List<TerminalPackageEntry> resources,
-                                       TerminalPackageEntry entry, long amount) {
+    private static void appendResource(List<TerminalData.PackageEntry> resources,
+                                       TerminalData.PackageEntry entry, long amount) {
         if (amount <= 0)
             return;
         int added = Math.toIntExact(amount);
         for (int i = 0; i < resources.size(); i++) {
-            TerminalPackageEntry existing = resources.get(i);
+            TerminalData.PackageEntry existing = resources.get(i);
             if (!existing.resourceType().equals(entry.resourceType())
                     || !ItemStack.isSameItemSameComponents(existing.key(), entry.key()))
                 continue;
-            resources.set(i, new TerminalPackageEntry(existing.key(),
+            resources.set(i, new TerminalData.PackageEntry(existing.key(),
                     Math.addExact(existing.amount(), added), existing.resourceType()));
             return;
         }
-        resources.add(new TerminalPackageEntry(entry.key(), added, entry.resourceType()));
+        resources.add(new TerminalData.PackageEntry(entry.key(), added, entry.resourceType()));
     }
 
     public void claim(ServerPlayer player, UUID id, boolean endWaiting) {
@@ -280,9 +280,9 @@ public final class TerminalOrders {
         order.held.removeIf(ItemStack::isEmpty);
         while (!order.held.isEmpty())
             order.packages.add(PackageItem.containing(takePackageContents(order.held)));
-        Iterator<TerminalPackageEntry> resources = order.heldResources.iterator();
+        Iterator<TerminalData.PackageEntry> resources = order.heldResources.iterator();
         while (resources.hasNext()) {
-            TerminalPackageEntry resource = resources.next();
+            TerminalData.PackageEntry resource = resources.next();
             List<ItemStack> packages = Mods.FLUIDLOGISTICS.runIfInstalled(() -> () ->
                     FluidLogisticsTerminalOrderCompat.createPackages(resource)).orElse(List.of());
             if (packages.isEmpty())
@@ -310,8 +310,8 @@ public final class TerminalOrders {
         return contents;
     }
 
-    public List<TerminalOrderSummary> summaries(ServerPlayer player) {
-        List<TerminalOrderSummary> result = new ArrayList<>();
+    public List<TerminalData.OrderSummary> summaries(ServerPlayer player) {
+        List<TerminalData.OrderSummary> result = new ArrayList<>();
         for (Order order : store.forPlayer(player.getUUID())) {
             Map<TerminalData.Selection, Long> requested = new LinkedHashMap<>();
             Map<TerminalData.Selection, Long> remaining = new HashMap<>();
@@ -323,12 +323,12 @@ public final class TerminalOrders {
                         new TerminalData.Selection(new ItemStackKey(stack), shipment.network),
                         (long) stack.getCount(), Long::sum));
             }
-            List<TerminalOrderSummary.Line> lines = requested.entrySet().stream()
-                    .map(entry -> new TerminalOrderSummary.Line(entry.getKey().key().copyStackWithCount(1),
+            List<TerminalData.OrderSummary.Line> lines = requested.entrySet().stream()
+                    .map(entry -> new TerminalData.OrderSummary.Line(entry.getKey().key().copyStackWithCount(1),
                             entry.getKey().network(), entry.getValue(),
                             remaining.getOrDefault(entry.getKey(), 0L)))
                     .toList();
-            result.add(new TerminalOrderSummary(order.id, order.ready(), estimatedPackages(order), lines));
+            result.add(new TerminalData.OrderSummary(order.id, order.ready(), estimatedPackages(order), lines));
         }
         return List.copyOf(result);
     }
@@ -341,7 +341,7 @@ public final class TerminalOrders {
             packages++;
             takePackageContents(pending);
         }
-        for (TerminalPackageEntry resource : order.heldResources)
+        for (TerminalData.PackageEntry resource : order.heldResources)
             packages += Mods.FLUIDLOGISTICS.runIfInstalled(() -> () ->
                     FluidLogisticsTerminalOrderCompat.createPackages(resource).size()).orElse(0);
         return packages;

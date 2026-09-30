@@ -42,7 +42,7 @@ final class TerminalOrderStore extends SavedData {
         final int netId;
         boolean ended;
         final List<ItemStack> held = new ArrayList<>();
-        final List<TerminalPackageEntry> heldResources = new ArrayList<>();
+        final List<TerminalData.PackageEntry> heldResources = new ArrayList<>();
         final List<ItemStack> packages = new ArrayList<>();
         final List<Shipment> shipments = new ArrayList<>();
 
@@ -101,7 +101,7 @@ final class TerminalOrderStore extends SavedData {
                 ResourceLocation type = ResourceLocation.tryParse(resource.getString("Type"));
                 int amount = resource.getInt("Amount");
                 if (!key.isEmpty() && type != null && amount > 0)
-                    order.heldResources.add(new TerminalPackageEntry(key, amount, type));
+                    order.heldResources.add(new TerminalData.PackageEntry(key, amount, type));
             }
             order.packages.addAll(TerminalData.stacks(t.getList("Packages", Tag.TAG_COMPOUND), registries));
             ListTag shipments = t.getList("Shipments", Tag.TAG_COMPOUND);
@@ -164,7 +164,7 @@ final class TerminalOrderStore extends SavedData {
             t.putBoolean("Ended", order.ended);
             t.put("Held", TerminalData.stacks(order.held, registries));
             ListTag heldResources = new ListTag();
-            for (TerminalPackageEntry entry : order.heldResources) {
+            for (TerminalData.PackageEntry entry : order.heldResources) {
                 CompoundTag resource = new CompoundTag();
                 resource.put("Key", entry.key().save(registries));
                 resource.putString("Type", entry.resourceType().toString());

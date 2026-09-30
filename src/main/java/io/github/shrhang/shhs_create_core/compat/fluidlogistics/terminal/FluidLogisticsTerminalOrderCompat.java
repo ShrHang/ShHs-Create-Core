@@ -1,12 +1,12 @@
 package io.github.shrhang.shhs_create_core.compat.fluidlogistics.terminal;
 
+import io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalData;
 import com.yision.fluidlogistics.api.packager.PackageResourceType;
 import com.yision.fluidlogistics.api.packager.PackageResources;
 import com.yision.fluidlogistics.content.logistics.fluidPackage.CompressedTankItem;
 import com.yision.fluidlogistics.content.logistics.fluidPackage.FluidPackageItem;
 import com.wintercogs.beyonddimensions.api.dimensionnet.DimensionsNet;
 import com.wintercogs.beyonddimensions.api.storage.key.impl.FluidStackKey;
-import io.github.shrhang.shhs_create_core.content.logistics.terminal.TerminalPackageEntry;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
@@ -19,18 +19,18 @@ public final class FluidLogisticsTerminalOrderCompat {
         return FluidPackageItem.isFluidPackage(stack);
     }
 
-    public static List<TerminalPackageEntry> inspect(ItemStack box) {
+    public static List<TerminalData.PackageEntry> inspect(ItemStack box) {
         var inspection = PackageResources.inspectPackage(box);
-        List<TerminalPackageEntry> entries = new ArrayList<>();
+        List<TerminalData.PackageEntry> entries = new ArrayList<>();
         inspection.ordinaryItems().stream()
                 .filter(stack -> !stack.isEmpty())
-                .forEach(stack -> entries.add(new TerminalPackageEntry(stack, stack.getCount(), null)));
-        inspection.resources().forEach(resource -> entries.add(new TerminalPackageEntry(
+                .forEach(stack -> entries.add(new TerminalData.PackageEntry(stack, stack.getCount(), null)));
+        inspection.resources().forEach(resource -> entries.add(new TerminalData.PackageEntry(
                 resource.key(), resource.amount(), resource.typeId())));
         return List.copyOf(entries);
     }
 
-    public static boolean matches(TerminalPackageEntry resource, ItemStack expected) {
+    public static boolean matches(TerminalData.PackageEntry resource, ItemStack expected) {
         if (!resource.isResource())
             return false;
         PackageResourceType expectedType = PackageResources.findType(expected).orElse(null);
@@ -39,7 +39,7 @@ public final class FluidLogisticsTerminalOrderCompat {
                 && PackageResources.sameResource(resource.key(), expected);
     }
 
-    public static List<ItemStack> createPackages(TerminalPackageEntry resource) {
+    public static List<ItemStack> createPackages(TerminalData.PackageEntry resource) {
         if (!resource.isResource())
             return List.of();
         PackageResourceType type = PackageResources.get(resource.resourceType()).orElse(null);
@@ -60,7 +60,7 @@ public final class FluidLogisticsTerminalOrderCompat {
     }
 
     /** Returns the amount that could not be inserted. */
-    public static long insert(DimensionsNet net, TerminalPackageEntry resource) {
+    public static long insert(DimensionsNet net, TerminalData.PackageEntry resource) {
         if (!resource.isResource() || !CompressedTankItem.isFluidStack(resource.key()))
             return resource.amount();
         var fluid = CompressedTankItem.getFluid(resource.key()).copyWithAmount(resource.amount());

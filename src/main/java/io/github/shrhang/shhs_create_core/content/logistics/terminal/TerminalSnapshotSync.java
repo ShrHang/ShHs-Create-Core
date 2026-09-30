@@ -15,14 +15,14 @@ import java.util.UUID;
 
 /** Publishes a client snapshot only after all parts of a revision have arrived. */
 final class TerminalSnapshotSync {
-    record Snapshot(List<TerminalStock.Entry> stock, List<TerminalOrderSummary> orders,
+    record Snapshot(List<TerminalStock.Entry> stock, List<TerminalData.OrderSummary> orders,
                     Map<UUID, String> addresses, long revision, UUID acceptedSubmission) {}
 
     private Snapshot current = new Snapshot(List.of(), List.of(), Map.of(), -1, null);
     private long receivingRevision = -1;
     private int nextPart;
     private final List<TerminalStock.Entry> receiving = new ArrayList<>();
-    private final List<TerminalOrderSummary> receivingOrders = new ArrayList<>();
+    private final List<TerminalData.OrderSummary> receivingOrders = new ArrayList<>();
     private final Map<UUID, String> receivingSourceAddresses = new HashMap<>();
     private long revision;
 
@@ -37,7 +37,7 @@ final class TerminalSnapshotSync {
         TerminalStock.Snapshot snapshot = TerminalStock.snapshot(serverPlayer, net);
         List<TerminalStock.Entry> stock = snapshot.entries();
         long version = ++revision;
-        List<TerminalOrderSummary> summaries = TerminalOrders.get(serverPlayer.server).summaries(serverPlayer);
+        List<TerminalData.OrderSummary> summaries = TerminalOrders.get(serverPlayer.server).summaries(serverPlayer);
         int stockParts = Math.max(1, (stock.size() + 31) / 32);
         int parts = stockParts + summaries.size();
         for (int part = 0; part < parts; part++) {
@@ -90,7 +90,7 @@ final class TerminalSnapshotSync {
         }
         ListTag orderTags = tag.getList("Orders", Tag.TAG_COMPOUND);
         for (int i = 0; i < orderTags.size(); i++)
-            receivingOrders.add(TerminalOrderSummary.load(orderTags.getCompound(i), registries));
+            receivingOrders.add(TerminalData.OrderSummary.load(orderTags.getCompound(i), registries));
         if (last) {
             current = new Snapshot(List.copyOf(receiving), List.copyOf(receivingOrders),
                     Map.copyOf(receivingSourceAddresses), revision,

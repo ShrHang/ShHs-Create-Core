@@ -26,7 +26,7 @@ public final class TerminalRecipeTransferHandler implements IRecipeTransferHandl
                                                          IRecipeSlotsView slots, Player player, boolean maxTransfer, boolean doTransfer) {
         if (!menu.isClientCraftSlotsActive())
             return helpers.createUserErrorWithTooltip(TerminalData.text("crafting_hidden"));
-        if (TerminalCrafting.plan(recipe.value(), menu.availableForCrafting()) == null)
+        if (TerminalInventory.plan(recipe.value(), menu.availableForCrafting()) == null)
             return helpers.createUserErrorWithTooltip(TerminalData.text("missing_materials"));
         if (doTransfer) {
             TerminalPackets.requestFill(menu, recipe.id(), maxTransfer);

@@ -170,7 +170,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         refreshState();
     }
 
-    private TerminalOrderSummary currentOrder() {
+    private TerminalData.OrderSummary currentOrder() {
         if (menu.snapshots.current().orders().isEmpty()) {
             selectedOrder = null;
             orderIndex = 0;
@@ -180,7 +180,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
             for (int i = 0; i < menu.snapshots.current().orders().size(); i++)
                 if (menu.snapshots.current().orders().get(i).id().equals(selectedOrder)) { orderIndex = i; break; }
         orderIndex = Math.clamp(orderIndex, 0, menu.snapshots.current().orders().size() - 1);
-        TerminalOrderSummary order = menu.snapshots.current().orders().get(orderIndex);
+        TerminalData.OrderSummary order = menu.snapshots.current().orders().get(orderIndex);
         selectedOrder = order.id();
         return order;
     }
@@ -192,7 +192,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
     }
 
     private void requestOrderAction(int operation, boolean needsCurrent) {
-        TerminalOrderSummary order = needsCurrent ? currentOrder() : null;
+        TerminalData.OrderSummary order = needsCurrent ? currentOrder() : null;
         if (needsCurrent && order == null) return;
         TerminalPackets.requestOrder(menu, operation, order == null ? null : order.id());
     }
@@ -345,7 +345,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
     }
 
     private void renderOrder(GuiGraphics graphics, int x, int y) {
-        TerminalOrderSummary order = currentOrder();
+        TerminalData.OrderSummary order = currentOrder();
         if (order == null) {
             drawFitted(graphics, TerminalData.text("no_orders"), x + Layout.INFO_X, y + Layout.INFO_Y, Layout.INFO_WIDTH);
             return;
@@ -354,7 +354,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
                 TerminalData.text(order.ready() ? "ready_short" : "waiting_short"), order.packages());
         drawFitted(graphics, status, x + Layout.INFO_X, y + Layout.INFO_Y, Layout.INFO_WIDTH);
         for (int i = 0; i < Math.min(TerminalData.MAX_ORDER_LINES, order.lines().size()); i++) {
-            TerminalOrderSummary.Line line = order.lines().get(i);
+            TerminalData.OrderSummary.Line line = order.lines().get(i);
             int itemX = x + Layout.ORDER_ITEM_X + i * Layout.ORDER_ITEM_STEP;
             int itemY = y + Layout.ORDER_ITEM_Y;
             graphics.renderItem(line.stack(), itemX + 1, itemY + 1);
@@ -496,9 +496,9 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
         return null;
     }
 
-    private TerminalOrderSummary.Line hoveredOrderLine(double mouseX, double mouseY) {
+    private TerminalData.OrderSummary.Line hoveredOrderLine(double mouseX, double mouseY) {
         if (!rightPanelVisible() || !orderVisible) return null;
-        TerminalOrderSummary order = currentOrder();
+        TerminalData.OrderSummary order = currentOrder();
         if (order == null) return null;
         int x = (int) mouseX - leftPos - menu.rightPanelX - Layout.ORDER_ITEM_X;
         int y = (int) mouseY - topPos - menu.orderPanelY - Layout.ORDER_ITEM_Y;
@@ -511,7 +511,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
     public Optional<Map.Entry<ItemStack, Rect2i>> hoveredIngredient(double mouseX, double mouseY) {
         HoveredEntry stock = hoveredStock((int) mouseX, (int) mouseY);
         if (stock != null) return Optional.of(Map.entry(stock.entry().stack(), new Rect2i((int) mouseX - 8, (int) mouseY - 8, 16, 16)));
-        TerminalOrderSummary.Line line = hoveredOrderLine(mouseX, mouseY);
+        TerminalData.OrderSummary.Line line = hoveredOrderLine(mouseX, mouseY);
         return line == null ? Optional.empty() : Optional.of(Map.entry(line.stack(), new Rect2i((int) mouseX - 8, (int) mouseY - 8, 16, 16)));
     }
 
@@ -546,7 +546,7 @@ public final class DimensionLogisticsTerminalScreen extends AbstractContainerScr
             graphics.renderComponentTooltip(font, tooltip, mouseX, mouseY);
             return;
         }
-        TerminalOrderSummary.Line line = hoveredOrderLine(mouseX, mouseY);
+        TerminalData.OrderSummary.Line line = hoveredOrderLine(mouseX, mouseY);
         if (line != null) {
             List<Component> tooltip = new ArrayList<>(getTooltipFromItem(minecraft, line.stack()));
             tooltip.add(TerminalData.text("delivery_progress", line.delivered(), line.requested()));
