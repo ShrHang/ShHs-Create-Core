@@ -57,7 +57,7 @@ public class ShHsAttackListener implements AttackListener {
 
             float originalMultiplier = 1.0f + (float) factor;
             float targetMultiplier = 1.0f + (float) (factor * reduce);
-            float compensation = Math.round((targetMultiplier / originalMultiplier) * 100.0f) / 100.0f;
+            float compensation = (float) (Math.ceil((targetMultiplier / originalMultiplier) * 100.0f) / 100.0f);
             data.addDealtModifier(DamageModifier.multTotal(compensation, REALITY_SCALING));
         }
     }
