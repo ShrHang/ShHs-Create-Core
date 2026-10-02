@@ -43,4 +43,8 @@ public enum ShHsKeys {
     public Component pressKeyTo() {
         return textComponent("press_key_to", keybind.getTranslatedKeyMessage(), keybind.getDisplayName());
     }
+
+    public static Component pressKeyTo(KeyMapping keyMapping) {
+        return textComponent("press_key_to", keyMapping.getTranslatedKeyMessage(), keyMapping.getDisplayName());
+    }
 }
