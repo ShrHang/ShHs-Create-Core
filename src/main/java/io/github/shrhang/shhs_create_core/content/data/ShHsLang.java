@@ -105,6 +105,8 @@ public class ShHsLang {
         REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.locked"), "Locked: Only the owner can open.");
         REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.unlocked"), "Unlocked: Anyone can open.");
 
+        REGISTRATE.addRawLang(key("text","press_key_to"), " Press %s to %s");
+
         REGISTRATE.addRawLang(key("text","portable_stock_ticker.tooltip.linked"), "Linked.");
         REGISTRATE.addRawLang(key("text","portable_stock_ticker.no_data"), "Not Linked to a Logistics Network");
         REGISTRATE.addRawLang(key("text","portable_stock_ticker.no_network"), "Linked Logistics Network no exists.");

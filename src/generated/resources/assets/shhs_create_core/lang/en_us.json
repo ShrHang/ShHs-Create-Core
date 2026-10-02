@@ -101,6 +101,7 @@
   "text.shhs_create_core.portable_stock_ticker.no_network": "Linked Logistics Network no exists.",
   "text.shhs_create_core.portable_stock_ticker.tooltip.linked": "Linked.",
   "text.shhs_create_core.portable_stock_ticker.unloaded": "Linked Logistics Network is unloaded.",
+  "text.shhs_create_core.press_key_to": " Press %s to %s",
   "text.shhs_create_core.terminal.address": "Receiving address",
   "text.shhs_create_core.terminal.address_hint": "Exact address; no * or ? wildcards.",
   "text.shhs_create_core.terminal.address_value": "Receiving address: %s",

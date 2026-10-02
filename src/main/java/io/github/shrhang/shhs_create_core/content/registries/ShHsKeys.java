@@ -1,13 +1,13 @@
 package io.github.shrhang.shhs_create_core.content.registries;
 
 import net.minecraft.client.KeyMapping;
+import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.function.BiConsumer;
 
-import static io.github.shrhang.shhs_create_core.content.data.ShHsLang.CATEGORY_KEY;
-import static io.github.shrhang.shhs_create_core.content.data.ShHsLang.key;
+import static io.github.shrhang.shhs_create_core.content.data.ShHsLang.*;
 
 public enum ShHsKeys {
     OPEN_PORTABLE_STOCK_TICKER("open_portable_stock_ticker", "Open Portable Stock Ticker", GLFW.GLFW_KEY_B),
@@ -38,5 +38,9 @@ public enum ShHsKeys {
 
     public KeyMapping getKeybind() {
         return keybind;
+    }
+
+    public Component pressKeyTo() {
+        return textComponent("press_key_to", keybind.getTranslatedKeyMessage(), keybind.getDisplayName());
     }
 }

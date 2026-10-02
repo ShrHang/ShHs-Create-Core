@@ -6,6 +6,7 @@ import com.simibubi.create.content.equipment.clipboard.ClipboardBlockEntity;
 import com.simibubi.create.content.logistics.packagerLink.PackagerLinkBlockEntity;
 import com.simibubi.create.content.logistics.stockTicker.StockCheckingBlockEntity;
 import com.simibubi.create.foundation.utility.CreateLang;
+import io.github.shrhang.shhs_create_core.content.registries.ShHsKeys;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -64,7 +65,7 @@ public class PortableStockTickerItem extends Item {
             } else if (Screen.hasAltDown()) {
                 tooltipComponents.add(Component.literal(NbtUtils.createUUID(networkId).toString()).withStyle(ChatFormatting.GREEN));
             } else {
-                tooltipComponents.add(textComponent("portable_stock_ticker.tooltip.linked").withStyle(ChatFormatting.DARK_GREEN));
+                tooltipComponents.add(textComponent("portable_stock_ticker.tooltip.linked").append(ShHsKeys.OPEN_PORTABLE_STOCK_TICKER.pressKeyTo()).withStyle(ChatFormatting.DARK_GREEN));
             }
         }
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
