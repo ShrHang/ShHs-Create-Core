@@ -8,20 +8,13 @@ import net.minecraft.world.item.ItemStack;
 import java.util.UUID;
 
 final class BrassEnderChestInventory implements Container {
-    enum Access {
-        AUTOMATION,
-        MENU
-    }
-
     private final BrassEnderChestBlockEntity blockEntity;
     private final UUID owner;
-    private final Access access;
-    private final UUID viewer;
+    private final Player viewer;
 
-    BrassEnderChestInventory(BrassEnderChestBlockEntity blockEntity, UUID owner, Access access, UUID viewer) {
+    BrassEnderChestInventory(BrassEnderChestBlockEntity blockEntity, UUID owner, Player viewer) {
         this.blockEntity = blockEntity;
         this.owner = owner;
-        this.access = access;
         this.viewer = viewer;
     }
 
@@ -82,7 +75,7 @@ final class BrassEnderChestInventory implements Container {
 
     @Override
     public boolean stillValid(Player player) {
-        return access == Access.MENU && viewer.equals(player.getUUID()) && blockEntity.canAccessMenu(player, owner);
+        return viewer == player && blockEntity.canAccessMenu(player, owner);
     }
 
     @Override
@@ -95,7 +88,7 @@ final class BrassEnderChestInventory implements Container {
     }
 
     private PlayerEnderChestContainer inventory() {
-        return blockEntity.resolveInventory(owner, access, viewer, false);
+        return blockEntity.resolveMenuInventory(owner, viewer);
     }
 
     private void changed(PlayerEnderChestContainer inventory) {

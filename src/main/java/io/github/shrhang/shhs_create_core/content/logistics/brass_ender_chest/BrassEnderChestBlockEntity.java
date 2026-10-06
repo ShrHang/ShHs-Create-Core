@@ -100,7 +100,16 @@ public class BrassEnderChestBlockEntity extends SmartBlockEntity
     }
 
     public void setOwner(Player player) {
-        setTarget(player.getUUID(), player.getName().getString(), locked);
+        boolean ownerChanged = !Objects.equals(targetUUID, player.getUUID());
+        String name = player.getName().getString();
+        if (!ownerChanged && targetName.equals(name))
+            return;
+        targetUUID = player.getUUID();
+        targetName = name;
+        if (ownerChanged)
+            accessChanged();
+        else
+            notifyUpdate();
     }
 
     public UUID getTargetUUID() {
@@ -132,9 +141,7 @@ public class BrassEnderChestBlockEntity extends SmartBlockEntity
 
     @Nullable
     public IItemHandler getInventory() {
-        if (!(level instanceof ServerLevel) || targetUUID == null || locked)
-            return null;
-        if (resolveInventory(targetUUID, BrassEnderChestInventory.Access.AUTOMATION, null, true) == null)
+        if (targetUUID == null || resolveAutomationInventory(targetUUID) == null)
             return null;
         if (inventory == null)
             inventory = new BrassEnderChestItemHandler(this, targetUUID);
@@ -144,11 +151,9 @@ public class BrassEnderChestBlockEntity extends SmartBlockEntity
 
     @Nullable
     public Container getMenuInventory(Player player) {
-        if (targetUUID == null || !canAccess(player))
+        if (targetUUID == null || resolveMenuInventory(targetUUID, player) == null)
             return null;
-        if (resolveInventory(targetUUID, BrassEnderChestInventory.Access.MENU, player.getUUID(), true) == null)
-            return null;
-        return new BrassEnderChestInventory(this, targetUUID, BrassEnderChestInventory.Access.MENU, player.getUUID());
+        return new BrassEnderChestInventory(this, targetUUID, player);
     }
 
     boolean canAccessMenu(Player player, UUID expectedOwner) {
@@ -159,15 +164,21 @@ public class BrassEnderChestBlockEntity extends SmartBlockEntity
     }
 
     @Nullable
-    PlayerEnderChestContainer resolveInventory(UUID expectedOwner, BrassEnderChestInventory.Access access,
-                                                @Nullable UUID viewer, boolean requestLoad) {
-        if (!(level instanceof ServerLevel serverLevel) || isRemoved() || !Objects.equals(targetUUID, expectedOwner))
+    PlayerEnderChestContainer resolveMenuInventory(UUID expectedOwner, Player viewer) {
+        return canAccessMenu(viewer, expectedOwner) ? resolveInventory(expectedOwner) : null;
+    }
+
+    @Nullable
+    PlayerEnderChestContainer resolveAutomationInventory(UUID expectedOwner) {
+        return allowsAccess(null) ? resolveInventory(expectedOwner) : null;
+    }
+
+    @Nullable
+    private PlayerEnderChestContainer resolveInventory(UUID expectedOwner) {
+        if (!(level instanceof ServerLevel serverLevel) || isRemoved() || !Objects.equals(targetUUID, expectedOwner)
+                || level.getBlockEntity(worldPosition) != this)
             return null;
-        if (access == BrassEnderChestInventory.Access.AUTOMATION && locked)
-            return null;
-        if (access == BrassEnderChestInventory.Access.MENU && locked && !expectedOwner.equals(viewer))
-            return null;
-        return EnderChestInventoryManager.get(serverLevel.getServer()).getInventory(expectedOwner, requestLoad);
+        return EnderChestInventoryManager.get(serverLevel.getServer()).getInventory(expectedOwner, true);
     }
 
     void markInventoryDirty(UUID expectedOwner) {
@@ -175,22 +186,18 @@ public class BrassEnderChestBlockEntity extends SmartBlockEntity
             EnderChestInventoryManager.get(serverLevel.getServer()).markDirty(expectedOwner);
     }
 
-    private boolean canAccess(Player player) {
-        return !locked || isOwner(player);
+    public boolean canAccess(Player player) {
+        return allowsAccess(player.getUUID());
     }
 
-    private void setTarget(UUID owner, String name, boolean lock) {
-        boolean accessChanged = !Objects.equals(targetUUID, owner) || locked != lock;
-        boolean changed = accessChanged || !targetName.equals(name);
-        if (!changed)
-            return;
-        targetUUID = owner;
-        targetName = name;
-        locked = lock;
-        if (accessChanged)
-            accessChanged();
-        else
-            notifyUpdate();
+    // A null viewer represents automation, which is allowed only while unlocked.
+    private boolean allowsAccess(@Nullable UUID viewer) {
+        return targetUUID != null && (!locked || targetUUID.equals(viewer));
+    }
+
+    public boolean hasInventoryLoadFailed() {
+        return targetUUID != null && level instanceof ServerLevel serverLevel
+                && EnderChestInventoryManager.get(serverLevel.getServer()).hasLoadFailed(targetUUID);
     }
 
     private void accessChanged() {

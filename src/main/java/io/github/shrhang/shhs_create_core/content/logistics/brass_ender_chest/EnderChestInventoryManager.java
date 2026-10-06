@@ -19,19 +19,16 @@ import net.minecraft.world.level.storage.LevelResource;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.WeakHashMap;
 
 /** Server-scoped bridge between online and persisted ender chest inventories. */
 public final class EnderChestInventoryManager {
@@ -40,16 +37,17 @@ public final class EnderChestInventoryManager {
     private static final int RETRY_DELAY_TICKS = 200;
     private static final int MAX_QUEUE_CHECKS_PER_TICK = 32;
     private static final int ERROR_LOG_INTERVAL_TICKS = 1200;
-    private static final int FAILED_ENTRY_TTL = 12000;
-    private static final DateTimeFormatter CORRUPT_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss");
-    private static final Map<MinecraftServer, EnderChestInventoryManager> INSTANCES = new WeakHashMap<>();
+    private static final int CACHE_TTL = 12000;
+    private static final int MAX_CLEANUP_CHECKS_PER_TICK = 32;
+    private static final Map<MinecraftServer, EnderChestInventoryManager> INSTANCES = new HashMap<>();
 
     private final MinecraftServer server;
     private final Map<UUID, Entry> entries = new HashMap<>();
-    private final Set<UUID> tracked = new LinkedHashSet<>();
+    private final Map<UUID, Long> lastAccess = new HashMap<>();
+    private final LinkedHashSet<UUID> cleanupQueue = new LinkedHashSet<>();
     private final LinkedHashSet<UUID> loadQueue = new LinkedHashSet<>();
     private final LinkedHashSet<UUID> saveQueue = new LinkedHashSet<>();
-    private final Set<UUID> transitioning = new LinkedHashSet<>();
+    private final Map<UUID, ServerPlayer> pendingLogins = new HashMap<>();
     private long ticks;
     private boolean preferLoad;
     private boolean stopping;
@@ -70,19 +68,20 @@ public final class EnderChestInventoryManager {
     public @Nullable PlayerEnderChestContainer getInventory(UUID owner, boolean requestLoad) {
         ServerPlayer player = server.getPlayerList().getPlayer(owner);
         if (player != null) {
-            tracked.add(owner);
+            touch(owner);
             return player.getEnderChestInventory();
         }
         Entry entry = entries.get(owner);
-        if (entry != null && entry.ready)
+        if (entry != null && entry.ready) {
+            touch(owner);
             return entry.inventory;
-        if (requestLoad && !stopping && !transitioning.contains(owner)) {
-            tracked.add(owner);
+        }
+        if (requestLoad && !stopping) {
+            touch(owner);
             if (entry == null) {
                 entry = new Entry();
                 entries.put(owner, entry);
             }
-            entry.lastRequest = ticks;
             if (ticks >= entry.retryAt)
                 loadQueue.add(owner);
         }
@@ -90,12 +89,19 @@ public final class EnderChestInventoryManager {
     }
 
     public boolean isAvailable(UUID owner) {
-        return getInventory(owner, false) != null;
+        Entry entry = entries.get(owner);
+        return server.getPlayerList().getPlayer(owner) != null || entry != null && entry.ready;
+    }
+
+    public boolean hasLoadFailed(UUID owner) {
+        Entry entry = entries.get(owner);
+        return entry != null && !entry.ready && entry.retryAt > 0;
     }
 
     public void markDirty(UUID owner) {
         Entry entry = entries.get(owner);
-        if (entry == null || !entry.ready || server.getPlayerList().getPlayer(owner) != null)
+        if (entry == null || !entry.ready
+                || server.getPlayerList().getPlayer(owner) != null && !pendingLogins.containsKey(owner))
             return;
         if (!entry.dirty) {
             entry.dirty = true;
@@ -106,32 +112,42 @@ public final class EnderChestInventoryManager {
 
     public void onPlayerLoading(ServerPlayer player) {
         UUID owner = player.getUUID();
-        transitioning.add(owner);
-        transferToPlayer(owner, player);
+        Entry entry = entries.get(owner);
+        if (entry == null || !entry.ready)
+            return;
+        copy(entry.inventory, player.getEnderChestInventory());
+        // Keep one live inventory and its pending save until login is confirmed.
+        entry.inventory = player.getEnderChestInventory();
+        pendingLogins.put(owner, player);
+        loadQueue.remove(owner);
     }
 
     public void onPlayerLoggedIn(ServerPlayer player) {
         UUID owner = player.getUUID();
-        transferToPlayer(owner, player);
-        transitioning.remove(owner);
+        Entry entry = entries.get(owner);
+        if (entry != null && entry.ready && entry.inventory != player.getEnderChestInventory())
+            copy(entry.inventory, player.getEnderChestInventory());
+        releaseOffline(owner);
+        if (lastAccess.containsKey(owner))
+            touch(owner);
     }
 
     public void onPlayerLoggedOut(ServerPlayer player) {
         UUID owner = player.getUUID();
-        transitioning.remove(owner);
-        if (!tracked.contains(owner))
+        pendingLogins.remove(owner);
+        if (!lastAccess.containsKey(owner))
             return;
-        Entry entry = new Entry();
+        Entry entry = entries.computeIfAbsent(owner, ignored -> new Entry());
         entry.inventory = player.getEnderChestInventory();
         entry.ready = true;
-        entry.lastRequest = ticks;
-        entries.put(owner, entry);
+        touch(owner);
         loadQueue.remove(owner);
-        saveQueue.remove(owner);
     }
 
     public void tick() {
         ticks++;
+        finishPendingLogins();
+        cleanCache();
         queueChecksRemaining = MAX_QUEUE_CHECKS_PER_TICK;
         if (preferLoad)
             runLoadOrSave();
@@ -142,22 +158,57 @@ public final class EnderChestInventoryManager {
 
     public void stop() {
         stopping = true;
+        finishPendingLogins();
         loadQueue.clear();
         for (UUID owner : Set.copyOf(saveQueue)) {
             Entry entry = entries.get(owner);
-            if (entry != null && entry.ready && entry.dirty && server.getPlayerList().getPlayer(owner) == null)
-                save(owner, entry);
+            if (entry != null && entry.ready && entry.dirty && server.getPlayerList().getPlayer(owner) == null
+                    && !save(owner, entry))
+                LOGGER.error("Unsaved offline ender chest at shutdown: {}", owner);
         }
     }
 
-    private void transferToPlayer(UUID owner, ServerPlayer player) {
-        Entry entry = entries.remove(owner);
+    private void releaseOffline(UUID owner) {
+        entries.remove(owner);
         loadQueue.remove(owner);
         saveQueue.remove(owner);
-        if (entry == null || !entry.ready)
-            return;
-        copy(entry.inventory, player.getEnderChestInventory());
-        tracked.add(owner);
+        pendingLogins.remove(owner);
+    }
+
+    private void touch(UUID owner) {
+        lastAccess.put(owner, ticks);
+        cleanupQueue.add(owner);
+    }
+
+    private void finishPendingLogins() {
+        // Vanilla loads and joins synchronously. At tick end an unfinished join has failed.
+        Iterator<Map.Entry<UUID, ServerPlayer>> iterator = pendingLogins.entrySet().iterator();
+        for (int checks = 0; iterator.hasNext() && checks < MAX_CLEANUP_CHECKS_PER_TICK; checks++) {
+            Map.Entry<UUID, ServerPlayer> pending = iterator.next();
+            UUID owner = pending.getKey();
+            if (server.getPlayerList().getPlayer(owner) == pending.getValue()) {
+                entries.remove(owner);
+                saveQueue.remove(owner);
+                loadQueue.remove(owner);
+            }
+            // A failed join leaves the inventory and dirty flag in the offline cache.
+            iterator.remove();
+        }
+    }
+
+    private void cleanCache() {
+        int checks = Math.min(MAX_CLEANUP_CHECKS_PER_TICK, cleanupQueue.size());
+        while (checks-- > 0) {
+            UUID owner = poll(cleanupQueue);
+            Entry entry = entries.get(owner);
+            if (ticks - lastAccess.get(owner) >= CACHE_TTL
+                    && (entry == null || !entry.dirty) && !pendingLogins.containsKey(owner)) {
+                releaseOffline(owner);
+                lastAccess.remove(owner);
+            } else {
+                cleanupQueue.add(owner);
+            }
+        }
     }
 
     private boolean runLoad() {
@@ -167,14 +218,10 @@ public final class EnderChestInventoryManager {
             if (owner == null)
                 return false;
             Entry entry = entries.get(owner);
-            if (entry == null || entry.ready || transitioning.contains(owner))
+            if (entry == null || entry.ready)
                 continue;
             if (server.getPlayerList().getPlayer(owner) != null)
                 continue;
-            if (ticks - entry.lastRequest > FAILED_ENTRY_TTL) {
-                entries.remove(owner);
-                continue;
-            }
             if (ticks < entry.retryAt) {
                 loadQueue.add(owner);
                 continue;
@@ -194,7 +241,7 @@ public final class EnderChestInventoryManager {
             Entry entry = entries.get(owner);
             if (entry == null || !entry.ready || !entry.dirty)
                 continue;
-            if (server.getPlayerList().getPlayer(owner) != null || transitioning.contains(owner)) {
+            if (server.getPlayerList().getPlayer(owner) != null || pendingLogins.containsKey(owner)) {
                 saveQueue.add(owner);
                 continue;
             }
@@ -211,16 +258,10 @@ public final class EnderChestInventoryManager {
     private void load(UUID owner, Entry entry) {
         try {
             LoadedPlayerData loaded = readPlayerData(owner);
-            if (loaded.tag.contains("EnderItems") && !loaded.tag.contains("EnderItems", Tag.TAG_LIST))
-                throw new IllegalStateException("EnderItems is not a list");
-            validateEnderItems(loaded.tag.getList("EnderItems", Tag.TAG_COMPOUND));
-            OfflineInventory inventory = new OfflineInventory(owner);
-            inventory.loading = true;
+            PlayerEnderChestContainer inventory = new PlayerEnderChestContainer();
             inventory.fromTag(loaded.tag.getList("EnderItems", Tag.TAG_COMPOUND), server.registryAccess());
-            inventory.loading = false;
             entry.inventory = inventory;
             entry.ready = true;
-            entry.loadedFromBackup = loaded.fromBackup;
             entry.retryAt = 0;
         } catch (Exception exception) {
             entry.retryAt = ticks + RETRY_DELAY_TICKS;
@@ -229,7 +270,7 @@ public final class EnderChestInventoryManager {
         }
     }
 
-    private void save(UUID owner, Entry entry) {
+    private boolean save(UUID owner, Entry entry) {
         try {
             LoadedPlayerData loaded = readPlayerData(owner);
             CompoundTag tag = loaded.tag;
@@ -238,13 +279,14 @@ public final class EnderChestInventoryManager {
             Path directory = playerDataDirectory();
             Path target = directory.resolve(owner + ".dat");
             Path backup = directory.resolve(owner + ".dat_old");
-            if ((entry.loadedFromBackup || loaded.fromBackup) && Files.isRegularFile(target)) {
-                Path corrupt = directory.resolve(owner + "_corrupted_" + LocalDateTime.now().format(CORRUPT_TIME) + ".dat");
-                Files.move(target, corrupt, StandardCopyOption.REPLACE_EXISTING);
-            }
             Path temporary = Files.createTempFile(directory, owner + "-", ".dat");
             try {
                 NbtIo.writeCompressed(tag, temporary);
+                if (loaded.fromBackup && Files.isRegularFile(target)) {
+                    // Preserve both the rejected main file and the known-good backup.
+                    Path corrupt = Files.createTempFile(directory, owner + "_corrupted_", ".dat");
+                    Files.move(target, corrupt, StandardCopyOption.REPLACE_EXISTING);
+                }
                 if (!Util.safeReplaceOrMoveFile(target, temporary, backup, false))
                     throw new IOException("Could not safely replace " + target);
             } finally {
@@ -252,12 +294,13 @@ public final class EnderChestInventoryManager {
             }
             syncIntegratedPlayerData(owner, tag);
             entry.dirty = false;
-            entry.loadedFromBackup = false;
             entry.retryAt = 0;
+            return true;
         } catch (Exception exception) {
             entry.retryAt = ticks + RETRY_DELAY_TICKS;
             saveQueue.add(owner);
             logFailure(owner, entry, "save", exception);
+            return false;
         }
     }
 
@@ -268,30 +311,58 @@ public final class EnderChestInventoryManager {
         Exception mainFailure = null;
         if (Files.isRegularFile(main)) {
             try {
-                return new LoadedPlayerData(fix(NbtIo.readCompressed(main, NbtAccounter.unlimitedHeap())), false);
+                return new LoadedPlayerData(readValidated(main), false);
             } catch (Exception exception) {
                 mainFailure = exception;
             }
         }
-        if (Files.isRegularFile(backup))
-            return new LoadedPlayerData(fix(NbtIo.readCompressed(backup, NbtAccounter.unlimitedHeap())), true);
+        if (Files.isRegularFile(backup)) {
+            try {
+                return new LoadedPlayerData(readValidated(backup), true);
+            } catch (Exception backupFailure) {
+                if (mainFailure != null)
+                    backupFailure.addSuppressed(mainFailure);
+                throw backupFailure;
+            }
+        }
         if (mainFailure != null)
             throw mainFailure;
         throw new IllegalStateException("No player data exists for " + owner);
     }
 
-    private CompoundTag fix(CompoundTag tag) {
+    private CompoundTag readValidated(Path path) throws IOException {
+        CompoundTag tag = NbtIo.readCompressed(path, NbtAccounter.unlimitedHeap());
+        // Reject malformed lists before data fixing can normalize away invalid entries.
+        validateSlots(tag);
         int version = NbtUtils.getDataVersion(tag, -1);
-        return DataFixTypes.PLAYER.updateToCurrentVersion(server.getFixerUpper(), tag, version);
+        tag = DataFixTypes.PLAYER.updateToCurrentVersion(server.getFixerUpper(), tag, version);
+        validateEnderItems(tag);
+        return tag;
     }
 
-    private void validateEnderItems(ListTag items) {
+    private void validateEnderItems(CompoundTag tag) throws IOException {
+        ListTag items = validateSlots(tag);
+        for (int i = 0; i < items.size(); i++) {
+            if (ItemStack.parse(server.registryAccess(), items.getCompound(i)).filter(stack -> !stack.isEmpty()).isEmpty())
+                throw new IOException("Invalid EnderItems stack at index " + i);
+        }
+    }
+
+    private static ListTag validateSlots(CompoundTag tag) throws IOException {
+        if (!tag.contains("EnderItems"))
+            return new ListTag();
+        if (!(tag.get("EnderItems") instanceof ListTag items)
+                || !items.isEmpty() && items.getElementType() != Tag.TAG_COMPOUND)
+            throw new IOException("EnderItems is not a compound list");
+        boolean[] occupied = new boolean[27];
         for (int i = 0; i < items.size(); i++) {
             CompoundTag item = items.getCompound(i);
             int slot = item.getByte("Slot") & 255;
-            if (slot >= 27 || ItemStack.parse(server.registryAccess(), item).isEmpty())
-                throw new IllegalStateException("Invalid EnderItems entry at index " + i);
+            if (!item.contains("Slot", Tag.TAG_BYTE) || slot >= occupied.length || occupied[slot])
+                throw new IOException("Invalid or duplicate EnderItems entry at index " + i);
+            occupied[slot] = true;
         }
+        return items;
     }
 
     private Path playerDataDirectory() throws Exception {
@@ -340,30 +411,12 @@ public final class EnderChestInventoryManager {
         target.setChanged();
     }
 
-    private final class OfflineInventory extends PlayerEnderChestContainer {
-        private final UUID owner;
-        private boolean loading;
-
-        private OfflineInventory(UUID owner) {
-            this.owner = owner;
-        }
-
-        @Override
-        public void setChanged() {
-            super.setChanged();
-            if (!loading)
-                markDirty(owner);
-        }
-    }
-
     private static final class Entry {
         private PlayerEnderChestContainer inventory;
         private boolean ready;
         private boolean dirty;
-        private boolean loadedFromBackup;
         private long saveAt;
         private long retryAt;
-        private long lastRequest;
         private long nextErrorLog;
     }
 

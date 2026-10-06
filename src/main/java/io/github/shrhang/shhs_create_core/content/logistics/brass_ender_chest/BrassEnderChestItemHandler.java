@@ -72,8 +72,7 @@ final class BrassEnderChestItemHandler implements IItemHandlerModifiable {
     }
 
     private InvWrapper delegate() {
-        PlayerEnderChestContainer inventory = blockEntity.resolveInventory(owner,
-                BrassEnderChestInventory.Access.AUTOMATION, null, false);
+        PlayerEnderChestContainer inventory = blockEntity.resolveAutomationInventory(owner);
         return inventory == null ? null : new InvWrapper(inventory);
     }
 }

@@ -29,6 +29,10 @@ public class ShHsLang {
         return Component.translatable(key(type, key), args);
     }
 
+    public static MutableComponent msgComponent(String key, Object... args) {
+        return component("msg", key, args);
+    }
+
     public static MutableComponent textComponent(String key, Object... args) {
         return component("text", key, args);
     }
@@ -105,7 +109,14 @@ public class ShHsLang {
         REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.no_owner"), "No owner is bound.");
         REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.locked"), "Locked: Only the owner can open; automation is disabled.");
         REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.unlocked"), "Unlocked: Anyone and logistics components can access it.");
-        REGISTRATE.addRawLang(key("message", "brass_ender_chest.loading"), "The owner's Ender Chest is loading. Please try again shortly.");
+        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.loading"), "The owner's Ender Chest is loading. Please try again shortly.");
+        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.load_failed"), "The owner's Ender Chest could not be loaded. Retrying automatically; contact the server administrator if this persists.");
+        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.no_owner"), "No owner is bound to this chest.");
+        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.owner_only"), "Only the owner can change this chest's lock.");
+        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.access_denied"), "This chest is locked. Only its owner can open it.");
+        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.blocked"), "The space above this chest is blocked.");
+        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.locked"), "Chest locked. Other players and logistics components can no longer access it.");
+        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.unlocked"), "Chest unlocked. Players and logistics components can access it.");
 
         REGISTRATE.addRawLang(key("text","press_key_to"), " Press %s to %s");
 

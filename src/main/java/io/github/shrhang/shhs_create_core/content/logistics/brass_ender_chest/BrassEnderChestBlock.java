@@ -25,14 +25,11 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
@@ -40,19 +37,17 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 import javax.annotation.Nullable;
-import java.util.Objects;
 
-import static io.github.shrhang.shhs_create_core.content.data.ShHsLang.titleComponent;
+import static io.github.shrhang.shhs_create_core.content.data.ShHsLang.*;
 import static io.github.shrhang.shhs_create_core.content.registries.ShHsBlockEntityTypes.BRASS_ENDER_CHEST_BE;
 
 public class BrassEnderChestBlock extends HorizontalDirectionalBlock implements SimpleWaterloggedBlock, IWrenchable, IBE<BrassEnderChestBlockEntity> {
     public static final MapCodec<? extends HorizontalDirectionalBlock> CODEC = simpleCodec(BrassEnderChestBlock::new);
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
     private static final VoxelShape SHAPE_HALF = Block.box(1, 0, 1, 14, 14, 14);
-    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
-    public BrassEnderChestBlock(Properties p_i48440_1_) {
-        super(p_i48440_1_);
+    public BrassEnderChestBlock(Properties properties) {
+        super(properties);
         this.registerDefaultState(this.defaultBlockState()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(WATERLOGGED, false)
@@ -78,7 +73,6 @@ public class BrassEnderChestBlock extends HorizontalDirectionalBlock implements 
                 .setValue(WATERLOGGED, fluidstate.getType() == Fluids.WATER);
     }
 
-    // Block Interaction Core
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (!(level.getBlockEntity(pos) instanceof BrassEnderChestBlockEntity brassEnderChestBE))
@@ -86,30 +80,30 @@ public class BrassEnderChestBlock extends HorizontalDirectionalBlock implements 
         if (level.isClientSide)
             return InteractionResult.SUCCESS;
         if (brassEnderChestBE.getTargetUUID() == null)
-            return InteractionResult.CONSUME;
+            return feedback(player, "no_owner");
         if (player.isCrouching()) {
-            if (brassEnderChestBE.isOwner(player))
-                brassEnderChestBE.changeLock();
-            return InteractionResult.CONSUME;
+            if (!brassEnderChestBE.isOwner(player))
+                return feedback(player, "owner_only");
+            brassEnderChestBE.changeLock();
+            return feedback(player, brassEnderChestBE.isLocked() ? "locked" : "unlocked");
         }
         BlockPos above = pos.above();
         if (level.getBlockState(above).isRedstoneConductor(level, above))
-            return InteractionResult.CONSUME;
-        if (brassEnderChestBE.isLocked() && !brassEnderChestBE.isOwner(player))
-            return InteractionResult.CONSUME;
+            return feedback(player, "blocked");
+        if (!brassEnderChestBE.canAccess(player))
+            return feedback(player, "access_denied");
 
         Container targetInventory = brassEnderChestBE.getMenuInventory(player);
-        if (targetInventory == null) {
-            player.displayClientMessage(Component.translatable("message.shhs_create_core.brass_ender_chest.loading"), true);
-            return InteractionResult.CONSUME;
-        }
-        player.openMenu(
+        if (targetInventory == null)
+            return feedback(player, brassEnderChestBE.hasInventoryLoadFailed() ? "load_failed" : "loading");
+        if (player.openMenu(
                 new SimpleMenuProvider(
                         (id, inventory, pl) -> ChestMenu.threeRows(id, inventory, targetInventory),
                         titleComponent("container.endchest", Component.literal(brassEnderChestBE.getTargetName()),
                                 Component.translatable("container.enderchest"))
                 )
-        );
+        ).isEmpty())
+            return InteractionResult.CONSUME;
 
         level.playSound(
                 null,
@@ -128,6 +122,11 @@ public class BrassEnderChestBlock extends HorizontalDirectionalBlock implements 
         return InteractionResult.CONSUME;
     }
 
+    private static InteractionResult feedback(Player player, String key) {
+        player.displayClientMessage(msgComponent("brass_ender_chest." + key), true);
+        return InteractionResult.CONSUME;
+    }
+
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
@@ -135,13 +134,11 @@ public class BrassEnderChestBlock extends HorizontalDirectionalBlock implements 
             withBlockEntityDo(level, pos, be -> be.setOwner(player));
     }
 
-    // Horizontal Directional Block
     @Override
     public BlockState rotate(BlockState state, Rotation rot) {
         return state.setValue(FACING, rot.rotate(state.getValue(FACING)));
     }
 
-    // Water loggable Block
     @Override
     public FluidState getFluidState(BlockState state) {
         return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
@@ -155,7 +152,6 @@ public class BrassEnderChestBlock extends HorizontalDirectionalBlock implements 
         return super.updateShape(state, dir, neighbor, level, pos, neighborPos);
     }
 
-    // IBE Methods
     @Override
     public Class<BrassEnderChestBlockEntity> getBlockEntityClass() {
         return BrassEnderChestBlockEntity.class;
@@ -166,17 +162,6 @@ public class BrassEnderChestBlock extends HorizontalDirectionalBlock implements 
         return BRASS_ENDER_CHEST_BE.get();
     }
 
-    @Override
-    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return Objects.requireNonNull(IBE.super.newBlockEntity(pos, state));
-    }
-
-    @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return IBE.super.getTicker(level, state, type);
-    }
-
-    // Voxel Shapes
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext ctx) {
         return SHAPE_HALF;
