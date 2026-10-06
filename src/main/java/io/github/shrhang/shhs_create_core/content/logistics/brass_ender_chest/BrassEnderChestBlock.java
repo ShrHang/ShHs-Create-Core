@@ -11,6 +11,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.piglin.PiglinAi;
 import net.minecraft.world.entity.player.Player;
@@ -82,59 +83,56 @@ public class BrassEnderChestBlock extends HorizontalDirectionalBlock implements 
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (!(level.getBlockEntity(pos) instanceof BrassEnderChestBlockEntity brassEnderChestBE))
             return InteractionResult.sidedSuccess(level.isClientSide);
-        BlockPos blockpos = pos.above();
-        if (level.getBlockState(blockpos).isRedstoneConductor(level, blockpos)) {
-            return InteractionResult.sidedSuccess(level.isClientSide);
-        }
-
-        if ((brassEnderChestBE).getTargetUUID() == null)
-            return InteractionResult.sidedSuccess(level.isClientSide);
-
-        Player targetPlayer = level.getPlayerByUUID((brassEnderChestBE).getTargetUUID());
-        if (targetPlayer == null) {
-            return InteractionResult.sidedSuccess(level.isClientSide);
-        }
+        if (level.isClientSide)
+            return InteractionResult.SUCCESS;
+        if (brassEnderChestBE.getTargetUUID() == null)
+            return InteractionResult.CONSUME;
         if (player.isCrouching()) {
-            if (Objects.equals(targetPlayer, player)) {
+            if (brassEnderChestBE.isOwner(player))
                 brassEnderChestBE.changeLock();
-                return InteractionResult.CONSUME;
-            }
-            return InteractionResult.sidedSuccess(level.isClientSide);
-        } else {
-            if (brassEnderChestBE.isLocked() && !Objects.equals(targetPlayer, player))
-                return InteractionResult.sidedSuccess(level.isClientSide);
-
-            player.openMenu(
-                    new SimpleMenuProvider(
-                            (id, inventory, pl) -> ChestMenu.threeRows(id, inventory, targetPlayer.getEnderChestInventory()),
-                            titleComponent("container.endchest", targetPlayer.getName(), Component.translatable("container.enderchest"))
-                    )
-            );
-
-            level.playSound(
-                    null,
-                    pos.getX() + 0.5,
-                    pos.getY() + 0.5,
-                    pos.getZ() + 0.5,
-                    SoundEvents.ENDER_CHEST_OPEN,
-                    SoundSource.BLOCKS,
-                    0.5F,
-                    level.random.nextFloat() * 0.1F + 0.9F
-            );
-
-            player.awardStat(Stats.OPEN_ENDERCHEST);
-            PiglinAi.angerNearbyPiglins(player, true);
-
             return InteractionResult.CONSUME;
         }
+        BlockPos above = pos.above();
+        if (level.getBlockState(above).isRedstoneConductor(level, above))
+            return InteractionResult.CONSUME;
+        if (brassEnderChestBE.isLocked() && !brassEnderChestBE.isOwner(player))
+            return InteractionResult.CONSUME;
+
+        Container targetInventory = brassEnderChestBE.getMenuInventory(player);
+        if (targetInventory == null) {
+            player.displayClientMessage(Component.translatable("message.shhs_create_core.brass_ender_chest.loading"), true);
+            return InteractionResult.CONSUME;
+        }
+        player.openMenu(
+                new SimpleMenuProvider(
+                        (id, inventory, pl) -> ChestMenu.threeRows(id, inventory, targetInventory),
+                        titleComponent("container.endchest", Component.literal(brassEnderChestBE.getTargetName()),
+                                Component.translatable("container.enderchest"))
+                )
+        );
+
+        level.playSound(
+                null,
+                pos.getX() + 0.5,
+                pos.getY() + 0.5,
+                pos.getZ() + 0.5,
+                SoundEvents.ENDER_CHEST_OPEN,
+                SoundSource.BLOCKS,
+                0.5F,
+                level.random.nextFloat() * 0.1F + 0.9F
+        );
+
+        player.awardStat(Stats.OPEN_ENDERCHEST);
+        PiglinAi.angerNearbyPiglins(player, true);
+
+        return InteractionResult.CONSUME;
     }
 
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
-        if (!level.isClientSide && placer instanceof Player player) {
-            withBlockEntityDo(level, pos, be -> be.setTargetUUID(player.getUUID()));
-        }
+        if (!level.isClientSide && placer instanceof Player player)
+            withBlockEntityDo(level, pos, be -> be.setOwner(player));
     }
 
     // Horizontal Directional Block

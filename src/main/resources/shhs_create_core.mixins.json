@@ -31,7 +31,8 @@
     "irons_spellbooks.gui.overlays.SpellWheelOverlayMixin",
     "irons_spellbooks.util.TooltipsUtilsMixin",
     "minecraft.client.renderer.LevelRendererMixin",
-    "minecraft.client.renderer.SkullBlockRendererMixin"
+    "minecraft.client.renderer.SkullBlockRendererMixin",
+    "minecraft.server.players.IntegratedPlayerDataAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

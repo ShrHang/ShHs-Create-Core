@@ -1,7 +1,6 @@
 package io.github.shrhang.shhs_create_core.content.ponder.scenes;
 
 import io.github.shrhang.shhs_create_core.content.registries.ShHsBlocks;
-import com.simibubi.create.AllBlocks;
 import com.simibubi.create.AllItems;
 import com.simibubi.create.content.logistics.funnel.FunnelBlock;
 import com.simibubi.create.foundation.ponder.CreateSceneBuilder;
@@ -162,7 +161,7 @@ public class BrassEnderChestScenes {
                 .pointAt(util.vector().topOf(chest))
                 .attachKeyFrame()
                 .placeNearTarget()
-                .text("Anyone who opens a Brass Ender Chest can only access its owner’s ender chest inventory.");
+                .text("An unlocked Brass Ender Chest accesses its owner’s inventory even while the owner is offline.");
         scene.idle(80);
 
         scene.overlay().showControls(util.vector().blockSurface(chest, Direction.NORTH), Pointing.RIGHT, 60).withItem(AllItems.GOGGLES.asStack());
@@ -190,17 +189,9 @@ public class BrassEnderChestScenes {
                 .pointAt(util.vector().topOf(chest))
                 .attachKeyFrame()
                 .placeNearTarget()
-                .text("When locked, only the owner can open the brass ender chest.");
+                .text("When locked, only the owner can open it and logistics access is disabled.");
         scene.idle(80);
 
-        scene.overlay().showControls(util.vector().blockSurface(chest, Direction.NORTH), Pointing.RIGHT, 60).withItem(AllBlocks.CLIPBOARD.asStack());
-        scene.overlay()
-                .showText(60)
-                .pointAt(util.vector().topOf(chest))
-                .attachKeyFrame()
-                .placeNearTarget()
-                .text("The clipboard can copy a Brass Ender Chest’s owner and lock status, then apply them to other Brass Ender Chests.");
-        scene.idle(80);
         scene.markAsFinished();
     }
 

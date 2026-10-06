@@ -67,9 +67,8 @@ public class ShHsBlocks {
                     prov.horizontalBlock(ctx.getEntry(), prov.models().getExistingFile(ctx.getId()))
             )
             .item(item -> item
-                    .tooltipSummary("An Ender Chest that can interact with _funnels_, _chutes_, _packagers_, and other _logistics components_. It can only access the Ender Chest _Inventory_ of its _owner_. If the owner is _offline_, the Brass Ender Chest _cannot be interacted with_.")
+                    .tooltipSummary("An Ender Chest that exposes its _owner's inventory_ to players and _logistics components_, even while the owner is _offline_. Lock it to disable logistics access and keep other players out.")
                     .tooltipBehaviour(1, "When R-Clicked while Sneaking", "Toggle the _lock state_.")
-                    .tooltipBehaviour(2, "When interacting with a clipboard", "_Copy_/_Paste_ the _owner_ and _lock state_ of the Brass Ender Chest.")
                     .recipe((ctx, prov) -> ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ctx.get())
                             .define('A', TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", "plates/brass")))
                             .define('B', TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", "plates/obsidian")))

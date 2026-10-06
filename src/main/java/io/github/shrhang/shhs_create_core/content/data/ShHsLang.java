@@ -102,8 +102,10 @@ public class ShHsLang {
         REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.header"), "Ender Chest Info");
         REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.owner"), "Owner: %s");
         REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.owner_unknown"), "Cannot find owner %s");
-        REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.locked"), "Locked: Only the owner can open.");
-        REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.unlocked"), "Unlocked: Anyone can open.");
+        REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.no_owner"), "No owner is bound.");
+        REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.locked"), "Locked: Only the owner can open; automation is disabled.");
+        REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.unlocked"), "Unlocked: Anyone and logistics components can access it.");
+        REGISTRATE.addRawLang(key("message", "brass_ender_chest.loading"), "The owner's Ender Chest is loading. Please try again shortly.");
 
         REGISTRATE.addRawLang(key("text","press_key_to"), " Press %s to %s");
 
