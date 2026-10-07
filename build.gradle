@@ -219,6 +219,20 @@ sourceSets.main.resources.srcDir generateModMetadata
 
 neoForge.ideSyncTask generateModMetadata
 
+sourceSets.test.compileClasspath += sourceSets.main.compileClasspath
+sourceSets.test.runtimeClasspath += sourceSets.main.runtimeClasspath
+
+tasks.register('verifyPortableStockTicker', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    workingDir = layout.buildDirectory.get().asFile
+    mainClass = 'io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerVerification'
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('verifyPortableStockTicker')
+}
+
 publishing {
     publications {
         register('mavenJava', MavenPublication) {

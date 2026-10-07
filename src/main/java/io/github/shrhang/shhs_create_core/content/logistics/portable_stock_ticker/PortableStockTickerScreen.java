@@ -7,10 +7,8 @@ import com.simibubi.create.AllSoundEvents;
 import com.simibubi.create.compat.Mods;
 import com.simibubi.create.compat.jei.CreateJEI;
 import com.simibubi.create.content.logistics.BigItemStack;
-import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelScreen;
 import com.simibubi.create.content.logistics.packager.InventorySummary;
 import com.simibubi.create.content.logistics.stockTicker.CraftableBigItemStack;
-import com.simibubi.create.content.logistics.stockTicker.PackageOrder;
 import com.simibubi.create.content.logistics.stockTicker.PackageOrderWithCrafts;
 import com.simibubi.create.content.logistics.stockTicker.PackageOrderWithCrafts.CraftingEntry;
 import com.simibubi.create.content.logistics.stockTicker.StockKeeperRequestScreen.SearchSyncMode;
@@ -38,7 +36,6 @@ import net.minecraft.world.item.Item.TooltipContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.crafting.CraftingRecipe;
-import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
@@ -66,7 +63,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
     private final List<BigItemStack> displayedItems = new ArrayList<>();
     private final List<BigItemStack> itemsToOrder = new ArrayList<>();
     private final List<CraftableBigItemStack> recipesToOrder = new ArrayList<>();
-    private List<List<BigItemStack>> currentItemSource;
+    private long currentStockRevision;
 
     private EditBox searchBox;
     private PortableStockTickerAddressEditBox addressBox;
@@ -136,7 +133,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
         moveToTopNextTick = true;
         syncJEI(true);
         requestStatus();
-        PacketDistributor.sendToServer(new StockInventoryPacket.StockRequestPacket(menu.networkId));
+        requestStock(true);
     }
 
     @Override
@@ -174,11 +171,12 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
         emptyTicks = allEmpty ? emptyTicks + 1 : 0;
         successTicks = successTicks > 0 && itemsToOrder.isEmpty() ? successTicks + 1 : 0;
 
-        List<List<BigItemStack>> clientStockSnapshot = snapshot == null ? null : snapshot.stockSnapshot();
-        if (clientStockSnapshot != currentItemSource) {
-            currentItemSource = clientStockSnapshot;
-            refreshSearchResults(false);
+        long stockRevision = snapshot == null ? 0 : snapshot.revision();
+        if (stockRevision != currentStockRevision) {
+            currentStockRevision = stockRevision;
+            refreshSearchNextTick = true;
             revalidateOrders();
+            updateCraftableAmounts();
         }
 
         if (refreshSearchNextTick) {
@@ -192,9 +190,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
             itemScroll.setValue(itemScroll.getChaseTarget());
         }
 
-        if (snapshot == null || snapshot.ticksSinceLastUpdate() > 15) {
-            PacketDistributor.sendToServer(new StockInventoryPacket.StockRequestPacket(menu.networkId));
-        }
+        requestStock(false);
         if (snapshot == null || snapshot.isStatusStale(minecraft.level.getGameTime(), STATUS_REFRESH_INTERVAL)) {
             requestStatus();
         }
@@ -326,13 +322,15 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
         pose.pushPose();
         pose.translate(0, -currentScroll * ROW_HEIGHT, 0);
 
-        for (int sliceY = -2; sliceY < getMaxScroll() * ROW_HEIGHT + windowHeight - 72;
-             sliceY += AllGuiTextures.STOCK_KEEPER_REQUEST_BG.getHeight()) {
+        int sliceHeight = AllGuiTextures.STOCK_KEEPER_REQUEST_BG.getHeight();
+        int firstSlice = Math.max(0, Mth.floor((currentScroll * ROW_HEIGHT - 18) / sliceHeight) - 1);
+        for (int sliceY = -2 + firstSlice * sliceHeight; sliceY < getMaxScroll() * ROW_HEIGHT + windowHeight - 72;
+             sliceY += sliceHeight) {
             if (sliceY - currentScroll * ROW_HEIGHT < -20) {
                 continue;
             }
             if (sliceY - currentScroll * ROW_HEIGHT > windowHeight - 72) {
-                continue;
+                break;
             }
             AllGuiTextures.STOCK_KEEPER_REQUEST_BG.render(graphics, x + 22, topPos + sliceY + 18);
         }
@@ -366,7 +364,8 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
             }
         }
 
-        for (int index = 0; index < displayedItems.size(); index++) {
+        int firstRow = Math.max(0, Mth.floor((topPos - itemsY - 4 + currentScroll * ROW_HEIGHT) / ROW_HEIGHT) - 1);
+        for (int index = firstRow * COLS; index < displayedItems.size(); index++) {
             int itemY = itemsY + 4 + (index / COLS) * ROW_HEIGHT;
             float cullY = itemY - currentScroll * ROW_HEIGHT;
             if (cullY < topPos) {
@@ -560,7 +559,6 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
         }
 
         clampScrollBar();
-        updateCraftableAmounts();
     }
 
     private void renderItemEntry(GuiGraphics graphics, BigItemStack entry, boolean isHovered, boolean renderingOrders) {
@@ -786,6 +784,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
             CraftableBigItemStack craftable = recipesToOrder.get(hoveredSlot.index());
             if (rightClick && craftable.count == 0) {
                 recipesToOrder.remove(craftable);
+                updateCraftableAmounts();
                 return true;
             }
             requestCraftable(craftable, rightClick ? -transfer : transfer);
@@ -983,6 +982,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
 
     private void sendOrder() {
         revalidateOrders();
+        updateCraftableAmounts();
         if (itemsToOrder.isEmpty()) {
             return;
         }
@@ -993,51 +993,8 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
                 if (!(craftable.recipe instanceof CraftingRecipe craftingRecipe) || minecraft == null || minecraft.level == null) {
                     continue;
                 }
-                int craftedCount = 0;
-                int targetCount = craftable.count / craftable.getOutputCount(minecraft.level);
-                List<BigItemStack> mutableOrder = BigItemStack.duplicateWrappers(itemsToOrder);
-                while (craftedCount < targetCount) {
-                    PackageOrder pattern = new PackageOrder(
-                            FactoryPanelScreen.convertRecipeToPackageOrderContext(craftingRecipe, mutableOrder, true)
-                    );
-                    int maxCrafts = targetCount - craftedCount;
-                    int availableCrafts = 0;
-                    boolean itemsExhausted = false;
-                    while (availableCrafts < maxCrafts && !itemsExhausted) {
-                        List<BigItemStack> previousSnapshot = BigItemStack.duplicateWrappers(mutableOrder);
-                        itemsExhausted = true;
-                        boolean failedPattern = false;
-                        for (BigItemStack patternStack : pattern.stacks()) {
-                            if (patternStack.stack.isEmpty()) {
-                                continue;
-                            }
-                            boolean matched = false;
-                            for (BigItemStack ordered : mutableOrder) {
-                                if (!ItemStack.isSameItemSameComponents(ordered.stack, patternStack.stack) || ordered.count == 0) {
-                                    continue;
-                                }
-                                ordered.count -= 1;
-                                itemsExhausted = false;
-                                matched = true;
-                                break;
-                            }
-                            if (!matched) {
-                                mutableOrder = previousSnapshot;
-                                failedPattern = true;
-                                break;
-                            }
-                        }
-                        if (failedPattern) {
-                            break;
-                        }
-                        availableCrafts++;
-                    }
-                    if (availableCrafts == 0) {
-                        break;
-                    }
-                    craftList.add(new CraftingEntry(pattern, availableCrafts));
-                    craftedCount += availableCrafts;
-                }
+                craftList.addAll(PortableStockTickerCrafting.planCrafts(craftingRecipe,
+                        craftable.count / craftable.getOutputCount(minecraft.level), itemsToOrder));
             }
             order = new PackageOrderWithCrafts(order.orderedStacks(), craftList);
         }
@@ -1048,7 +1005,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
         ));
         itemsToOrder.clear();
         recipesToOrder.clear();
-        PacketDistributor.sendToServer(new StockInventoryPacket.StockRequestPacket(menu.networkId));
+        requestStock(true);
         successTicks = 1;
     }
 
@@ -1066,7 +1023,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
             return;
         }
 
-        InventorySummary availableItems = snapshot.summary().copy();
+        InventorySummary availableItems = snapshot.summary();
         Function<ItemStack, Integer> countModifier = stack -> {
             BigItemStack ordered = getOrderForItem(stack);
             return ordered == null ? 0 : -ordered.count;
@@ -1120,8 +1077,8 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
     }
 
     private void updateCraftableAmounts() {
-        if (minecraft == null || minecraft.level == null) {
-            canRequestCraftingPackage = false;
+        canRequestCraftingPackage = false;
+        if (recipesToOrder.isEmpty() || minecraft == null || minecraft.level == null) {
             return;
         }
 
@@ -1149,7 +1106,6 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
             }
         }
 
-        canRequestCraftingPackage = false;
         for (BigItemStack ordered : itemsToOrder) {
             if (usedItems.getCountOf(ordered.stack) != ordered.count) {
                 return;
@@ -1159,141 +1115,13 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
     }
 
     private Pair<Integer, List<List<BigItemStack>>> maxCraftable(CraftableBigItemStack craftable,
-                                                                  InventorySummary summary,
-                                                                  Function<ItemStack, Integer> countModifier,
-                                                                  int newTypeLimit) {
+            InventorySummary summary, Function<ItemStack, Integer> countModifier, int newTypeLimit) {
         if (minecraft == null || minecraft.level == null) {
             return Pair.of(0, List.of());
         }
-
-        List<Ingredient> ingredients = craftable.getIngredients();
-        List<List<BigItemStack>> validEntriesByIngredient = new ArrayList<>();
-        List<BigItemStack> alreadyCreated = new ArrayList<>();
-
-        for (Ingredient ingredient : ingredients) {
-            if (ingredient.isEmpty()) {
-                continue;
-            }
-            List<BigItemStack> valid = new ArrayList<>();
-            for (List<BigItemStack> list : summary.getItemMap().values()) {
-                entries:
-                for (BigItemStack entry : list) {
-                    if (!ingredient.test(entry.stack)) {
-                        continue;
-                    }
-                    for (BigItemStack visited : alreadyCreated) {
-                        if (!ItemStack.isSameItemSameComponents(visited.stack, entry.stack)) {
-                            continue;
-                        }
-                        valid.add(visited);
-                        continue entries;
-                    }
-                    BigItemStack asBis = new BigItemStack(entry.stack, summary.getCountOf(entry.stack) + countModifier.apply(entry.stack));
-                    if (asBis.count > 0) {
-                        valid.add(asBis);
-                        alreadyCreated.add(asBis);
-                    }
-                }
-            }
-            if (valid.isEmpty()) {
-                return Pair.of(0, List.of());
-            }
-            valid.sort((left, right) -> -Integer.compare(summary.getCountOf(left.stack), summary.getCountOf(right.stack)));
-            validEntriesByIngredient.add(valid);
-        }
-
-        if (newTypeLimit != -1) {
-            int toRemove = (int) validEntriesByIngredient.stream()
-                    .flatMap(List::stream)
-                    .filter(entry -> getOrderForItem(entry.stack) == null)
-                    .distinct()
-                    .count() - newTypeLimit;
-            for (int i = 0; i < toRemove; i++) {
-                removeLeastEssentialItemStack(validEntriesByIngredient);
-            }
-        }
-
-        validEntriesByIngredient = resolveIngredientAmounts(validEntriesByIngredient);
-        int minCount = Integer.MAX_VALUE;
-        for (List<BigItemStack> list : validEntriesByIngredient) {
-            int sum = 0;
-            for (BigItemStack entry : list) {
-                sum += entry.count;
-            }
-            minCount = Math.min(sum, minCount);
-        }
-        if (minCount == 0) {
-            return Pair.of(0, List.of());
-        }
-
-        int outputCount = craftable.getOutputCount(minecraft.level);
-        return Pair.of(minCount * outputCount, validEntriesByIngredient);
-    }
-
-    private void removeLeastEssentialItemStack(List<List<BigItemStack>> validIngredients) {
-        List<BigItemStack> longest = null;
-        int most = 0;
-        for (List<BigItemStack> list : validIngredients) {
-            int count = (int) list.stream().filter(entry -> getOrderForItem(entry.stack) == null).count();
-            if (longest != null && count <= most) {
-                continue;
-            }
-            longest = list;
-            most = count;
-        }
-        if (longest == null || longest.isEmpty()) {
-            return;
-        }
-
-        BigItemStack chosen = null;
-        for (int i = 0; i < longest.size(); i++) {
-            BigItemStack entry = longest.get(longest.size() - 1 - i);
-            if (getOrderForItem(entry.stack) != null) {
-                continue;
-            }
-            chosen = entry;
-            break;
-        }
-        if (chosen == null) {
-            return;
-        }
-        for (List<BigItemStack> list : validIngredients) {
-            list.remove(chosen);
-        }
-    }
-
-    private List<List<BigItemStack>> resolveIngredientAmounts(List<List<BigItemStack>> validIngredients) {
-        List<List<BigItemStack>> resolvedIngredients = new ArrayList<>();
-        for (int i = 0; i < validIngredients.size(); i++) {
-            resolvedIngredients.add(new ArrayList<>());
-        }
-
-        boolean everythingTaken = false;
-        while (!everythingTaken) {
-            everythingTaken = true;
-            ingredientLoop:
-            for (int i = 0; i < validIngredients.size(); i++) {
-                List<BigItemStack> list = validIngredients.get(i);
-                List<BigItemStack> resolvedList = resolvedIngredients.get(i);
-                for (BigItemStack bigItemStack : list) {
-                    if (bigItemStack.count == 0) {
-                        continue;
-                    }
-                    bigItemStack.count -= 1;
-                    everythingTaken = false;
-                    for (BigItemStack resolvedItemStack : resolvedList) {
-                        if (ItemStack.isSameItemSameComponents(resolvedItemStack.stack, bigItemStack.stack)) {
-                            resolvedItemStack.count++;
-                            continue ingredientLoop;
-                        }
-                    }
-                    resolvedList.add(new BigItemStack(bigItemStack.stack, 1));
-                    continue ingredientLoop;
-                }
-            }
-        }
-
-        return resolvedIngredients;
+        return PortableStockTickerCrafting.maxCraftable(craftable.getIngredients(),
+                craftable.getOutputCount(minecraft.level), summary, countModifier, newTypeLimit,
+                stack -> getOrderForItem(stack) != null);
     }
 
     private boolean shouldSyncFromJEI() {
@@ -1334,6 +1162,15 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
                 256,
                 256
         );
+    }
+
+    private void requestStock(boolean force) {
+        if (minecraft == null || minecraft.level == null) {
+            return;
+        }
+        if (PortableStockTickerClientData.getOrCreate(menu.networkId).requestStock(minecraft.level.getGameTime(), force)) {
+            PacketDistributor.sendToServer(new StockInventoryPacket.StockRequestPacket(menu.networkId));
+        }
     }
 
     private void requestStatus() {
