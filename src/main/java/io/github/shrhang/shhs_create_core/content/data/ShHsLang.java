@@ -105,18 +105,17 @@ public class ShHsLang {
         REGISTRATE.addRawLang(key("title", "container.endchest"), "%s's %s");
         REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.header"), "Ender Chest Info");
         REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.owner"), "Owner: %s");
-        REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.owner_unknown"), "Cannot find owner %s");
-        REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.no_owner"), "No owner is bound.");
-        REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.locked"), "Locked: Only the owner can open; automation is disabled.");
-        REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.unlocked"), "Unlocked: Anyone and logistics components can access it.");
-        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.loading"), "The owner's Ender Chest is loading. Please try again shortly.");
-        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.load_failed"), "The owner's Ender Chest could not be loaded. Retrying automatically; contact the server administrator if this persists.");
-        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.no_owner"), "No owner is bound to this chest.");
-        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.owner_only"), "Only the owner can change this chest's lock.");
-        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.access_denied"), "This chest is locked. Only its owner can open it.");
-        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.blocked"), "The space above this chest is blocked.");
-        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.locked"), "Chest locked. Other players and logistics components can no longer access it.");
-        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.unlocked"), "Chest unlocked. Players and logistics components can access it.");
+        REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.no_owner"), "No owner bound");
+        REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.locked"), "Locked");
+        REGISTRATE.addRawLang(key("tooltip", "brass_ender_chest.unlocked"), "Unlocked");
+        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.loading"), "Loading inventory");
+        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.load_failed"), "Failed to load inventory");
+        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.no_owner"), "No owner bound");
+        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.owner_only"), "Only the owner can toggle the lock");
+        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.access_denied"), "Only the owner can access this Ender Chest");
+        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.blocked"), "Blocked above.");
+        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.locked"), "Locked");
+        REGISTRATE.addRawLang(key("msg", "brass_ender_chest.unlocked"), "Unlocked");
 
         REGISTRATE.addRawLang(key("text","press_key_to"), " Press %s to %s");
 

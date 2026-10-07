@@ -3,6 +3,7 @@ package io.github.shrhang.shhs_create_core.content.logistics.brass_ender_chest;
 import com.mojang.serialization.MapCodec;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.foundation.block.IBE;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -80,22 +81,24 @@ public class BrassEnderChestBlock extends HorizontalDirectionalBlock implements 
         if (level.isClientSide)
             return InteractionResult.SUCCESS;
         if (brassEnderChestBE.getTargetUUID() == null)
-            return feedback(player, "no_owner");
+            return feedback(player, "no_owner", ChatFormatting.RED);
         if (player.isCrouching()) {
             if (!brassEnderChestBE.isOwner(player))
-                return feedback(player, "owner_only");
+                return feedback(player, "owner_only", ChatFormatting.RED);
             brassEnderChestBE.changeLock();
-            return feedback(player, brassEnderChestBE.isLocked() ? "locked" : "unlocked");
+            return feedback(player, brassEnderChestBE.isLocked() ? "locked" : "unlocked", ChatFormatting.GRAY);
         }
         BlockPos above = pos.above();
         if (level.getBlockState(above).isRedstoneConductor(level, above))
-            return feedback(player, "blocked");
+            return feedback(player, "blocked", ChatFormatting.RED);
         if (!brassEnderChestBE.canAccess(player))
-            return feedback(player, "access_denied");
+            return feedback(player, "access_denied", ChatFormatting.RED);
 
         Container targetInventory = brassEnderChestBE.getMenuInventory(player);
-        if (targetInventory == null)
-            return feedback(player, brassEnderChestBE.hasInventoryLoadFailed() ? "load_failed" : "loading");
+        if (targetInventory == null) {
+            var result = brassEnderChestBE.hasInventoryLoadFailed();
+            return feedback(player, result ? "load_failed" : "loading", result ? ChatFormatting.RED : ChatFormatting.GRAY);
+        }
         if (player.openMenu(
                 new SimpleMenuProvider(
                         (id, inventory, pl) -> ChestMenu.threeRows(id, inventory, targetInventory),
@@ -122,8 +125,8 @@ public class BrassEnderChestBlock extends HorizontalDirectionalBlock implements 
         return InteractionResult.CONSUME;
     }
 
-    private static InteractionResult feedback(Player player, String key) {
-        player.displayClientMessage(msgComponent("brass_ender_chest." + key), true);
+    private static InteractionResult feedback(Player player, String key, ChatFormatting formatting) {
+        player.displayClientMessage(msgComponent("brass_ender_chest." + key).withStyle(formatting), true);
         return InteractionResult.CONSUME;
     }
 
