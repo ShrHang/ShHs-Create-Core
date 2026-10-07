@@ -1271,10 +1271,10 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
         boolean everythingTaken = false;
         while (!everythingTaken) {
             everythingTaken = true;
+            ingredientLoop:
             for (int i = 0; i < validIngredients.size(); i++) {
                 List<BigItemStack> list = validIngredients.get(i);
                 List<BigItemStack> resolvedList = resolvedIngredients.get(i);
-                ingredientLoop:
                 for (BigItemStack bigItemStack : list) {
                     if (bigItemStack.count == 0) {
                         continue;
@@ -1288,6 +1288,7 @@ public class PortableStockTickerScreen extends AbstractSimiContainerScreen<Porta
                         }
                     }
                     resolvedList.add(new BigItemStack(bigItemStack.stack, 1));
+                    continue ingredientLoop;
                 }
             }
         }
