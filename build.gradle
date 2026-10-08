@@ -30,20 +30,29 @@ neoForge {
         minecraftVersion = project.parchment_minecraft_version
     }
 
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+        // Alternate development view of the same mod, not a separate test mod.
+        "${mod_id}_tests" {
+            sourceSet(sourceSets.main)
+            sourceSet(sourceSets.test)
+        }
+    }
+
     runs {
         client {
             client()
-
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
         server {
             server()
             programArgument '--nogui'
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
         gameTestServer {
             type = "gameTestServer"
+            sourceSet = sourceSets.test
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
@@ -53,14 +62,9 @@ neoForge {
         }
 
         configureEach {
+            loadedMods = [mods.getByName(name == 'gameTestServer' ? "${mod_id}_tests" : mod_id)]
             systemProperty 'forge.logging.markers', 'REGISTRIES'
             logLevel = org.slf4j.event.Level.DEBUG
-        }
-    }
-
-    mods {
-        "${mod_id}" {
-            sourceSet(sourceSets.main)
         }
     }
 }
@@ -218,6 +222,19 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
 sourceSets.main.resources.srcDir generateModMetadata
 
 neoForge.ideSyncTask generateModMetadata
+
+sourceSets.test.compileClasspath += sourceSets.main.compileClasspath
+sourceSets.test.runtimeClasspath += sourceSets.main.runtimeClasspath
+
+tasks.register('verifyPortableStockTicker', JavaExec) {
+    classpath = sourceSets.test.runtimeClasspath
+    workingDir = layout.buildDirectory.get().asFile
+    mainClass = 'io.github.shrhang.shhs_create_core.content.logistics.portable_stock_ticker.PortableStockTickerVerification'
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('verifyPortableStockTicker'), tasks.named('runGameTestServer')
+}
 
 publishing {
     publications {

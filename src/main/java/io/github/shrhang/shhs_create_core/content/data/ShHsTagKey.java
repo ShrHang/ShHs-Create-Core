@@ -35,6 +35,23 @@ public class ShHsTagKey {
     }
 
     public static final ShHsSpellTag ENTITY_SPELL_BLACKLIST;
+    public static final ShHsSpellTag MOB_SPELL_CONTROL = ShHsSpellTag.create(ShHsCreateCore.rl("mob_spells/control"))
+            .addSpell(ROOT_SPELL, FROSTWAVE_SPELL);
+    public static final ShHsSpellTag MOB_SPELL_DAMAGE = ShHsSpellTag.create(ShHsCreateCore.rl("mob_spells/damage"))
+            .addSpell(FIREBALL_SPELL, MAGIC_MISSILE_SPELL, RAY_OF_FROST_SPELL, WALL_OF_FIRE_SPELL,
+                    ELDRITCH_BLAST_SPELL, FLAMING_BARRAGE_SPELL, RAISE_HELL_SPELL);
+    public static final ShHsSpellTag MOB_SPELL_APPROACH = ShHsSpellTag.create(ShHsCreateCore.rl("mob_spells/approach"))
+            .addSpell(TELEPORT_SPELL, BLOOD_STEP_SPELL, BURNING_DASH_SPELL);
+    public static final ShHsSpellTag MOB_SPELL_ESCAPE = ShHsSpellTag.create(ShHsCreateCore.rl("mob_spells/escape"))
+            .addSpell(TELEPORT_SPELL, FROST_STEP_SPELL);
+    public static final ShHsSpellTag MOB_SPELL_HEAL = ShHsSpellTag.create(ShHsCreateCore.rl("mob_spells/heal"))
+            .addSpell(HEAL_SPELL, HEALING_CIRCLE_SPELL);
+    public static final ShHsSpellTag MOB_SPELL_DEFENSE = ShHsSpellTag.create(ShHsCreateCore.rl("mob_spells/defense"))
+            .addSpell(OAKSKIN_SPELL, FORTIFY_SPELL);
+    public static final ShHsSpellTag MOB_SPELL_SUMMON = ShHsSpellTag.create(ShHsCreateCore.rl("mob_spells/summon"))
+            .addSpell(RAISE_DEAD_SPELL, SUMMON_SWORDS, SUMMON_VEX_SPELL, SUMMON_HORSE_SPELL, SUMMON_POLAR_BEAR_SPELL);
+    public static final ShHsSpellTag MOB_SPELL_CLOSE_RANGE = ShHsSpellTag.create(ShHsCreateCore.rl("mob_spells/close_range"))
+            .addSpell(FROSTWAVE_SPELL, CONE_OF_COLD_SPELL, FANG_WARD_SPELL, STOMP_SPELL);
 
     static {
         ENTITY_SPELL_BLACKLIST =
@@ -42,6 +59,8 @@ public class ShHsTagKey {
                         GLUTTONY_SPELL,
                         PLANAR_SIGHT_SPELL,
                         POCKET_DIMENSION_SPELL,
+                        PORTAL_SPELL,
+                        RECALL_SPELL,
                         SACRIFICE_SPELL,
                         SHIELD_SPELL,
                         SPECTRAL_HAMMER_SPELL,

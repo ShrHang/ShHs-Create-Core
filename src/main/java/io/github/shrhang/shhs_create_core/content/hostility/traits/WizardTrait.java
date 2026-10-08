@@ -1,20 +1,14 @@
 package io.github.shrhang.shhs_create_core.content.hostility.traits;
 
-import io.github.shrhang.shhs_create_core.content.magic.mob_spell_cast.MobMagicManager;
-import io.github.shrhang.shhs_create_core.content.magic.mob_spell_cast.MobSpellQueue;
-import io.github.shrhang.shhs_create_core.content.magic.mob_spell_cast.MobSpellTactics;
-import io.github.shrhang.shhs_create_core.content.magic.mob_spell_cast.MobSummonManager;
 import io.github.shrhang.shhs_create_core.content.util.magic.SpellCastHelper;
 import dev.xkmc.l2hostility.content.logic.TraitManager;
 import dev.xkmc.l2hostility.content.traits.legendary.LegendaryTrait;
 import dev.xkmc.l2hostility.init.registrate.LHEnchantments;
-import io.redspace.ironsspellbooks.api.magic.MagicData;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.ISpellContainer;
 import io.redspace.ironsspellbooks.api.spells.ISpellContainerMutable;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
 import io.redspace.ironsspellbooks.loot.SpellFilter;
-import io.redspace.ironsspellbooks.registries.DataAttachmentRegistry;
 import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.util.RandomSource;
@@ -34,8 +28,7 @@ import static io.redspace.ironsspellbooks.api.registry.AttributeRegistry.MANA_RE
 import static io.redspace.ironsspellbooks.api.registry.AttributeRegistry.MAX_MANA;
 
 /**
- * 巫师词条，赋予生物施法能力。
- * 负责初始化法术书、增加法力/恢复属性，以及每 tick 推进施法状态机和法术决策。
+ * 提供巫师装备和属性；施法入口由接入模块启用。
  */
 public class WizardTrait extends LegendaryTrait {
     private static final int MAX_SPELLBOOK_SLOTS = 20;
@@ -54,12 +47,6 @@ public class WizardTrait extends LegendaryTrait {
     @Override
     public void postInit(@NotNull LivingEntity entity, int traitLV) {
         grantSpellbook(entity, traitLV);
-        MagicData magicData = new MagicData(false);
-        // 注册映射：MagicData -> 施法者
-        MobSummonManager.registerCaster(magicData, entity);
-        // 强制初始化 PlayerRecasts 并注册映射
-        MobSummonManager.registerRecasts(magicData.getPlayerRecasts(), magicData);
-        entity.setData(DataAttachmentRegistry.MAGIC_DATA, magicData);
     }
 
     private void grantSpellbook(LivingEntity entity, int traitLV) {
@@ -102,25 +89,4 @@ public class WizardTrait extends LegendaryTrait {
                 !(entity instanceof AbstractSpellCastingMob);
     }
 
-    /**
-     * 尝试清除实体的法术队列（仅在实体死亡时执行清理，避免内存泄漏）。
-     */
-    public static void tryClearCache(LivingEntity entity) {
-        if (!entity.isAlive()) {
-            MobSpellQueue.clearQueue(entity);
-        }
-    }
-
-    @Override
-    public void tick(@NotNull LivingEntity entity, int level) {
-        tryClearCache(entity);
-        MobMagicManager.tick(entity);
-        MobSpellQueue.tickQueue(entity);
-        MobSpellTactics.tick(entity);
-    }
-
-    @SuppressWarnings("unused")
-    public static void clearCache(LivingEntity entity) {
-        MobSpellQueue.clearQueue(entity);
-    }
 }

@@ -1,0 +1,12 @@
+{
+  "values": [
+    {
+      "id": "irons_spellbooks:heal",
+      "required": false
+    },
+    {
+      "id": "irons_spellbooks:healing_circle",
+      "required": false
+    }
+  ]
+}

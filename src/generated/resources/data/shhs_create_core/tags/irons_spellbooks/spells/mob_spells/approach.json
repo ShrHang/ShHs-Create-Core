@@ -1,0 +1,16 @@
+{
+  "values": [
+    {
+      "id": "irons_spellbooks:teleport",
+      "required": false
+    },
+    {
+      "id": "irons_spellbooks:blood_step",
+      "required": false
+    },
+    {
+      "id": "irons_spellbooks:burning_dash",
+      "required": false
+    }
+  ]
+}

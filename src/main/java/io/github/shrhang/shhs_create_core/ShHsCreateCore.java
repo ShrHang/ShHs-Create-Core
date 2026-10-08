@@ -46,6 +46,7 @@ public class ShHsCreateCore {
 
         ShHsSkullTypes.init(modEventBus);
         ShHsComponentTypes.register(modEventBus);
+        ShHsAttachmentTypes.register(modEventBus);
         ShHsCreativeTabs.register(modEventBus);
         ShHsMenuTypes.register(modEventBus);
         ShHsRecipeTypes.register(modEventBus);

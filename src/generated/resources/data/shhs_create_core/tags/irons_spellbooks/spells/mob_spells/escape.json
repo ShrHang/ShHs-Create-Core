@@ -1,0 +1,12 @@
+{
+  "values": [
+    {
+      "id": "irons_spellbooks:teleport",
+      "required": false
+    },
+    {
+      "id": "irons_spellbooks:frost_step",
+      "required": false
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "values": [
+    {
+      "id": "irons_spellbooks:root",
+      "required": false
+    },
+    {
+      "id": "irons_spellbooks:frostwave",
+      "required": false
+    }
+  ]
+}

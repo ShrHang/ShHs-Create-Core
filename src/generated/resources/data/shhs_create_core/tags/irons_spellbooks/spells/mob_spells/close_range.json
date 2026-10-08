@@ -1,0 +1,20 @@
+{
+  "values": [
+    {
+      "id": "irons_spellbooks:frostwave",
+      "required": false
+    },
+    {
+      "id": "irons_spellbooks:cone_of_cold",
+      "required": false
+    },
+    {
+      "id": "irons_spellbooks:fang_ward",
+      "required": false
+    },
+    {
+      "id": "irons_spellbooks:stomp",
+      "required": false
+    }
+  ]
+}

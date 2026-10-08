@@ -13,6 +13,14 @@
       "required": false
     },
     {
+      "id": "irons_spellbooks:portal",
+      "required": false
+    },
+    {
+      "id": "irons_spellbooks:recall",
+      "required": false
+    },
+    {
       "id": "irons_spellbooks:sacrifice",
       "required": false
     },

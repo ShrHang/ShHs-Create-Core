@@ -1,0 +1,12 @@
+{
+  "values": [
+    {
+      "id": "irons_spellbooks:oakskin",
+      "required": false
+    },
+    {
+      "id": "irons_spellbooks:fortify",
+      "required": false
+    }
+  ]
+}
