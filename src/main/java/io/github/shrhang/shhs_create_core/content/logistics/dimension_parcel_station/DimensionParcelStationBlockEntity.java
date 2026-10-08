@@ -133,7 +133,13 @@ public class DimensionParcelStationBlockEntity extends NetedBlockEntity
 
     public boolean mayConfigure(Player player) {
         DimensionsNet net = getNet();
-        return net != null && ShHsConfig.SERVER.dimensionParcelStationConfigurePermission.get().allows(net, player);
+        if (net == null)
+            return false;
+        return switch (ShHsConfig.SERVER.dimensionParcelStationConfigurePermission.get()) {
+            case Owner -> net.isOwner(player);
+            case Manager -> net.isManager(player);
+            case Member -> net.getPlayers().contains(player.getUUID());
+        };
     }
 
     public void toggle(Channel channel, Player player) {

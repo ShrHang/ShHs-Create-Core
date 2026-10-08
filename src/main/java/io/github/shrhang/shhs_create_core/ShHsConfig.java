@@ -1,6 +1,6 @@
 package io.github.shrhang.shhs_create_core;
 
-import io.github.shrhang.shhs_create_core.content.logistics.dimension_parcel_station.DimensionParcelStationPermission;
+import com.wintercogs.beyonddimensions.api.dimensionnet.NetPermissionlevel;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
@@ -67,7 +67,7 @@ public class ShHsConfig {
         public final ModConfigSpec.DoubleValue wizardManaRegenPerLev;
 
         public final ModConfigSpec.IntValue dimensionParcelStationMaxPerNetwork;
-        public final ModConfigSpec.EnumValue<DimensionParcelStationPermission> dimensionParcelStationConfigurePermission;
+        public final ModConfigSpec.EnumValue<NetPermissionlevel> dimensionParcelStationConfigurePermission;
 
         Server(ModConfigSpec.Builder builder) {
             builder.push("performance");
@@ -84,16 +84,8 @@ public class ShHsConfig {
                     .comment("Minimum server ticks between matching drill hit sounds. Pitch and playback duration are unchanged.")
                     .defineInRange("contraptionDrillHitSoundIntervalTicks", 4, 1, 100);
             builder.pop();
+
             builder.push("compat");
-            builder.push("beyond_dimensions");
-            dimensionParcelStationMaxPerNetwork = builder
-                    .comment("Maximum number of Dimension Parcel Stations bound to one dimension network.")
-                    .comment("0 disables and unbinds all stations; -1 allows unlimited stations.")
-                    .defineInRange("dimensionParcelStationMaxPerNetwork", 1, -1, Integer.MAX_VALUE);
-            dimensionParcelStationConfigurePermission = builder
-                    .comment("Minimum network permission required to change a Dimension Parcel Station's I/O settings.")
-                    .defineEnum("dimensionParcelStationConfigurePermission", DimensionParcelStationPermission.MANAGER);
-            builder.pop();
             builder.push("enchantment_industry");
             scrollPrintingCost = builder
                     .comment("The cost of ink for printing a spell scroll per relative level in Enchantment Industry.")
@@ -142,6 +134,17 @@ public class ShHsConfig {
                     .comment("The mana regeneration increase per level of Wizard Trait. The mana regeneration increase is calculated as trait level * WizardManaRegenPerLv.")
                     .defineInRange("wizardManaRegenPerLev", 0.2, 0.0, Float.MAX_VALUE);
             builder.pop(3);
+
+            builder.push("logistics");
+            builder.push("dimension_parcel_station");
+            dimensionParcelStationMaxPerNetwork = builder
+                    .comment("Maximum number of Dimension Parcel Stations bound to one dimension network.")
+                    .comment("0 disables and unbinds all stations; -1 allows unlimited stations.")
+                    .defineInRange("dimensionParcelStationMaxPerNetwork", -1, -1, Integer.MAX_VALUE);
+            dimensionParcelStationConfigurePermission = builder
+                    .comment("Minimum network permission required to change a Dimension Parcel Station's I/O settings.")
+                    .defineEnum("dimensionParcelStationConfigurePermission", NetPermissionlevel.Manager);
+            builder.pop(2);
         }
     }
 }

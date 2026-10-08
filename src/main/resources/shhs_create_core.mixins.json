@@ -20,6 +20,7 @@
     "fluidlogistics.content.logistics.fluidPackager.FluidRepackagerBlockEntityMixin",
     "irons_spellbooks.capabilities.magic.PlayerRecastsMixin",
     "l2hostility.content.capability.player.PlayerDifficultyAccessor",
+    "l2hostility.events.LHAttackListenerMixin",
     "minecraft.server.level.ServerLevelMixin",
     "minecraft.world.entity.monster.DrownedMixin",
     "minecraft.world.entity.monster.HuskMixin"
