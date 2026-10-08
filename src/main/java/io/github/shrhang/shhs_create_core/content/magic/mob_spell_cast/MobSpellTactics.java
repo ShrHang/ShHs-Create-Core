@@ -50,7 +50,7 @@ public class MobSpellTactics {
         return new ArrayList<>(bySpell.values());
     }
 
-    private static boolean damage(AbstractSpell spell) {
+    public static boolean isDamageSpell(AbstractSpell spell) {
         return MOB_SPELL_DAMAGE.contains(spell) || !(MOB_SPELL_CONTROL.contains(spell)
                 || MOB_SPELL_APPROACH.contains(spell) || MOB_SPELL_ESCAPE.contains(spell)
                 || MOB_SPELL_HEAL.contains(spell) || MOB_SPELL_DEFENSE.contains(spell)
@@ -59,11 +59,11 @@ public class MobSpellTactics {
 
     private static boolean matches(Tactic tactic, int stage, AbstractSpell spell) {
         return switch (tactic) {
-            case CONTROL -> stage == 0 ? MOB_SPELL_CONTROL.contains(spell) : damage(spell);
+            case CONTROL -> stage == 0 ? MOB_SPELL_CONTROL.contains(spell) : isDamageSpell(spell);
             case APPROACH -> stage == 0 ? MOB_SPELL_APPROACH.contains(spell)
-                    : damage(spell) && MOB_SPELL_CLOSE_RANGE.contains(spell);
-            case SUMMON -> stage == 0 ? MOB_SPELL_SUMMON.contains(spell) : damage(spell);
-            case ATTACK -> damage(spell);
+                    : isDamageSpell(spell) && MOB_SPELL_CLOSE_RANGE.contains(spell);
+            case SUMMON -> stage == 0 ? MOB_SPELL_SUMMON.contains(spell) : isDamageSpell(spell);
+            case ATTACK -> isDamageSpell(spell);
             case EMERGENCY -> MOB_SPELL_HEAL.contains(spell) || MOB_SPELL_DEFENSE.contains(spell)
                     || MOB_SPELL_ESCAPE.contains(spell);
             default -> false;
@@ -112,7 +112,7 @@ public class MobSpellTactics {
                     return new Decision(tactic, first);
             }
         }
-        List<Candidate> attacks = new ArrayList<>(usable.stream().filter(c -> damage(c.spell())).toList());
+        List<Candidate> attacks = new ArrayList<>(usable.stream().filter(c -> isDamageSpell(c.spell())).toList());
         if (attacks.size() > 1) attacks.removeIf(c -> c.spell().getSpellId().equals(state.lastSpell));
         return attacks.isEmpty() ? null : new Decision(Tactic.ATTACK,
                 attacks.get(mob.getRandom().nextInt(attacks.size())));

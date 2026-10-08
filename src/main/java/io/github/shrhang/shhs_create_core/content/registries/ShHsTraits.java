@@ -25,12 +25,12 @@ public class ShHsTraits {
 
         WIZARD = REGISTRATE.trait("wizard", ()-> new WizardTrait(
                         (() -> 0x5e5d82)
-                ), new TraitConfig(100, 1, 10, 200))
+                ), new TraitConfig(100, 1, 5, 200))
                 .addWhitelist(entry -> entry.add(
                         EntityType.ENDERMAN, EntityType.SPIDER, EntityType.CAVE_SPIDER,
                         EntityType.ZOMBIE, EntityType.HUSK, EntityType.DROWNED,
                         EntityType.SKELETON, EntityType.STRAY, EntityType.BOGGED, EntityType.WITHER))
-                .desc("The mob can cast spells.")
+                .desc("Casts spells from equipment and a granted spellbook. Each level grants 4 book slots and raises spell levels, maximum mana, mana regeneration and cooldown reduction. Higher ranks favor spell combos.")
                 .lang("Wizard").register();
     }
 

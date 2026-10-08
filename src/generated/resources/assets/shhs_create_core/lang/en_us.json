@@ -153,5 +153,5 @@
   "tooltip.shhs_create_core.sprayer.range": "Range: %s x %s x %s",
   "trait.shhs_create_core.augmented_reality": "Augmented Reality",
   "trait.shhs_create_core.wizard": "Wizard",
-  "trait.shhs_create_core.wizard.desc": "The mob can cast spells."
+  "trait.shhs_create_core.wizard.desc": "Casts spells from equipment and a granted spellbook. Each level grants 4 book slots and raises spell levels, maximum mana, mana regeneration and cooldown reduction. Higher ranks favor spell combos."
 }

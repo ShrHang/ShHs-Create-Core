@@ -153,5 +153,5 @@
   "tooltip.shhs_create_core.sprayer.range": "喷洒范围：%s x %s x %s",
   "trait.shhs_create_core.augmented_reality": "增强现实",
   "trait.shhs_create_core.wizard": "巫师",
-  "trait.shhs_create_core.wizard.desc": "生物可释放法术。"
+  "trait.shhs_create_core.wizard.desc": "生物可使用装备及获赠法术书中的法术。每级提供4个法术书槽位，并提高法术等级、最大法力、法力恢复和冷却缩减；高等级优先搭配连招。"
 }

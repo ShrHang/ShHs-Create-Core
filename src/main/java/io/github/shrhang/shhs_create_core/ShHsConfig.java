@@ -65,6 +65,8 @@ public class ShHsConfig {
         public final ModConfigSpec.BooleanValue hostilityDebitCardGenerateParticles;
         public final ModConfigSpec.DoubleValue wizardMaxManaPerLev;
         public final ModConfigSpec.DoubleValue wizardManaRegenPerLev;
+        public final ModConfigSpec.DoubleValue wizardCooldownReductionPerLev;
+        public final ModConfigSpec.BooleanValue wizardImbueEquipment;
 
         public final ModConfigSpec.IntValue dimensionParcelStationMaxPerNetwork;
         public final ModConfigSpec.EnumValue<NetPermissionlevel> dimensionParcelStationConfigurePermission;
@@ -127,12 +129,18 @@ public class ShHsConfig {
                     .define("hostilityDebitCardGenerateParticles", true);
             builder.push("trait");
             builder.push("wizard");
+            wizardImbueEquipment = builder
+                    .comment("Imbue eligible existing equipment once when the Wizard trait is first initialized. Uses native arcane anvil restrictions; existing spells are preserved.")
+                    .define("wizardImbueEquipment", true);
             wizardMaxManaPerLev = builder
                     .comment("The maximum mana increase per level of Wizard Trait. The maximum mana increase is calculated as trait level * WizardMaxManaPerLv.")
                     .defineInRange("wizardMaxManaPerLev", 200.0, 0, Float.MAX_VALUE);
             wizardManaRegenPerLev = builder
                     .comment("The mana regeneration increase per level of Wizard Trait. The mana regeneration increase is calculated as trait level * WizardManaRegenPerLv.")
                     .defineInRange("wizardManaRegenPerLev", 0.2, 0.0, Float.MAX_VALUE);
+            wizardCooldownReductionPerLev = builder
+                    .comment("Cooldown reduction attribute bonus per Wizard level. Uses the native cooldown soft cap; 0 disables this bonus.")
+                    .defineInRange("wizardCooldownReductionPerLev", 0.1, 0.0, Float.MAX_VALUE);
             builder.pop(3);
 
             builder.push("logistics");
