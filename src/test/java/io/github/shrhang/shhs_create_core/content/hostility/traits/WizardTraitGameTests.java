@@ -27,6 +27,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -76,7 +77,7 @@ public class WizardTraitGameTests {
         var container = ISpellContainer.get(book);
         helper.assertTrue(container.getMaxSpellCount() == level * 4 && container.getActiveSpellCount() == level * 4,
                 "Book capacity and filled slots must follow trait rank");
-        helper.assertTrue(container.getActiveSpells().stream().map(slot -> slot.getSpell().getSpellId()).distinct().count() == level * 4,
+        helper.assertTrue(container.getActiveSpells().stream().map(slot -> slot.getSpell().getSpellId()).distinct().count() == level * 4L,
                 "Generated book must not repeat spell IDs");
         for (var slot : container.getActiveSpells()) {
             helper.assertTrue(slot.getLevel() == Math.min(level * 2, slot.getSpell().getMaxLevel()), "Spell level must clamp to native maximum");
@@ -440,7 +441,7 @@ public class WizardTraitGameTests {
         data.goal = null;
         data.runtimeReady = false;
         helper.runAfterDelay(2, () -> {
-            var goal = mob.goalSelector.getAvailableGoals().stream().map(wrapped -> wrapped.getGoal())
+            var goal = mob.goalSelector.getAvailableGoals().stream().map(WrappedGoal::getGoal)
                     .filter(MobSpellCastGoal.class::isInstance).findFirst().orElseThrow();
             helper.assertFalse(goal.canContinueToUse(), "Restoring wizard goal must not clear core failure stop");
             helper.succeed();

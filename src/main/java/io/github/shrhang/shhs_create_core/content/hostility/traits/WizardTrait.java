@@ -1,5 +1,6 @@
 package io.github.shrhang.shhs_create_core.content.hostility.traits;
 
+import com.google.common.base.Suppliers;
 import dev.xkmc.l2hostility.content.capability.mob.CapStorageData;
 import dev.xkmc.l2hostility.content.logic.TraitManager;
 import dev.xkmc.l2hostility.content.traits.legendary.LegendaryTrait;
@@ -47,6 +48,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.IntSupplier;
+import java.util.function.Supplier;
 
 import static io.github.shrhang.shhs_create_core.ShHsConfig.SERVER;
 import static io.github.shrhang.shhs_create_core.content.data.ShHsTagKey.*;
@@ -91,11 +93,12 @@ public class WizardTrait extends LegendaryTrait {
         int level = Mth.clamp(traitLV, 0, 5);
         var cap = LHMiscs.MOB.type().getOrCreate(mob);
         Data data = cap.getOrCreateData(getRegistryName(), Data::new);
+        var pool = Suppliers.memoize(() -> spellPool(mob, level)); // 初始化法术池
         if (level > 0 && !data.equipmentProcessed) {
             data.equipmentProcessed = true;
-            if (SERVER.wizardImbueEquipment.get()) imbueEquipment(mob, level);
+            if (SERVER.wizardImbueEquipment.get()) imbueEquipment(mob, level, pool.get());
         }
-        sync(mob, data, level);
+        sync(mob, data, level, pool);
     }
 
     private static boolean ineligible(Mob mob) {
@@ -136,6 +139,10 @@ public class WizardTrait extends LegendaryTrait {
     }
 
     private static void sync(Mob mob, Data data, int level) {
+        sync(mob, data, level, Suppliers.memoize(() -> spellPool(mob, level))); // 实际调用处只会进入 level == 0 的分支，不会使用法术池。
+    }
+
+    private static void sync(Mob mob, Data data, int level, Supplier<List<AbstractSpell>> pool) {
         if (level == 0) {
             if (data.goal != null) mob.goalSelector.removeGoal(data.goal);
             if (data.ownsCasting) MobMagicManager.disable(mob);
@@ -144,7 +151,7 @@ public class WizardTrait extends LegendaryTrait {
             data.runtimeReady = false;
             data.ownsCasting = false;
         } else {
-            if (data.level != level) updateBook(mob, level);
+            if (data.level != level) updateBook(mob, level, pool);
             if (!data.runtimeReady) {
                 boolean enabled = MobMagicManager.isEnabled(mob);
                 if (data.level <= 0 || !enabled) data.ownsCasting = !enabled;
@@ -166,6 +173,7 @@ public class WizardTrait extends LegendaryTrait {
         else TraitManager.addAttribute(mob, attribute, id, amount, operation);
     }
 
+    /** 过滤掉不允许的、无施法类型的、最大等级为 0 的，以及不支持的法术。 */
     private static List<AbstractSpell> spellPool(Mob mob, int level) {
         return new SpellFilter().getApplicableSpells().stream()
                 .filter(spell -> SpellCastHelper.isSpellAllowed(mob, spell) && spell.getCastType() != CastType.NONE
@@ -177,8 +185,7 @@ public class WizardTrait extends LegendaryTrait {
         return Math.min(level * 2, spell.getMaxLevel());
     }
 
-    private static void imbueEquipment(Mob mob, int level) {
-        var pool = spellPool(mob, level);
+    private static void imbueEquipment(Mob mob, int level, List<AbstractSpell> pool) {
         if (pool.isEmpty()) return;
         for (var slot : EquipmentSlot.values()) {
             ItemStack stack = mob.getItemBySlot(slot);
@@ -195,12 +202,12 @@ public class WizardTrait extends LegendaryTrait {
         }
     }
 
-    private static void updateBook(Mob mob, int level) {
+    private static void updateBook(Mob mob, int level, Supplier<List<AbstractSpell>> pool) {
         var books = ownedBooks(mob);
         ItemStack book = books.isEmpty() ? new ItemStack(ItemRegistry.WIMPY_SPELL_BOOK.get()) : books.getFirst();
         Consumer<ItemStack> destination = books.isEmpty() ? findBookSlot(mob, book) : null;
         if (books.isEmpty() && destination == null) return;
-        var selected = selectSpells(spellPool(mob, level), level, mob.getRandom());
+        var selected = selectSpells(pool.get(), level, mob.getRandom());
         if (books.isEmpty() && selected.isEmpty()) return;
         var container = ISpellContainer.create(level * 4, true, false).mutableCopy();
         for (var spell : selected) container.addSpell(spell, spellLevel(spell, level), false);
